@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ar">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حلاق الشكر | نظام الإدارة المتكامل</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+</head>
+
+<body>
+
+    <div id="auth-overlay">
+        <div class="auth-card">
+            <h1 style="color: var(--primary); margin-bottom: 20px;">🔒 محمي</h1>
+            <p style="margin-bottom: 25px; color: var(--text-muted);">أدخل الرمز السري للوصول</p>
+            <input type="password" id="admin-pass" placeholder="الرقم السري"
+                style="text-align: center; margin-bottom: 20px; font-size: 1.5rem;">
+            <button class="btn-action" onclick="verifyAdmin()">فتح الوصول</button>
+            <button class="btn-action"
+                style="background: transparent; color: white; border: 1px solid #333; margin-top: 10px;"
+                onclick="closeAuth()">إغلاق</button>
+        </div>
+    </div>
+
+    <div class="app-layout">
+        <!-- Aside Menu (Sidebar) -->
+        <aside>
+            <div class="brand">
+                <div class="logo-box" style="background: var(--primary); color: black;">HS</div>
+                <h2 style="font-size: 1.4rem; color: var(--text-main);">حلاق الشكر</h2>
+            </div>
+            <nav class="nav-menu">
+                <div class="nav-link active" onclick="handleNav('employee')">
+                    <span>🏠 نقطة البيع (موظف)</span>
+                </div>
+                <div class="nav-link" onclick="handleNav('owner')">
+                    <span>✂️ كاشير الحلاق (الشكر)</span>
+                </div>
+                <div style="font-size: 0.7rem; color: var(--text-muted); margin: 10px 15px 5px 0; font-weight: 800;">
+                    المحاسبة والتقارير</div>
+                <div class="nav-link" onclick="handleNav('analytics')">
+                    <span>📊 الرسوم والتحليلات</span>
+                </div>
+                <div class="nav-link" onclick="handleNav('fixed-exp')">
+                    <span>💰 المصاريف الثابتة</span>
+                </div>
+                <div class="nav-link" onclick="handleNav('emergency-exp')">
+                    <span>💸 مصاريف طارئة</span>
+                </div>
+                <div class="nav-link" onclick="handleNav('history')">
+                    <span>📜 كشف المبيعات</span>
+                </div>
+                <div class="nav-link" onclick="handleNav('top-services')">
+                    <span>⭐ الخدمات الأكثر طلباً</span>
+                </div>
+                <div class="nav-link" onclick="handleNav('manage-services')">
+                    <span>🛠️ إدارة الخدمات</span>
+                </div>
+            </nav>
+            <div style="padding: 20px; border-top: 1px solid var(--border);">
+                <p id="role-status" style="color: var(--primary); font-size: 0.8rem; text-align: center;">المسؤول:
+                    الموظف</p>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main>
+            <!-- Global Stats (ONLY FOR OWNER) -->
+            <div class="top-stats">
+                <div class="stat-card owner-only">
+                    <div class="stat-label">دخل اليوم</div>
+                    <div class="stat-value gold" id="daily-total">0.000</div>
+                </div>
+                <div class="stat-card owner-only">
+                    <div class="stat-label">مصاريف اليوم</div>
+                    <div class="stat-value" id="daily-exp" style="color: var(--danger);">0.000</div>
+                </div>
+                <div class="stat-card owner-only">
+                    <div class="stat-label">صافي الشهر متوقع</div>
+                    <div class="stat-value" id="monthly-net">0.000</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">عمليات اليوم</div>
+                    <div class="stat-value" id="daily-count">0</div>
+                </div>
+            </div>
+
+            <!-- PAGE: POS -->
+            <div id="page-pos" class="page active">
+                <div class="pos-grid">
+                    <div class="card-glass">
+                        <h2 style="margin-bottom: 20px;">الخدمات المتاحة</h2>
+                        <div class="services-list" id="services-grid"></div>
+                    </div>
+                    <div class="cart-box">
+                        <h3 style="margin-bottom: 15px;">الفاتورة الحالية</h3>
+                        <div id="cart-items"
+                            style="max-height: 200px; overflow-y: auto; margin-bottom: 15px; border-bottom: 1px solid var(--border);">
+                        </div>
+                        <div
+                            style="display: flex; justify-content: space-between; font-size: 1.8rem; font-weight: 800; margin-bottom: 20px; color: var(--primary);">
+                            <span>الإجمالي</span>
+                            <span id="cart-total">0.000</span>
+                        </div>
+                        <button class="btn-action" onclick="confirmSale()">تأكيد وإتمام العملية</button>
+                        <button class="btn-action"
+                            style="background: transparent; color: var(--danger); border: 1px solid var(--danger); margin-top: 10px;"
+                            onclick="clearCart()">حذف السلة</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE: ANALYTICS -->
+            <div id="page-analytics" class="page">
+                <div class="card-glass" style="margin-bottom: 2rem;">
+                    <h3>📈 أداء المحل (الشهر الحالي)</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">الرسم البياني يوضح صافي
+                        الربح اليومي بعد خصم المصروفات</p>
+                    <div style="height: 400px;">
+                        <canvas id="profitChart"></canvas>
+                    </div>
+                </div>
+                <div class="summary-grid"
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                    <div class="stat-card" style="background: rgba(16, 185, 129, 0.05);">
+                        <div class="stat-label">إجمالي دخل الشهر الحالي</div>
+                        <div class="stat-value" id="m-income">0.000</div>
+                    </div>
+                    <div class="stat-card" style="background: rgba(239, 68, 68, 0.05);">
+                        <div class="stat-label">إجمالي مصروفات الشهر</div>
+                        <div class="stat-value" id="m-exp" style="color: var(--danger)">0.000</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE: FIXED EXPENSES -->
+            <div id="page-fixed-exp" class="page">
+                <div class="card-glass">
+                    <h2 style="margin-bottom: 20px;">إدارة المصاريف الثابتة</h2>
+                    <p style="color: var(--text-muted); margin-bottom: 25px;">مثل الأجار، فواتير الكهرباء، والرواتب
+                        الشهرية</p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 15px; margin-bottom: 30px;">
+                        <input type="text" id="fixed-name" placeholder="البيان (مثلاً: أجار المحل)">
+                        <input type="number" id="fixed-amount" placeholder="المبلغ">
+                        <button class="btn-action" style="width: auto; padding-left: 30px; padding-right: 30px;"
+                            onclick="addFixedExpense()">إضافة</button>
+                    </div>
+                    <div class="table-container">
+                        <table id="fixed-table">
+                            <thead>
+                                <tr>
+                                    <th>المسمى</th>
+                                    <th>المبلغ الشهري</th>
+                                    <th>الإجراء</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE: EMERGENCY EXPENSES -->
+            <div id="page-emergency-exp" class="page">
+                <div class="card-glass" style="max-width: 600px; margin: 0 auto;">
+                    <h2 style="margin-bottom: 20px;">تسجيل مصروف طارئ</h2>
+                    <p style="color: var(--text-muted); margin-bottom: 25px;">للمصاريف المباشرة التي لا تتكرر شهرياً</p>
+                    <div class="form-group">
+                        <label>المبلغ</label>
+                        <input type="number" id="exp-amount" placeholder="0.000">
+                    </div>
+                    <div class="form-group">
+                        <label>السبب</label>
+                        <input type="text" id="exp-note" placeholder="شراء أغراض تنظيف مثلاً">
+                    </div>
+                    <button class="btn-action" onclick="saveExpense()">حفظ المصروف فوراً</button>
+                </div>
+            </div>
+
+            <!-- PAGE: HISTORY -->
+            <div id="page-history" class="page">
+                <div class="card-glass" style="margin-bottom: 2rem;">
+                    <h3 style="margin-bottom: 20px;">📅 استعراض السجلات والتقارير</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 15px; margin-bottom: 20px;">
+                        <select id="history-month" class="btn-action"
+                            style="background: var(--bg-input); color: white; border: 1px solid var(--border);"
+                            onchange="renderHistoryTable()">
+                            <option value="0">يناير</option>
+                            <option value="1">فبراير</option>
+                            <option value="2">مارس</option>
+                            <option value="3">أبريل</option>
+                            <option value="4">مايو</option>
+                            <option value="5">يونيو</option>
+                            <option value="6">يوليو</option>
+                            <option value="7">أغسطس</option>
+                            <option value="8">سبتمبر</option>
+                            <option value="9">أكتوبر</option>
+                            <option value="10">نوفمبر</option>
+                            <option value="11">ديسمبر</option>
+                        </select>
+                        <select id="history-year" class="btn-action"
+                            style="background: var(--bg-input); color: white; border: 1px solid var(--border);"
+                            onchange="renderHistoryTable()">
+                            <!-- Years will be added by JS -->
+                        </select>
+                        <button class="btn-action" style="width: auto; padding: 0 30px;"
+                            onclick="renderHistoryTable()">تحديث العرض</button>
+                    </div>
+
+                    <div style="border-top: 1px solid var(--border); padding-top: 20px;">
+                        <span style="color: var(--text-muted); font-size: 0.9rem;">بحث عن يوم محدد بالتفصيل:</span>
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <input type="date" id="search-date" style="flex: 1;">
+                            <button class="btn-action" style="width: auto; padding: 0 40px;"
+                                onclick="performSearch()">تقرير مفصل</button>
+                        </div>
+                    </div>
+
+                    <div id="search-result"
+                        style="display:none; margin-top: 20px; background: rgba(212, 175, 55, 0.05); padding: 25px; border-radius: 20px; border: 1px solid var(--primary);">
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <h3
+                        style="padding: 1.5rem; background: var(--bg-card); display: flex; justify-content: space-between;">
+                        <span>كشف مبيعات الشهر</span>
+                        <span id="history-month-label" style="color: var(--primary);"></span>
+                    </h3>
+                    <table id="history-table">
+                        <thead>
+                            <tr>
+                                <th>اليوم</th>
+                                <th>التاريخ</th>
+                                <th>دخل الحلاق</th>
+                                <th>دخل الموظف</th>
+                                <th>المجموع</th>
+                                <th>المصاريف</th>
+                                <th>الصافي</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <button class="btn-action"
+                    style="background: transparent; border: none; color: var(--danger); margin-top: 40px; font-size: 0.8rem;"
+                    onclick="resetData()">حذف سجلات النظام بالكامل</button>
+            </div>
+
+            <!-- PAGE: TOP SERVICES -->
+            <div id="page-top-services" class="page">
+                <div class="card-glass">
+                    <h2 style="margin-bottom: 20px;">⭐ الخدمات الأكثر طلباً هذا الشهر</h2>
+                    <div id="top-services-list" style="display: flex; flex-direction: column; gap: 15px;">
+                        <!-- JS Content -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE: MANAGE SERVICES -->
+            <div id="page-manage-services" class="page">
+                <div class="card-glass">
+                    <h2 style="margin-bottom: 20px;">🛠️ إدارة قائمة الخدمات</h2>
+                    <p style="color: var(--text-muted); margin-bottom: 25px;">يمكنك إضافة خدمة جديدة أو تعديل الأسعار
+                        والأسماء الحالية.</p>
+
+                    <div
+                        style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 15px; margin-bottom: 30px; background: rgba(255,255,255,0.02); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
+                        <input type="text" id="new-service-name" placeholder="اسم الخدمة الجديدة">
+                        <input type="number" id="new-service-price" placeholder="السعر (د.ب)">
+                        <button class="btn-action" style="width: auto; padding: 0 30px;" onclick="addService()">إضافة
+                            خدمة</button>
+                    </div>
+
+                    <div class="table-container">
+                        <table id="manage-services-table">
+                            <thead>
+                                <tr>
+                                    <th>اسم الخدمة</th>
+                                    <th>السعر (د.ب)</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- JS Generated -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
