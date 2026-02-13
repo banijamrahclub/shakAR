@@ -103,7 +103,28 @@ h3 {
 .option-item:hover,
 .option-item.selected {
     border-color: var(--primary);
-    background: rgba(148, 163, 184, 0.05);
+    background: rgba(148, 163, 184, 0.1);
+}
+
+.option-item.selected {
+    position: relative;
+    border-width: 2px;
+}
+
+.check-mark {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: var(--primary);
+    color: black;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 800;
 }
 
 .option-item.busy {
