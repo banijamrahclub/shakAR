@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
-const fetch = require('node-fetch'); // سنحتاج هذه للمراسلة
+const fetch = require('node-fetch');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -22,9 +22,9 @@ function initializeDB() {
 }
 initializeDB();
 
-// جلب الأوقات المشغولة من قوقل (عبر الجسر المجاني)
+// جلب الأوقات المشغولة من قوقل
 app.get('/api/calendar/busy', async (req, res) => {
-    const { start } = req.query; // الموعد المطلوب
+    const { start } = req.query;
     if (!GAS_URL || GAS_URL.includes('ضع_رابط')) return res.json([]);
 
     try {
@@ -32,34 +32,41 @@ app.get('/api/calendar/busy', async (req, res) => {
         const busyData = await response.json();
         res.json(busyData);
     } catch (err) {
-        res.status(500).json({ error: "GAS Connection Error" });
+        console.error("GAS Get Busy Error:", err);
+        res.json([]); // نرجع مصفوفة فارغة عشان ما يتعطل الموقع
     }
 });
 
-// تسجيل حجز جديد في قوقل والموقع
+// تسجيل حجز جديد
 app.post('/api/calendar/book', async (req, res) => {
     const { name, phone, service, startTime, endTime } = req.body;
 
-    // 1. حفظ محلي
-    const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-    data.appointments.push({ name, phone, service, startTime, endTime, date: new Date().toISOString() });
-    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+    try {
+        // 1. حفظ محلي
+        const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+        if (!data.appointments) data.appointments = [];
+        data.appointments.push({ name, phone, service, startTime, endTime, date: new Date().toISOString() });
+        fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
 
-    // 2. إرسال لقوقل (عبر الجسر المجاني)
-    if (GAS_URL && !GAS_URL.includes('ضع_رابط')) {
-        try {
+        // 2. إرسال لقوقل (مع معالجة التحويلات/Redirects)
+        if (GAS_URL && !GAS_URL.includes('ضع_رابط')) {
             await fetch(GAS_URL, {
                 method: 'POST',
+                follow: 20, // السماح بالتحويلات التلقائية
                 body: JSON.stringify({ name, phone, service, startTime, endTime })
             });
-        } catch (err) { console.error("GAS Post Error"); }
+        }
+        res.json({ success: true });
+    } catch (err) {
+        console.error("Booking Error:", err);
+        res.status(500).json({ success: false, error: err.message });
     }
-
-    res.json({ success: true });
 });
 
 app.get('/api/data', (req, res) => {
-    res.json(JSON.parse(fs.readFileSync(DB_FILE, 'utf8')));
+    try {
+        res.json(JSON.parse(fs.readFileSync(DB_FILE, 'utf8')));
+    } catch (e) { res.json({}); }
 });
 
 app.post('/api/save', (req, res) => {
@@ -67,7 +74,26 @@ app.post('/api/save', (req, res) => {
     res.json({ success: true });
 });
 
-app.get('/booking', (req, res) => { res.sendFile(path.resolve(__dirname, 'booking.html')); });
-app.get('*', (req, res) => { res.sendFile(path.resolve(__dirname, 'index.html')); });
+// --- إعداد الروابط (Routes) ---
+
+// الرابط المختصر للإدارة (حطه في المفضلة عندك)
+app.get('/h-shakar', (req, res) => {
+    res.sendFile(path.resolve(__dirname, 'index.html'));
+});
+
+// الرابط الأساسي للزبائن (الحجوزات)
+app.get('/', (req, res) => {
+    res.sendFile(path.resolve(__dirname, 'booking.html'));
+});
+
+// رابط الحجز الاحتياطي
+app.get('/booking', (req, res) => {
+    res.sendFile(path.resolve(__dirname, 'booking.html'));
+});
+
+// أي رابط آخر يفتح صفحة الحجز لضمان عدم ضياع الزبون
+app.get('*', (req, res) => {
+    res.sendFile(path.resolve(__dirname, 'booking.html'));
+});
 
 app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
