@@ -259,70 +259,240 @@ input {
     cursor: pointer;
 }
 
-/* Table styling */
+/* Table styling & Responsiveness */
 .table-container {
     background: var(--bg-card);
     border-radius: 20px;
-    overflow: hidden;
+    overflow-x: auto;
     border: 1px solid var(--border);
+    -webkit-overflow-scrolling: touch;
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
+    min-width: 600px;
+    /* Force scroll on very narrow screens for readability */
+}
+
+/* Specific adjustment for mobile: allow some tables to stack if needed, but horizontal scroll is safer for accounting */
+@media (max-width: 600px) {
+    table {
+        min-width: 700px;
+    }
 }
 
 th,
 td {
-    padding: 1.2rem;
+    padding: 1rem;
     text-align: center;
     border-bottom: 1px solid var(--border);
+    font-size: 0.9rem;
 }
 
 th {
     background: rgba(255, 255, 255, 0.03);
     color: var(--primary);
+    font-weight: 700;
 }
 
-/* Responsive Adjustments */
+/* RESPONSIVE DESIGN SYSTEM */
+
+/* Tablets and smaller desktops */
 @media (max-width: 1100px) {
     .pos-grid {
         grid-template-columns: 1fr;
     }
 
+    .cart-box {
+        position: static;
+        margin-top: 2rem;
+    }
+
     .top-stats {
         grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+
+    main {
+        padding: 1.5rem;
     }
 }
 
-@media (max-width: 850px) {
+/* Mobile Devices (Phones) */
+@media (max-width: 768px) {
+    .app-layout {
+        flex-direction: column;
+    }
+
     aside {
         width: 100%;
         height: auto;
-        position: static;
+        position: relative;
+        /* Stays at the top of the page, not the screen */
+        top: 0;
+        right: 0;
+        left: 0;
         border-left: none;
         border-bottom: 1px solid var(--border);
+        flex-direction: column;
+        background: var(--bg-card);
+        z-index: 1000;
+        padding: 0;
+        box-shadow: none;
+    }
+
+    /* ROW 1: Brand Area (Mini) */
+    .brand {
+        display: flex;
+        padding: 10px 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .brand .logo-box {
+        width: 30px;
+        height: 30px;
+        font-size: 0.8rem;
+    }
+
+    .brand h2 {
+        font-size: 1rem;
     }
 
     .nav-menu {
-        flex-direction: row;
-        overflow-x: auto;
-        padding: 0.5rem;
-        gap: 5px;
+        display: flex;
+        flex-direction: column;
+        padding: 8px;
+        gap: 8px;
     }
 
+    /* Row 2: POS Links */
+    .nav-menu .nav-link:nth-child(1),
+    .nav-menu .nav-link:nth-child(2) {
+        width: 100%;
+        /* Full width for clarity on mobile */
+        background: var(--bg-input);
+        padding: 12px;
+        font-size: 0.85rem;
+        justify-content: center;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        margin-bottom: 4px;
+    }
+
+    /* Row 3: Admin Links (Now as a separate scrolling row) */
+    .nav-menu {
+        overflow-x: hidden;
+        /* Reset for mobile stack */
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Admin links scrolling container logic */
+    .admin-chips-scroll {
+        display: flex;
+        overflow-x: auto;
+        padding: 5px 0 10px;
+        gap: 8px;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Target direct children links from 3 onwards locally */
     .nav-link {
+        flex: 0 0 auto;
         white-space: nowrap;
-        padding: 8px 12px;
+        padding: 10px 15px;
+        font-size: 0.8rem;
+    }
+
+    /* Update: Make the 3-row structure explicit and clean */
+    .nav-menu {
+        padding: 10px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .nav-link:nth-child(n+3) {
+        grid-column: span 1;
+        font-size: 0.75rem;
+        padding: 8px;
+        border-radius: 20px;
+        justify-content: center;
     }
 
     main {
         margin-right: 0;
-        padding: 1rem;
+        margin-top: 0;
+        /* Content follows the header naturally */
+        padding: 1.5rem 1rem;
+    }
+
+    .top-stats {
+        grid-template-columns: 1fr;
+        gap: 0.8rem;
+    }
+
+    .stat-card {
+        padding: 1.2rem;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+    }
+
+    .card-glass {
+        padding: 1.2rem;
+        border-radius: 18px;
+    }
+
+    h2,
+    h3 {
+        font-size: 1.2rem;
+    }
+
+    .services-list {
+        grid-template-columns: repeat(2, 1fr);
+        /* 2 columns on small mobile */
+        gap: 10px;
+    }
+
+    .service-item {
+        padding: 1.2rem 8px;
+    }
+
+    /* History page selectors */
+    #page-history .card-glass div[style*="grid-template-columns"] {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+    }
+
+    #page-history .btn-action {
+        width: 100% !important;
+    }
+
+    /* Auth Overlay adjustments */
+    .auth-card {
+        padding: 2rem;
+        width: 95%;
     }
 }
 
-/* Auth Modal */
+/* Fine-tuning for very small phones */
+@media (max-width: 400px) {
+    .nav-link {
+        min-width: 65px;
+        font-size: 0.6rem;
+    }
+
+    .services-list {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Auth Modal Styling */
 #auth-overlay {
     position: fixed;
     top: 0;
@@ -334,35 +504,42 @@ th {
     display: none;
     align-items: center;
     justify-content: center;
+    padding: 20px;
 }
 
 .auth-card {
     background: var(--bg-card);
     padding: 3rem;
     border-radius: 30px;
-    width: 90%;
+    width: 100%;
     max-width: 380px;
     text-align: center;
     border: 2px solid var(--primary);
+    box-shadow: 0 0 50px rgba(148, 163, 184, 0.1);
 }
 
-/* Analytics Tab System */
+/* Finance sub navigation adjustments */
 .finance-sub-nav {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     margin-bottom: 2rem;
     background: var(--bg-input);
-    padding: 6px;
+    padding: 5px;
     border-radius: 15px;
-    width: fit-content;
+    width: 100%;
+    overflow-x: auto;
 }
 
 .sub-link {
-    padding: 10px 25px;
+    padding: 10px 15px;
     border-radius: 10px;
     cursor: pointer;
     font-weight: 700;
     color: var(--text-muted);
+    font-size: 0.85rem;
+    white-space: nowrap;
+    flex: 1;
+    text-align: center;
 }
 
 .sub-link.active {
