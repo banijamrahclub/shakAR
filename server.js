@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 3000;
 const DB_FILE = path.resolve(__dirname, 'db.json');
 
 // الرابط الخاص بجسر قوقل كلندر المجاني
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzJce7BwOakPfjoe4oWzgeNW1Waj9UFzBsIx3XHM1i6d6wWWpOaak-_pRNixDWNobY06g/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbx6zJg_biskjjGKCvjGpVg6kdxR4-5ACoAmjOyCv1gqONCyxRF9uq1mxxt2VMhMdcH-/exec';
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
