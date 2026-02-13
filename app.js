@@ -215,14 +215,23 @@ async function renderAppointmentsTable() {
 
 async function completeAppointment(index) {
     const app = state.appointments[index];
-    if (confirm(`هل انتهيت من حلاقة ${app.name}؟ (سيتم تسجيل ${app.price || '0.000'} د.ب في الأرباح)`)) {
+    let finalPrice = app.price || 0;
+
+    // إذا كان السعر صفر أو غير موجود، نسأل الحلاق يكتبه يدوياً
+    if (!finalPrice || finalPrice === 0) {
+        const inputPrice = prompt(`تنبيه: حجز ${app.name} لا يحتوي على سعر. يرجى إدخال المبلغ (د.ب):`, "1.000");
+        if (inputPrice === null) return; // إلغاء العملية
+        finalPrice = parseFloat(inputPrice) || 0;
+    }
+
+    if (confirm(`هل انتهيت من حلاقة ${app.name}؟ (سيتم تسجيل ${finalPrice.toFixed(3)} د.ب في الأرباح)`)) {
         // 1. تسجيل العملية في السجل التاريخي (الأرباح)
         const sale = {
             id: Date.now(),
             time: new Date().toLocaleTimeString('ar-BH'),
             date: new Date().toISOString().split('T')[0],
-            role: 'owner', // المالك هو من يؤكد الحجز عادة
-            total: app.price || 0,
+            role: state.currentRole,
+            total: finalPrice,
             items: `حجز: ${app.service}`
         };
         state.history.unshift(sale);

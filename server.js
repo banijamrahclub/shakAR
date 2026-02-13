@@ -49,11 +49,14 @@ app.get('/api/calendar/busy', async (req, res) => {
 });
 
 app.post('/api/calendar/book', async (req, res) => {
-    const { name, phone, service, startTime, endTime } = req.body;
+    const { name, phone, service, price, startTime, endTime } = req.body;
     try {
         const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
         if (!data.appointments) data.appointments = [];
-        data.appointments.push({ name, phone, service, startTime, endTime, date: new Date().toISOString() });
+        data.appointments.push({
+            name, phone, service, price, startTime, endTime,
+            date: new Date().toISOString()
+        });
         fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
         if (GAS_URL && !GAS_URL.includes('ضع_رابط')) {
             await fetch(GAS_URL, {
