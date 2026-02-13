@@ -42,27 +42,27 @@ async function loadData() {
         const res = await fetch(`${API_BASE}/api/data`);
         const cloudData = await res.json();
 
-        // إذا كان السيرفر جديد وما فيه بيانات، نأخذ اللي في الموبايل ونرفعها له
-        if (!cloudData.history || cloudData.history.length === 0) {
-            console.log("Empty server, uploading local data...");
-            state.history = JSON.parse(localStorage.getItem('sh_history')) || [];
-            state.expenses = JSON.parse(localStorage.getItem('sh_expenses')) || [];
-            state.fixedExpenses = JSON.parse(localStorage.getItem('sh_fixed')) || [];
-            state.services = JSON.parse(localStorage.getItem('sh_services')) || defaultServices;
-            await save(); // ارفع للملف
-        } else {
-            state.history = cloudData.history || [];
-            state.expenses = cloudData.expenses || [];
-            state.fixedExpenses = cloudData.fixedExpenses || [];
-            state.services = cloudData.services && cloudData.services.length > 0 ? cloudData.services : defaultServices;
-            state.appointments = cloudData.appointments || [];
-        }
+        // تحديث حالة النظام ببيانات السيرفر إذا كانت موجودة
+        state.history = cloudData.history || [];
+        state.expenses = cloudData.expenses || [];
+        state.fixedExpenses = cloudData.fixedExpenses || [];
+        state.services = (cloudData.services && cloudData.services.length > 0) ? cloudData.services : defaultServices;
+        state.appointments = cloudData.appointments || [];
+
+        // نحفظ في المتصفح فقط كاحتياط (نسخة محلية)
+        localStorage.setItem('sh_history', JSON.stringify(state.history));
+        localStorage.setItem('sh_expenses', JSON.stringify(state.expenses));
+        localStorage.setItem('sh_fixed', JSON.stringify(state.fixedExpenses));
+        localStorage.setItem('sh_services', JSON.stringify(state.services));
+
+        console.log("Data synced from server correctly.");
     } catch (err) {
         console.log("Server not found, using local storage...");
         state.history = JSON.parse(localStorage.getItem('sh_history')) || [];
         state.expenses = JSON.parse(localStorage.getItem('sh_expenses')) || [];
         state.fixedExpenses = JSON.parse(localStorage.getItem('sh_fixed')) || [];
         state.services = JSON.parse(localStorage.getItem('sh_services')) || defaultServices;
+        state.appointments = [];
     }
 }
 
