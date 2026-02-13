@@ -63,6 +63,9 @@
                 <div class="nav-link" onclick="handleNav('manage-services')">
                     <span>🛠️ إدارة الخدمات</span>
                 </div>
+                <div class="nav-link" onclick="handleNav('appointments')">
+                    <span>📅 الحجوزات القادمة</span>
+                </div>
             </nav>
             <div style="padding: 20px; border-top: 1px solid var(--border);">
                 <p id="role-status" style="color: var(--primary); font-size: 0.8rem; text-align: center;">المسؤول:
@@ -290,6 +293,31 @@
                             </thead>
                             <tbody>
                                 <!-- JS Generated -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE: APPOINTMENTS -->
+            <div id="page-appointments" class="page">
+                <div class="card-glass">
+                    <h2 style="margin-bottom: 20px;">📅 الحجوزات القادمة (من الموقع وقوقل)</h2>
+                    <p style="color: var(--text-muted); margin-bottom: 25px;">هذه القائمة محدثة تلقائياً من نظام الحجز
+                        ومن قوقل كلندر.</p>
+
+                    <div class="table-container">
+                        <table id="appointments-table">
+                            <thead>
+                                <tr>
+                                    <th>الوقت</th>
+                                    <th>الاسم</th>
+                                    <th>الهاتف</th>
+                                    <th>الخدمة</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- JS Content -->
                             </tbody>
                         </table>
                     </div>

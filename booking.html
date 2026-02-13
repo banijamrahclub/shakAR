@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حجز موعد | حلاق الشكر</title>
+    <link rel="stylesheet" href="booking-style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="booking-container">
+        <header>
+            <div class="logo">HS</div>
+            <h1>حلاق الشكر</h1>
+            <p>احجز موعدك الآن بكل سهولة</p>
+        </header>
+
+        <main class="booking-card">
+            <div id="step-1" class="step active">
+                <h3>1. اختر الخدمة</h3>
+                <div id="services-list" class="grid-options">
+                    <!-- JS Content -->
+                </div>
+            </div>
+
+            <div id="step-2" class="step">
+                <h3>2. اختر التاريخ والوقت</h3>
+                <input type="date" id="booking-date" class="input-field">
+                <div id="time-slots" class="grid-options">
+                    <!-- JS Content -->
+                </div>
+                <button class="btn-back" onclick="goToStep(1)">رجوع</button>
+            </div>
+
+            <div id="step-3" class="step">
+                <h3>3. بيانات التواصل</h3>
+                <input type="text" id="cust-name" placeholder="الاسم الكامل" class="input-field">
+                <input type="tel" id="cust-phone" placeholder="رقم الهاتف" class="input-field">
+                <div class="summary-box">
+                    <p>الخدمة: <span id="summary-service"></span></p>
+                    <p>الموعد: <span id="summary-time"></span></p>
+                </div>
+                <button class="btn-confirm" onclick="confirmBooking()">تأكيد الحجز</button>
+                <button class="btn-back" onclick="goToStep(2)">رجوع</button>
+            </div>
+
+            <div id="step-success" class="step">
+                <div class="success-icon">✅</div>
+                <h2>تم الحجز بنجاح!</h2>
+                <p>ننتظرك في الموعد المحدد.</p>
+                <button class="btn-confirm" onclick="location.reload()">حجز جديد</button>
+            </div>
+        </main>
+
+        <footer>
+            <p>© 2026 حلاق الشكر | جميع الحقوق محفوظة</p>
+        </footer>
+    </div>
+
+    <script src="booking-app.js"></script>
+</body>
+
+</html>

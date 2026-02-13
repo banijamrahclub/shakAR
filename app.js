@@ -157,6 +157,7 @@ function updateUI() {
         if (text.includes('كشف') && state.currentPage === 'history') link.classList.add('active');
         if (text.includes('أكثر طلباً') && state.currentPage === 'top-services') link.classList.add('active');
         if (text.includes('إدارة الخدمات') && state.currentPage === 'manage-services') link.classList.add('active');
+        if (text.includes('الحجوزات') && state.currentPage === 'appointments') link.classList.add('active');
     });
 
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -172,7 +173,35 @@ function updateUI() {
     if (state.currentPage === 'history') renderHistoryTable();
     if (state.currentPage === 'top-services') renderTopServices();
     if (state.currentPage === 'manage-services') renderManageServices();
+    if (state.currentPage === 'appointments') renderAppointmentsTable();
     updateGlobalStats();
+}
+
+async function renderAppointmentsTable() {
+    const body = document.querySelector('#appointments-table tbody');
+    if (!body) return;
+
+    body.innerHTML = '<tr><td colspan="4">جاري تحميل الحجوزات...</td></tr>';
+
+    try {
+        const res = await fetch(`${API_BASE}/api/data`);
+        const data = await res.json();
+        const appointments = data.appointments || [];
+
+        // ترتيب الحجوزات من الأحدث
+        appointments.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
+
+        body.innerHTML = appointments.map(app => `
+            <tr>
+                <td style="color:var(--primary); font-weight:700;">${new Date(app.startTime).toLocaleString('ar-BH')}</td>
+                <td>${app.name}</td>
+                <td>${app.phone}</td>
+                <td>${app.service}</td>
+            </tr>
+        `).join('') || '<tr><td colspan="4">لا توجد حجوزات حالياً</td></tr>';
+    } catch (e) {
+        body.innerHTML = '<tr><td colspan="4">فشل جلب الحجوزات</td></tr>';
+    }
 }
 
 function renderServices() {
