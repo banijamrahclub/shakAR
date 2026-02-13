@@ -67,7 +67,29 @@ app.post('/api/calendar/book', async (req, res) => {
 });
 
 app.get('/api/data', (req, res) => {
-    try { res.json(JSON.parse(fs.readFileSync(DB_FILE, 'utf8'))); } catch (e) { res.json({}); }
+    try {
+        if (!fs.existsSync(DB_FILE)) initializeDB();
+        const data = fs.readFileSync(DB_FILE, 'utf8');
+        res.json(JSON.parse(data));
+    } catch (e) { res.json({ history: [], expenses: [], fixedExpenses: [], services: [], appointments: [] }); }
+});
+
+app.post('/api/calendar/cancel', async (req, res) => {
+    const { phone, index } = req.body;
+    try {
+        const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+        const customerApps = data.appointments.filter(a => a.phone === phone);
+        const appToCancel = customerApps[index];
+
+        if (appToCancel) {
+            // حذف من القائمة الأصلية
+            data.appointments = data.appointments.filter(a => !(a.phone === phone && a.startTime === appToCancel.startTime));
+            fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+            res.json({ success: true });
+        } else {
+            res.json({ success: false, error: "Not found" });
+        }
+    } catch (e) { res.status(500).json({ success: false }); }
 });
 
 app.post('/api/save', (req, res) => {

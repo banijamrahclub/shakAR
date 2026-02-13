@@ -7,6 +7,64 @@ let bookingData = {
     services: []
 };
 
+function switchMainTab(tab) {
+    document.getElementById('main-tab-book').style.display = tab === 'book' ? 'block' : 'none';
+    document.getElementById('main-tab-my-apps').style.display = tab === 'my-apps' ? 'block' : 'none';
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.innerText.includes(tab === 'book' ? 'حجز' : 'مواعيد'));
+    });
+}
+
+async function fetchMyApps() {
+    const phone = document.getElementById('search-phone').value;
+    if (!phone) return alert("أدخل رقم الهاتف");
+
+    const list = document.getElementById('my-apps-list');
+    list.innerHTML = 'جاري البحث...';
+
+    try {
+        const res = await fetch(`${API_BASE}/api/data`);
+        const data = await res.json();
+        const myApps = (data.appointments || []).filter(a => a.phone === phone);
+
+        if (myApps.length === 0) {
+            list.innerHTML = '<p style="color:var(--text-muted)">لا توجد حجوزات لهذا الرقم</p>';
+            return;
+        }
+
+        list.innerHTML = myApps.map((app, index) => `
+            <div class="app-item">
+                <div style="font-weight:700; color:var(--primary);">${new Date(app.startTime).toLocaleDateString('ar-BH')} - ${new Date(app.startTime).toLocaleTimeString('ar-BH', { hour: '2-digit', minute: '2-digit' })}</div>
+                <div style="font-size:0.9rem; margin:5px 0;">${app.service}</div>
+                <button class="btn-back" style="color:var(--danger); border:1px solid var(--danger); padding:5px 10px; border-radius:8px; margin-top:5px; text-decoration:none;" 
+                    onclick="cancelApp('${phone}', ${index})">إلغاء الموعد</button>
+            </div>
+        `).join('');
+    } catch (e) {
+        list.innerHTML = 'خطأ في جلب البيانات';
+    }
+}
+
+async function cancelApp(phone, index) {
+    if (!confirm("هل أنت متأكد من إلغاء الموعد؟")) return;
+
+    try {
+        const res = await fetch(`${API_BASE}/api/calendar/cancel`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone, index })
+        });
+        const result = await res.json();
+        if (result.success) {
+            alert("تم إلغاء الموعد بنجاح");
+            fetchMyApps();
+        } else {
+            alert("فشل الإلغاء");
+        }
+    } catch (e) { alert("خطأ في الاتصال"); }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. تحميل الخدمات من السيرفر
     try {

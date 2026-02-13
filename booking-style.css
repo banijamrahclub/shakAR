@@ -32,6 +32,41 @@ body {
     text-align: center;
 }
 
+.booking-tabs {
+    display: flex;
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 5px;
+    margin-bottom: 20px;
+    border: 1px solid var(--border);
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 10px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.3s;
+}
+
+.tab-btn.active {
+    background: var(--primary);
+    color: black;
+}
+
+.app-item {
+    background: var(--bg-input);
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    text-align: right;
+    border: 1px solid var(--border);
+}
+
 header {
     margin-bottom: 30px;
 }
