@@ -16,7 +16,22 @@ app.use(express.json({ limit: '50mb' }));
 
 function initializeDB() {
     if (!fs.existsSync(DB_FILE)) {
-        fs.writeFileSync(DB_FILE, JSON.stringify({ history: [], expenses: [], fixedExpenses: [], services: [], appointments: [] }, null, 2));
+        const defaultServices = [
+            { name: "قص الشعر", price: 1.0 }, { name: "قص اللحية", price: 1.0 },
+            { name: "شمع الوجه", price: 1.0 }, { name: "صباغة اللحية", price: 1.0 },
+            { name: "مساج كتف وراس", price: 1.0 }, { name: "حلاقة الأطفال", price: 1.0 },
+            { name: "تسريحة", price: 1.0 }, { name: "غسل الشعر", price: 0.5 },
+            { name: "لصقة أنف", price: 0.5 }, { name: "الخيط", price: 0.5 },
+            { name: "صباغة الشعر", price: 1.5 }, { name: "تنظيف الوجه", price: 2.0 },
+            { name: "التمليس", price: 3.0 }, { name: "البروتين", price: 15.0 }
+        ];
+        fs.writeFileSync(DB_FILE, JSON.stringify({
+            history: [],
+            expenses: [],
+            fixedExpenses: [],
+            services: defaultServices,
+            appointments: []
+        }, null, 2));
     }
 }
 initializeDB();
