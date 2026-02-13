@@ -36,19 +36,17 @@ header {
     margin-bottom: 30px;
 }
 
-.logo {
-    width: 60px;
-    height: 60px;
-    background: var(--primary);
-    color: black;
+.logo-img-main {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
     margin: 0 auto 15px;
-    border-radius: 15px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 800;
-    font-size: 1.5rem;
+    border-radius: 25px;
+    border: 2px solid var(--primary);
+    display: block;
 }
+
+
 
 .booking-card {
     background: var(--bg-card);

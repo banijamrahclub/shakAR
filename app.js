@@ -18,7 +18,8 @@ let state = {
     history: [],
     expenses: [],
     fixedExpenses: [],
-    services: defaultServices
+    services: defaultServices,
+    appointments: []
 };
 
 const PASSWORD = "1";
@@ -54,6 +55,7 @@ async function loadData() {
             state.expenses = cloudData.expenses || [];
             state.fixedExpenses = cloudData.fixedExpenses || [];
             state.services = cloudData.services && cloudData.services.length > 0 ? cloudData.services : defaultServices;
+            state.appointments = cloudData.appointments || [];
         }
     } catch (err) {
         console.log("Server not found, using local storage...");
@@ -80,7 +82,8 @@ async function save() {
                 history: state.history,
                 expenses: state.expenses,
                 fixedExpenses: state.fixedExpenses,
-                services: state.services
+                services: state.services,
+                appointments: state.appointments
             })
         });
     } catch (err) {
@@ -181,26 +184,64 @@ async function renderAppointmentsTable() {
     const body = document.querySelector('#appointments-table tbody');
     if (!body) return;
 
-    body.innerHTML = '<tr><td colspan="4">جاري تحميل الحجوزات...</td></tr>';
+    body.innerHTML = '<tr><td colspan="5">جاري تحميل الحجوزات...</td></tr>';
 
     try {
         const res = await fetch(`${API_BASE}/api/data`);
         const data = await res.json();
-        const appointments = data.appointments || [];
+        state.appointments = data.appointments || [];
 
-        // ترتيب الحجوزات من الأحدث
-        appointments.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
+        // ترتيب الحجوزات من الأقرب موعداً
+        state.appointments.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
 
-        body.innerHTML = appointments.map(app => `
+        body.innerHTML = state.appointments.map((app, index) => `
             <tr>
                 <td style="color:var(--primary); font-weight:700;">${new Date(app.startTime).toLocaleString('ar-BH')}</td>
                 <td>${app.name}</td>
                 <td>${app.phone}</td>
                 <td>${app.service}</td>
+                <td>
+                    <button class="btn-action" style="padding:5px 10px; font-size:0.8rem; background:var(--success); color:black;" 
+                        onclick="completeAppointment(${index})">✅ انتهى</button>
+                    <button class="btn-action" style="padding:5px 10px; font-size:0.8rem; background:var(--danger); color:white; margin-top:5px;" 
+                        onclick="deleteAppointment(${index})">🗑️ إلغاء</button>
+                </td>
             </tr>
-        `).join('') || '<tr><td colspan="4">لا توجد حجوزات حالياً</td></tr>';
+        `).join('') || '<tr><td colspan="5">لا توجد حجوزات حالياً</td></tr>';
     } catch (e) {
-        body.innerHTML = '<tr><td colspan="4">فشل جلب الحجوزات</td></tr>';
+        body.innerHTML = '<tr><td colspan="5">فشل جلب الحجوزات</td></tr>';
+    }
+}
+
+async function completeAppointment(index) {
+    const app = state.appointments[index];
+    if (confirm(`هل انتهيت من حلاقة ${app.name}؟ (سيتم تسجيل ${app.price || '0.000'} د.ب في الأرباح)`)) {
+        // 1. تسجيل العملية في السجل التاريخي (الأرباح)
+        const sale = {
+            id: Date.now(),
+            time: new Date().toLocaleTimeString('ar-BH'),
+            date: new Date().toISOString().split('T')[0],
+            role: 'owner', // المالك هو من يؤكد الحجز عادة
+            total: app.price || 0,
+            items: `حجز: ${app.service}`
+        };
+        state.history.unshift(sale);
+
+        // 2. حذف الحجز من قائمة الحجوزات
+        state.appointments.splice(index, 1);
+
+        // 3. حفظ وتحديث
+        await save();
+        updateUI();
+        alert("تم تسجيل الموعد كعملية بيع بنجاح!");
+    }
+}
+
+async function deleteAppointment(index) {
+    if (confirm("هل تريد إلغاء هذا الحجز نهائياً؟")) {
+        state.appointments.splice(index, 1);
+        await save();
+        renderAppointmentsTable();
     }
 }
 

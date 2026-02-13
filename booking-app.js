@@ -100,8 +100,9 @@ async function loadTimeSlots() {
         busyTime = await res.json();
     } catch (e) { console.error("Calendar fetch error:", e); }
 
+    // Generate slots (from 9 AM to 11 PM, every 30 mins)
     let html = "";
-    for (let h = 9; h < 22; h++) {
+    for (let h = 9; h < 23; h++) {
         for (let m of ["00", "30"]) {
             const timeStr = `${String(h).padStart(2, '0')}:${m}`;
             const slotDateTime = new Date(`${date}T${timeStr}:00`);
@@ -155,12 +156,18 @@ async function confirmBooking() {
     const durationMinutes = Math.max(30, bookingData.selectedServices.length * 20);
     const endTime = new Date(new Date(startTime).getTime() + durationMinutes * 60000).toISOString();
     const servicesNames = bookingData.selectedServices.map(s => s.name).join(' + ');
+    const totalPrice = bookingData.selectedServices.reduce((sum, s) => sum + s.price, 0);
 
     try {
         const res = await fetch(`${API_BASE}/api/calendar/book`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, phone, service: servicesNames, startTime, endTime })
+            body: JSON.stringify({
+                name, phone,
+                service: servicesNames,
+                price: totalPrice,
+                startTime, endTime
+            })
         });
         const result = await res.json();
         if (result.success) goToStep('success'); else alert("خطأ في الحجز");

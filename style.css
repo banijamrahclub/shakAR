@@ -52,20 +52,17 @@ aside {
     padding: 2rem 1.5rem;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 15px;
 }
 
-.brand .logo-box {
-    background: var(--primary);
-    color: black;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.logo-img {
+    width: 45px;
+    height: 45px;
     border-radius: 10px;
-    font-weight: 800;
+    object-fit: cover;
+    border: 1px solid var(--border);
 }
+
 
 .nav-menu {
     flex: 1;
