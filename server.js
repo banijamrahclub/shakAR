@@ -94,7 +94,14 @@ app.post('/api/calendar/cancel', async (req, res) => {
             // 1. حذف من قوقل كلندر (باستخدام GET المضمونة)
             if (GAS_URL && !GAS_URL.includes('ضع_رابط')) {
                 try {
-                    const deleteUrl = `${GAS_URL}?action=delete&name=${encodeURIComponent(appToCancel.name)}&startTime=${appToCancel.startTime}&endTime=${appToCancel.endTime || appToCancel.startTime}`;
+                    const encodedName = encodeURIComponent(appToCancel.name);
+                    const encodedStart = encodeURIComponent(appToCancel.startTime);
+
+                    // نضمن أن نطاق البحث في الكالندر هو 30 دقيقة على الأقل ليجده السكريبت
+                    const end = appToCancel.endTime || new Date(new Date(appToCancel.startTime).getTime() + 30 * 60000).toISOString();
+                    const encodedEnd = encodeURIComponent(end);
+
+                    const deleteUrl = `${GAS_URL}?action=delete&name=${encodedName}&startTime=${encodedStart}&endTime=${encodedEnd}`;
                     await fetch(deleteUrl);
                 } catch (e) { console.error("GAS Delete Error:", e); }
             }

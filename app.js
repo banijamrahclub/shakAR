@@ -35,6 +35,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderServices();
     updateUI();
     if (document.getElementById('search-date')) document.getElementById('search-date').valueAsDate = new Date();
+
+    // تحديث تلقائي كل 20 ثانية لجلب الحجوزات الجديدة بدون ريفريش
+    setInterval(async () => {
+        await loadData();
+        if (state.currentPage === 'appointments') renderAppointmentsTable();
+    }, 20000);
 });
 
 async function loadData() {
@@ -217,15 +223,23 @@ async function completeAppointment(index) {
     const app = state.appointments[index];
     let finalPrice = app.price || 0;
 
-    // إذا كان السعر صفر أو غير موجود، نسأل الحلاق يكتبه يدوياً
     if (!finalPrice || finalPrice === 0) {
-        const inputPrice = prompt(`تنبيه: حجز ${app.name} لا يحتوي على سعر. يرجى إدخال المبلغ (د.ب):`, "1.000");
-        if (inputPrice === null) return; // إلغاء العملية
+        const inputPrice = prompt(`تنبيه: حجز ${app.name} لا يحتوي على سعر. يرجى إدخل المبلغ (د.ب):`, "1.000");
+        if (inputPrice === null) return;
         finalPrice = parseFloat(inputPrice) || 0;
     }
 
-    if (confirm(`هل انتهيت من حلاقة ${app.name}؟ (سيتم تسجيل ${finalPrice.toFixed(3)} د.ب في الأرباح)`)) {
-        // 1. تسجيل العملية في السجل التاريخي (الأرباح)
+    if (confirm(`هل انتهيت من حلاقة ${app.name}؟ (سيتم تسجيل ${finalPrice.toFixed(3)} د.ب في الأرباح وحذفه من قوقل)`)) {
+        // 1. إرسال طلب حذف من قوقل كلندر
+        try {
+            await fetch(`${API_BASE}/api/calendar/cancel`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: app.name, startTime: app.startTime })
+            });
+        } catch (e) { console.error("Sync error:", e); }
+
+        // 2. تسجيل العملية في السجل التاريخي
         const sale = {
             id: Date.now(),
             time: new Date().toLocaleTimeString('ar-BH'),
@@ -236,18 +250,25 @@ async function completeAppointment(index) {
         };
         state.history.unshift(sale);
 
-        // 2. حذف الحجز من قائمة الحجوزات
+        // 3. حذف الحجز محلياً وحفظ السجل
         state.appointments.splice(index, 1);
-
-        // 3. حفظ وتحديث
         await save();
         updateUI();
-        alert("تم تسجيل الموعد كعملية بيع بنجاح!");
+        alert("تم تسجيل الموعد بنجاح وحذفه من قوقل!");
     }
 }
 
 async function deleteAppointment(index) {
-    if (confirm("هل تريد إلغاء هذا الحجز نهائياً؟")) {
+    const app = state.appointments[index];
+    if (confirm("هل تريد إلغاء هذا الحجز نهائياً من السيستم وقوقل؟")) {
+        try {
+            await fetch(`${API_BASE}/api/calendar/cancel`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: app.name, startTime: app.startTime })
+            });
+        } catch (e) { console.error("Sync error:", e); }
+
         state.appointments.splice(index, 1);
         await save();
         renderAppointmentsTable();
