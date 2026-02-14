@@ -78,15 +78,29 @@ app.get('/api/data', (req, res) => {
 });
 
 app.post('/api/calendar/cancel', async (req, res) => {
-    const { phone, index } = req.body;
+    const { phone, index, name, startTime } = req.body;
     try {
         const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-        const customerApps = data.appointments.filter(a => a.phone === phone);
-        const appToCancel = customerApps[index];
+        let appToCancel = null;
+
+        if (phone && index !== undefined) {
+            const customerApps = data.appointments.filter(a => a.phone === phone);
+            appToCancel = customerApps[index];
+        } else if (name && startTime) {
+            appToCancel = data.appointments.find(a => a.name === name && a.startTime === startTime);
+        }
 
         if (appToCancel) {
-            // حذف من القائمة الأصلية
-            data.appointments = data.appointments.filter(a => !(a.phone === phone && a.startTime === appToCancel.startTime));
+            // 1. حذف من قوقل كلندر (باستخدام GET المضمونة)
+            if (GAS_URL && !GAS_URL.includes('ضع_رابط')) {
+                try {
+                    const deleteUrl = `${GAS_URL}?action=delete&name=${encodeURIComponent(appToCancel.name)}&startTime=${appToCancel.startTime}&endTime=${appToCancel.endTime || appToCancel.startTime}`;
+                    await fetch(deleteUrl);
+                } catch (e) { console.error("GAS Delete Error:", e); }
+            }
+
+            // 2. حذف من قاعدة البيانات المحلية
+            data.appointments = data.appointments.filter(a => !(a.name === appToCancel.name && a.startTime === appToCancel.startTime));
             fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
             res.json({ success: true });
         } else {
