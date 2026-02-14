@@ -231,9 +231,8 @@ async function confirmBooking() {
         if (res.ok) {
             goToStep('success');
             const waBtn = document.getElementById('btn-whatsapp-confirm');
-            const waMsg = `مرحباً حلاق الشكر، قمت بطلب حجز:\n👤 الاسم: ${name}\n✂️ الخدمة: ${servicesNames}\n⏰ الموعد: ${bookingData.date} | ${bookingData.time}\n💰 السعر: ${totalPrice.toFixed(3)} د.ب\n\n- أرفق لكم صورة العربون للتأكيد.`;
-            // ضع رقمك هنا مكان الـ 97333xxxxxx
-            waBtn.onclick = () => window.open(`https://wa.me/97333333333?text=${encodeURIComponent(waMsg)}`);
+            const waMsg = `تحية طيبة صالون "حسين الشكر"،\nلقد قمت بتقديم طلب حجز موعد صالون.\n\nتفاصيل الحجز:\n👤 الاسم: ${name}\n✂️ الخدمات: ${servicesNames}\n📅 التاريخ: ${bookingData.date}\n⏰ الوقت: ${bookingData.time}\n💰 الإجمالي: ${totalPrice.toFixed(3)} د.ب\n\nمرفق لكم إيصال تحويل العربون لتأكيد الموعد.\nشكراً لكم.`;
+            waBtn.onclick = () => window.open(`https://wa.me/97337055332?text=${encodeURIComponent(waMsg)}`);
         }
     } catch (e) { alert("خطأ في الاتصال"); }
 }
