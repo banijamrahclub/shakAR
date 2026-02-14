@@ -63,7 +63,7 @@ app.post('/api/calendar/book', async (req, res) => {
 
         // --- إرسال رسالة واتساب تلقائية (قيد الانتظار) ---
         const formattedTime = new Date(startTime).toLocaleString('ar-BH');
-        const pendingMsg = `تحية طيبة من صالون "حسين الشكر"،\nمرحباً ${name}، لقد استلمنا طلب حجزك المبدئي لباقة (${service}) في موعد: ${formattedTime}.\n\nيرجى تحويل مبلغ العربون لتأكيد الحجز نهائياً عبر Benefit Pay على رقم: 37055332\nشكراً لك.`;
+        const pendingMsg = `تحية طيبة صالون "حسين الشكر"،\nمرحباً ${name}، لقد استلمنا طلب حجزك المبدئي:\n✂️ الخدمة: ${service}\n⏰ الموعد: ${formattedTime}\n\nيرجى تحويل مبلغ العربون لتأكيد الحجز نهائياً عبر Benefit Pay على رقم: 37055332\nشكراً لك.`;
         sendWhatsApp(phone, pendingMsg);
 
         res.json({ success: true });
@@ -81,7 +81,7 @@ app.post('/api/calendar/confirm', async (req, res) => {
 
             // --- إرسال رسالة واتساب تلقائية (تم التأكيد) ---
             const formattedTime = new Date(app.startTime).toLocaleString('ar-BH');
-            const confirmMsg = `تم التأكيد ✅\nعزيزي ${app.name}، تم استلام العربون وتأكيد موعدك بنجاح.\n⏰ ننتظرك في موعدك: ${formattedTime}.\n\nشكراً لاختيارك صالون حسين الشكر.`;
+            const confirmMsg = `تم التأكيد ✅\nعزيزي ${app.name}، تم استلام العربون وتأكيد موعدك بنجاح.\n⏰ ننتظرك في موعدك المختار: ${formattedTime}.\n\nشكراً لاختيارك صالون حسين الشكر.`;
             sendWhatsApp(app.phone, confirmMsg);
 
             // الآن نرسل لقوقل كلندر بعد التأكيد
@@ -179,15 +179,18 @@ app.get('*', (req, res) => {
 });
 
 // --- وظائف الوتساب التلقائي ---
+// --- وظائف الوتساب التلقائي (Wassenger) ---
 async function sendWhatsApp(phone, message) {
     if (!WASSENGER_TOKEN) return;
 
-    // تنظيف رقم الهاتف وإضافة مقدمة البحرين
+    // تنظيف رقم الهاتف وإضافة مقدمة البحرين 973
     let cleanPhone = phone.replace(/\D/g, '');
     if (cleanPhone.length === 8) cleanPhone = '973' + cleanPhone;
 
+    console.log(`Sending WhatsApp to: ${cleanPhone}`);
+
     try {
-        await fetch('https://api.wassenger.com/v1/messages', {
+        const response = await fetch('https://api.wassenger.com/v1/messages', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -198,7 +201,8 @@ async function sendWhatsApp(phone, message) {
                 message: message
             })
         });
-        console.log(`WhatsApp message sent to ${cleanPhone}`);
+        const resData = await response.json();
+        console.log("WhatsApp API Response:", resData);
     } catch (err) {
         console.error("WhatsApp API Error:", err);
     }
