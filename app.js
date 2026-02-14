@@ -202,25 +202,32 @@ async function renderAppointmentsTable() {
 
         body.innerHTML = state.appointments.map((app, index) => {
             const isPending = app.status === 'pending';
+            const startTimeFormatted = new Date(app.startTime).toLocaleString('ar-BH');
+
+            // روابط الواتساب المجهزة
+            const depositMsg = `تحية طيبة صالون "حسين الشكر"،\nمرحباً ${app.name}، لقد استلمنا حجزك المبدئي:\n⏰ الموعد: ${startTimeFormatted}\n✂️ الخدمة: ${app.service}\n\nيرجى إرسال صورة إيصال دفع العربون (نصف المبلغ) عبر بينفت أو آيبان لتأكيد الموعد نهائياً.\nشكراً لك.`;
+            const confirmMsg = `تم التأكيد ✅\nعزيزي ${app.name}، تم استلام العربون وتأكيد موعدك بنجاح.\n⏰ ننتظرك في: ${startTimeFormatted}\n\nشكراً لاختيارك صالون حسين الشكر.`;
+
             return `
-            <tr style="${isPending ? 'opacity: 0.8;' : ''}">
+            <tr style="${isPending ? 'border-right: 4px solid orange;' : 'border-right: 4px solid var(--success);'}">
                 <td style="color:var(--primary); font-weight:700;">
-                    ${new Date(app.startTime).toLocaleString('ar-BH')}
-                    <div style="font-size:0.7rem; color:${isPending ? 'orange' : 'var(--success)'}">${isPending ? '⏳ بانتظار العربون' : '✅ مؤكد'}</div>
+                    ${startTimeFormatted}
+                    <div style="font-size:0.7rem; color:${isPending ? 'orange' : 'var(--success)'}">${isPending ? '⏳ بانتظار العربون' : '✅ موعد مؤكد'}</div>
                 </td>
                 <td>${app.name}</td>
                 <td>${app.phone}</td>
                 <td>${app.service}</td>
                 <td>
-                    ${isPending ? `
-                        <button class="btn-action" style="padding:5px 10px; font-size:0.8rem; background:orange; color:black;" 
-                            onclick="verifyBooking(${index})">💰 تأكيد العربون</button>
-                    ` : `
-                        <button class="btn-action" style="padding:5px 10px; font-size:0.8rem; background:var(--success); color:black;" 
-                            onclick="completeAppointment(${index})">✅ انتهى</button>
-                    `}
-                    <button class="btn-action" style="padding:5px 10px; font-size:0.8rem; background:var(--danger); color:white; margin-top:5px;" 
-                        onclick="deleteAppointment(${index})">🗑️ إلغاء</button>
+                    <div style="display: flex; flex-direction: column; gap: 5px;">
+                        ${isPending ? `
+                            <button class="btn-action" style="background:orange; color:black;" onclick="verifyBooking(${index})">💰 تأكيد العربون</button>
+                            <button class="btn-action" style="background:#25d366; color:white;" onclick="sendWhatsAppMessage('${app.phone}', '${encodeURIComponent(depositMsg)}')">💬 اطلب العربون</button>
+                        ` : `
+                            <button class="btn-action" style="background:var(--success); color:black;" onclick="completeAppointment(${index})">✅ انتهى</button>
+                            <button class="btn-action" style="background:#25d366; color:white;" onclick="sendWhatsAppMessage('${app.phone}', '${encodeURIComponent(confirmMsg)}')">💬 أرسل تأكيد</button>
+                        `}
+                        <button class="btn-action" style="background:var(--danger); color:white;" onclick="deleteAppointment(${index})">🗑️ إلغاء</button>
+                    </div>
                 </td>
             </tr>
             `;
@@ -228,6 +235,13 @@ async function renderAppointmentsTable() {
     } catch (e) {
         body.innerHTML = '<tr><td colspan="5">فشل جلب الحجوزات</td></tr>';
     }
+}
+
+function sendWhatsAppMessage(phone, encodedMsg) {
+    // تنظيف رقم الهاتف إذا كان يبدأ بـ 0 أو بدون مفتاح الدولة
+    let cleanPhone = phone.replace(/\s+/g, '').replace('+', '');
+    if (!cleanPhone.startsWith('973')) cleanPhone = '973' + cleanPhone;
+    window.open(`https://wa.me/${cleanPhone}?text=${encodedMsg}`);
 }
 
 async function verifyBooking(index) {
