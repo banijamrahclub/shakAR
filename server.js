@@ -55,17 +55,41 @@ app.post('/api/calendar/book', async (req, res) => {
         if (!data.appointments) data.appointments = [];
         data.appointments.push({
             name, phone, service, price, startTime, endTime,
+            status: 'pending',
             date: new Date().toISOString()
         });
         fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
-        if (GAS_URL && !GAS_URL.includes('ضع_رابط')) {
-            await fetch(GAS_URL, {
-                method: 'POST',
-                follow: 20,
-                body: JSON.stringify({ name, phone, service, startTime, endTime })
-            });
-        }
         res.json({ success: true });
+    } catch (err) { res.status(500).json({ success: false }); }
+});
+
+app.post('/api/calendar/confirm', async (req, res) => {
+    const { name, startTime } = req.body;
+    try {
+        const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+        const app = data.appointments.find(a => a.name === name && a.startTime === startTime);
+        if (app) {
+            app.status = 'confirmed';
+            fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+
+            // الآن نرسل لقوقل كلندر بعد التأكيد
+            if (GAS_URL && !GAS_URL.includes('ضع_رابط')) {
+                await fetch(GAS_URL, {
+                    method: 'POST',
+                    follow: 20,
+                    body: JSON.stringify({
+                        name: app.name,
+                        phone: app.phone,
+                        service: app.service,
+                        startTime: app.startTime,
+                        endTime: app.endTime
+                    })
+                });
+            }
+            res.json({ success: true });
+        } else {
+            res.json({ success: false, error: "Not found" });
+        }
     } catch (err) { res.status(500).json({ success: false }); }
 });
 

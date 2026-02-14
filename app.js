@@ -200,22 +200,51 @@ async function renderAppointmentsTable() {
         // ترتيب الحجوزات من الأقرب موعداً
         state.appointments.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
 
-        body.innerHTML = state.appointments.map((app, index) => `
-            <tr>
-                <td style="color:var(--primary); font-weight:700;">${new Date(app.startTime).toLocaleString('ar-BH')}</td>
+        body.innerHTML = state.appointments.map((app, index) => {
+            const isPending = app.status === 'pending';
+            return `
+            <tr style="${isPending ? 'opacity: 0.8;' : ''}">
+                <td style="color:var(--primary); font-weight:700;">
+                    ${new Date(app.startTime).toLocaleString('ar-BH')}
+                    <div style="font-size:0.7rem; color:${isPending ? 'orange' : 'var(--success)'}">${isPending ? '⏳ بانتظار العربون' : '✅ مؤكد'}</div>
+                </td>
                 <td>${app.name}</td>
                 <td>${app.phone}</td>
                 <td>${app.service}</td>
                 <td>
-                    <button class="btn-action" style="padding:5px 10px; font-size:0.8rem; background:var(--success); color:black;" 
-                        onclick="completeAppointment(${index})">✅ انتهى</button>
+                    ${isPending ? `
+                        <button class="btn-action" style="padding:5px 10px; font-size:0.8rem; background:orange; color:black;" 
+                            onclick="verifyBooking(${index})">💰 تأكيد العربون</button>
+                    ` : `
+                        <button class="btn-action" style="padding:5px 10px; font-size:0.8rem; background:var(--success); color:black;" 
+                            onclick="completeAppointment(${index})">✅ انتهى</button>
+                    `}
                     <button class="btn-action" style="padding:5px 10px; font-size:0.8rem; background:var(--danger); color:white; margin-top:5px;" 
                         onclick="deleteAppointment(${index})">🗑️ إلغاء</button>
                 </td>
             </tr>
-        `).join('') || '<tr><td colspan="5">لا توجد حجوزات حالياً</td></tr>';
+            `;
+        }).join('') || '<tr><td colspan="5">لا توجد حجوزات حالياً</td></tr>';
     } catch (e) {
         body.innerHTML = '<tr><td colspan="5">فشل جلب الحجوزات</td></tr>';
+    }
+}
+
+async function verifyBooking(index) {
+    const app = state.appointments[index];
+    if (confirm(`هل استلمت العربون من ${app.name}؟ (سيتم تأكيد الحجز وإرساله لقوقل كلندر)`)) {
+        try {
+            const res = await fetch(`${API_BASE}/api/calendar/confirm`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: app.name, startTime: app.startTime })
+            });
+            const result = await res.json();
+            if (result.success) {
+                alert("تم تأكيد الحجز وإضافته للتقويم!");
+                renderAppointmentsTable();
+            }
+        } catch (e) { alert("خطأ في التأكيد"); }
     }
 }
 

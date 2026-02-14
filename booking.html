@@ -58,10 +58,20 @@
                 </div>
 
                 <div id="step-success" class="step">
-                    <div class="success-icon">✅</div>
-                    <h2>تم الحجز بنجاح!</h2>
-                    <p>ننتظرك في الموعد المحدد.</p>
-                    <button class="btn-confirm" onclick="location.reload()">حجز جديد</button>
+                    <div class="success-icon" style="color: var(--primary);">⏳</div>
+                    <h2 id="success-title">طلبك قيد المراجعة</h2>
+                    <p id="success-msg">للتأكيد، يرجى دفع (نصف المبلغ) كعربون عبر:</p>
+                    <div
+                        style="background: var(--bg-input); padding: 15px; border-radius: 12px; margin: 15px 0; text-align: right; border: 1px solid var(--border);">
+                        <p style="color: var(--primary); font-weight: 700;">💰 Benefit Pay: 33xxxxxx</p>
+                        <p style="font-size: 0.8rem; color: var(--text-muted);">رقم الحساب: IBAN BH000000000000000000
+                        </p>
+                    </div>
+                    <p style="font-size: 0.9rem;">بعد الدفع، اضغط الزر بالأسفل لإرسال صورة التحويل عبر الواتساب لتأكيد
+                        موعدك.</p>
+                    <button class="btn-confirm" id="btn-whatsapp-confirm"
+                        style="background: #25d366; color: white;">إرسال صورة الدفع (واتساب)</button>
+                    <button class="btn-back" onclick="location.reload()" style="margin-top: 10px;">رجوع</button>
                 </div>
             </div>
 

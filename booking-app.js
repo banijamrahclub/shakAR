@@ -216,11 +216,8 @@ async function confirmBooking() {
     const servicesNames = bookingData.selectedServices.map(s => s.name).join(' + ');
     const totalPrice = bookingData.selectedServices.reduce((sum, s) => sum + s.price, 0);
 
-    // سرعة خارقة (Optimistic UI): اظهر النجاح فوراً ولا تنتظر السيرفر
-    goToStep('success');
-
     try {
-        fetch(`${API_BASE}/api/calendar/book`, {
+        const res = await fetch(`${API_BASE}/api/calendar/book`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -230,8 +227,13 @@ async function confirmBooking() {
                 startTime, endTime
             })
         });
-        // لا نحتاج لعمل await هنا لكي لا يشعر الزبون بالتأخير
-    } catch (e) {
-        console.error("بالمناسبة، حدث خطأ في الخلفية، لكننا سجلنا الطلب محلياً غالباً");
-    }
+
+        if (res.ok) {
+            goToStep('success');
+            const waBtn = document.getElementById('btn-whatsapp-confirm');
+            const waMsg = `مرحباً حلاق الشكر، قمت بطلب حجز:\n👤 الاسم: ${name}\n✂️ الخدمة: ${servicesNames}\n⏰ الموعد: ${bookingData.date} | ${bookingData.time}\n💰 السعر: ${totalPrice.toFixed(3)} د.ب\n\n- أرفق لكم صورة العربون للتأكيد.`;
+            // ضع رقمك هنا مكان الـ 97333xxxxxx
+            waBtn.onclick = () => window.open(`https://wa.me/97333333333?text=${encodeURIComponent(waMsg)}`);
+        }
+    } catch (e) { alert("خطأ في الاتصال"); }
 }
