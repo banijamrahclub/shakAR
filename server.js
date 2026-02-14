@@ -10,6 +10,7 @@ const DB_FILE = path.resolve(__dirname, 'db.json');
 
 // الرابط الخاص بجسر قوقل كلندر المجاني
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbx6zJg_biskjjGKCvjGpVg6kdxR4-5ACoAmjOyCv1gqONCyxRF9uq1mxxt2VMhMdcH-/exec';
+const WASSENGER_TOKEN = 'wps_c09923cf1bd8b6f50904ee863406b04eb95d9cc3dfabf28837b4585e3275c9b8';
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
@@ -59,6 +60,12 @@ app.post('/api/calendar/book', async (req, res) => {
             date: new Date().toISOString()
         });
         fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+
+        // --- إرسال رسالة واتساب تلقائية (قيد الانتظار) ---
+        const formattedTime = new Date(startTime).toLocaleString('ar-BH');
+        const pendingMsg = `تحية طيبة من صالون "حسين الشكر"،\nمرحباً ${name}، لقد استلمنا طلب حجزك المبدئي لباقة (${service}) في موعد: ${formattedTime}.\n\nيرجى تحويل مبلغ العربون لتأكيد الحجز نهائياً عبر Benefit Pay على رقم: 37055332\nشكراً لك.`;
+        sendWhatsApp(phone, pendingMsg);
+
         res.json({ success: true });
     } catch (err) { res.status(500).json({ success: false }); }
 });
@@ -71,6 +78,11 @@ app.post('/api/calendar/confirm', async (req, res) => {
         if (app) {
             app.status = 'confirmed';
             fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+
+            // --- إرسال رسالة واتساب تلقائية (تم التأكيد) ---
+            const formattedTime = new Date(app.startTime).toLocaleString('ar-BH');
+            const confirmMsg = `تم التأكيد ✅\nعزيزي ${app.name}، تم استلام العربون وتأكيد موعدك بنجاح.\n⏰ ننتظرك في موعدك: ${formattedTime}.\n\nشكراً لاختيارك صالون حسين الشكر.`;
+            sendWhatsApp(app.phone, confirmMsg);
 
             // الآن نرسل لقوقل كلندر بعد التأكيد
             if (GAS_URL && !GAS_URL.includes('ضع_رابط')) {
@@ -165,5 +177,31 @@ app.use(express.static(__dirname));
 app.get('*', (req, res) => {
     res.sendFile(path.resolve(__dirname, 'booking.html'));
 });
+
+// --- وظائف الوتساب التلقائي ---
+async function sendWhatsApp(phone, message) {
+    if (!WASSENGER_TOKEN) return;
+
+    // تنظيف رقم الهاتف وإضافة مقدمة البحرين
+    let cleanPhone = phone.replace(/\D/g, '');
+    if (cleanPhone.length === 8) cleanPhone = '973' + cleanPhone;
+
+    try {
+        await fetch('https://api.wassenger.com/v1/messages', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Token': WASSENGER_TOKEN
+            },
+            body: JSON.stringify({
+                phone: cleanPhone,
+                message: message
+            })
+        });
+        console.log(`WhatsApp message sent to ${cleanPhone}`);
+    } catch (err) {
+        console.error("WhatsApp API Error:", err);
+    }
+}
 
 app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
