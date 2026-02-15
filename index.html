@@ -107,10 +107,21 @@
                         <div id="cart-items"
                             style="max-height: 200px; overflow-y: auto; margin-bottom: 15px; border-bottom: 1px solid var(--border);">
                         </div>
-                        <div
-                            style="display: flex; justify-content: space-between; font-size: 1.8rem; font-weight: 800; margin-bottom: 20px; color: var(--primary);">
-                            <span>الإجمالي</span>
-                            <span id="cart-total">0.000</span>
+                        <div style="margin-bottom: 20px;">
+                            <label
+                                style="display: block; margin-bottom: 10px; font-size: 0.9rem; color: var(--text-muted);">طريقة
+                                الدفع:</label>
+                            <div style="display: flex; gap: 10px;">
+                                <label class="payment-method-btn" style="flex: 1;">
+                                    <input type="radio" name="payment-method" value="cash" checked
+                                        style="display: none;">
+                                    <div class="method-box">كاش</div>
+                                </label>
+                                <label class="payment-method-btn" style="flex: 1;">
+                                    <input type="radio" name="payment-method" value="benefit" style="display: none;">
+                                    <div class="method-box">بينفت</div>
+                                </label>
+                            </div>
                         </div>
                         <button class="btn-action" onclick="confirmSale()">تأكيد وإتمام العملية</button>
                         <button class="btn-action"

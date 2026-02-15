@@ -272,7 +272,10 @@ async function completeAppointment(index) {
         finalPrice = parseFloat(inputPrice) || 0;
     }
 
-    if (confirm(`هل انتهيت من حلاقة ${app.name}؟ (سيتم تسجيل ${finalPrice.toFixed(3)} د.ب في الأرباح وحذفه من قوقل)`)) {
+    // سؤال عن طريقة الدفع
+    const pMethod = confirm(`هل دفع ${app.name} بقية المبلغ عن طريق "بينفت"؟\n(موافق = بينفت ، إلغاء = كاش)`) ? 'benefit' : 'cash';
+
+    if (confirm(`هل انتهيت من حलाقة ${app.name}؟ (سيتم تسجيل ${finalPrice.toFixed(3)} د.ب في الأرباح وحذفه من قوقل)`)) {
         // 1. إرسال طلب حذف من قوقل كلندر
         try {
             await fetch(`${API_BASE}/api/calendar/cancel`, {
@@ -289,7 +292,8 @@ async function completeAppointment(index) {
             date: new Date().toISOString().split('T')[0],
             role: state.currentRole,
             total: finalPrice,
-            items: `حجز: ${app.service}`
+            items: `حجز: ${app.service}`,
+            paymentMethod: pMethod // مضافة حديثاً
         };
         state.history.unshift(sale);
 
@@ -297,7 +301,7 @@ async function completeAppointment(index) {
         state.appointments.splice(index, 1);
         await save();
         updateUI();
-        alert("تم تسجيل الموعد بنجاح وحذفه من قوقل!");
+        alert("تم تسجيل الموعد بنجاح (" + (pMethod === 'cash' ? 'كاش' : 'بينفت') + ")");
     }
 }
 
@@ -359,19 +363,24 @@ function clearCart() {
 
 async function confirmSale() {
     if (state.cart.length === 0) return;
+
+    const methodEl = document.querySelector('input[name="payment-method"]:checked');
+    const paymentMethod = methodEl ? methodEl.value : 'cash';
+
     const sale = {
         id: Date.now(),
         time: new Date().toLocaleTimeString('ar-BH'),
         date: new Date().toISOString().split('T')[0],
         role: state.currentRole,
         total: state.cart.reduce((a, b) => a + b.price, 0),
-        items: state.cart.map(c => c.name).join(', ')
+        items: state.cart.map(c => c.name).join(', '),
+        paymentMethod: paymentMethod // مضافة حديثاً
     };
     state.history.unshift(sale);
     await save();
     clearCart();
     updateGlobalStats();
-    alert("تم تسجيل العملية بنجاح");
+    alert("تم تسجيل العملية بنجاح (" + (paymentMethod === 'cash' ? 'كاش' : 'بينفت') + ")");
 }
 
 function initProfitChart() {
@@ -491,7 +500,22 @@ function performSearch() {
     const s = getStatsForDate(date);
     const box = document.getElementById('search-result');
     box.style.display = 'block';
-    box.innerHTML = `<h4 style="margin-bottom:15px; border-bottom:1px solid var(--primary); padding-bottom:10px;">تقرير يوم: ${date}</h4><div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; font-size:1.1rem;"><div>دخل الحلاق: <span style="font-weight:700;">${s.barber.toFixed(3)}</span></div><div>دخل الموظف: <span style="font-weight:700;">${s.employee.toFixed(3)}</span></div><div>المصاريف: <span style="color:var(--danger); font-weight:700;">${s.expenses.toFixed(3)}</span></div><div>صافي الربح: <span style="color:${s.net < 0 ? 'var(--danger)' : 'var(--success)'}; font-weight:800; border:1px solid; padding:2px 10px; border-radius:10px;">${s.net.toFixed(3)}</span></div></div>`;
+    box.innerHTML = `
+        <h4 style="margin-bottom:15px; border-bottom:1px solid var(--primary); padding-bottom:10px;">تقرير يوم: ${date}</h4>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; font-size:1.1rem; margin-bottom: 20px;">
+            <div>دخل الحلاق: <span style="font-weight:700;">${s.barber.toFixed(3)}</span></div>
+            <div>دخل الموظف: <span style="font-weight:700;">${s.employee.toFixed(3)}</span></div>
+            <div>المصاريف: <span style="color:var(--danger); font-weight:700;">${s.expenses.toFixed(3)}</span></div>
+            <div>صافي الربح: <span style="color:${s.net < 0 ? 'var(--danger)' : 'var(--success)'}; font-weight:800; border:1px solid; padding:2px 10px; border-radius:10px;">${s.net.toFixed(3)}</span></div>
+        </div>
+        <div style="background: rgba(255,255,255,0.02); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
+            <h5 style="margin-bottom: 10px; color: var(--primary);">تفصيل الدفع:</h5>
+            <div style="display: flex; gap: 20px;">
+                <div style="color: var(--success);">💵 كاش: <b>${s.cash.toFixed(3)}</b></div>
+                <div style="color: #60a5fa;">🏦 بينفت: <b>${s.benefit.toFixed(3)}</b></div>
+            </div>
+        </div>
+    `;
 }
 
 function renderTopServices() {
@@ -563,7 +587,12 @@ function getStatsForDate(date) {
     const barber = sales.filter(h => h.role === 'owner').reduce((a, b) => a + b.total, 0);
     const employee = sales.filter(h => h.role === 'employee').reduce((a, b) => a + b.total, 0);
     const expenses = exps.reduce((a, b) => a + b.amount, 0);
-    return { barber, employee, total, expenses, net: total - expenses };
+
+    // حساب الكاش والبينفت
+    const cash = sales.filter(h => h.paymentMethod === 'cash' || !h.paymentMethod).reduce((a, b) => a + b.total, 0);
+    const benefit = sales.filter(h => h.paymentMethod === 'benefit').reduce((a, b) => a + b.total, 0);
+
+    return { barber, employee, total, expenses, net: total - expenses, cash, benefit };
 }
 
 async function resetData() {
