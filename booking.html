@@ -60,18 +60,27 @@
                 <div id="step-success" class="step">
                     <div class="success-icon" style="color: var(--primary);">⏳</div>
                     <h2 id="success-title">طلبك قيد المراجعة</h2>
-                    <p id="success-msg">للتأكيد، يرجى دفع (نصف المبلغ) كعربون عبر:</p>
+                    <p>للتأكيد، يرجى دفع (1.000 دينار) كعربون عبر:</p>
                     <div
-                        style="background: var(--bg-input); padding: 15px; border-radius: 12px; margin: 15px 0; text-align: right; border: 1px solid var(--border);">
-                        <p style="color: var(--primary); font-weight: 700;">💰 Benefit Pay: 37055332</p>
-                        <p style="font-size: 0.8rem; color: var(--text-muted);">رقم الحساب: IBAN BH000000000000000000
+                        style="background: var(--bg-input); padding: 15px; border-radius: 12px; margin: 10px 0; text-align: right; border: 1px solid var(--border);">
+                        <p style="color: var(--primary); font-weight: 700; margin-bottom: 5px;">Benefit Pay: 37055332
                         </p>
+                        <p style="font-size: 0.8rem; color: var(--text-muted);">IBAN: BH000000000000000000</p>
                     </div>
-                    <p style="font-size: 0.9rem;">بعد الدفع، اضغط الزر بالأسفل لإرسال صورة التحويل عبر الواتساب لتأكيد
-                        موعدك.</p>
+
+                    <p style="font-size: 0.8rem; margin-top: 15px;">يرجى كتابة النص التالي في وصف المعاملة:</p>
+                    <div style="display: flex; gap: 5px; margin-bottom: 15px;">
+                        <input type="text" id="copy-desc" readonly class="input-field"
+                            style="margin-bottom:0; font-size:0.8rem; padding:8px;">
+                        <button onclick="copyDesc()"
+                            style="background: var(--primary); color: white; border: none; border-radius: 8px; padding: 0 15px; cursor: pointer; font-size: 0.8rem;">نسخ</button>
+                    </div>
+
+                    <p style="font-size: 0.85rem;">بعد الدفع، أرسل صورة الحوالة لتأكيد موعدك:</p>
                     <button class="btn-confirm" id="btn-whatsapp-confirm"
-                        style="background: #25d366; color: white;">إرسال صورة الدفع (واتساب)</button>
-                    <button class="btn-back" onclick="location.reload()" style="margin-top: 10px;">رجوع</button>
+                        style="background: #25d366; color: white; margin-top: 10px;">إرسال المعاملة على
+                        الواتساب</button>
+                    <button class="btn-back" onclick="location.reload()" style="margin-top: 10px;">رجوع للحجز</button>
                 </div>
             </div>
 

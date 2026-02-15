@@ -230,9 +230,22 @@ async function confirmBooking() {
 
         if (res.ok) {
             goToStep('success');
+
+            // تجهيز نص الوصف للنسخ (بدون ايموجي)
+            const desc = `حجز: ${name} - ${bookingData.date} - ${bookingData.time}`;
+            document.getElementById('copy-desc').value = desc;
+
             const waBtn = document.getElementById('btn-whatsapp-confirm');
-            const waMsg = `تحية طيبة صالون "حسين الشكر"،\nلقد قمت بتقديم طلب حجز موعد صالون.\n\nتفاصيل الحجز:\n👤 الاسم: ${name}\n✂️ الخدمات: ${servicesNames}\n📅 التاريخ: ${bookingData.date}\n⏰ الوقت: ${bookingData.time}\n💰 الإجمالي: ${totalPrice.toFixed(3)} د.ب\n\nمرفق لكم إيصال تحويل العربون لتأكيد الموعد.\nشكراً لكم.`;
+            const waMsg = `تحية طيبة صالون حسين الشكر\nلقد قمت بتقديم طلب حجز موعد صالون\n\nتفاصيل الحجز\nالاسم: ${name}\nالخدمات: ${servicesNames}\nالتاريخ: ${bookingData.date}\nالوقت: ${bookingData.time}\nالإجمالي: ${totalPrice.toFixed(3)} دب\n\nمرفق لكم ايصال تحويل العربون لتأكيد الموعد\nشكرا لكم`;
             waBtn.onclick = () => window.open(`https://wa.me/97337055332?text=${encodeURIComponent(waMsg)}`);
         }
     } catch (e) { alert("خطأ في الاتصال"); }
+}
+
+function copyDesc() {
+    const copyText = document.getElementById("copy-desc");
+    copyText.select();
+    copyText.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(copyText.value);
+    alert("تم نسخ وصف المعاملة: " + copyText.value);
 }
