@@ -256,6 +256,12 @@ async function verifyBooking(index) {
             const result = await res.json();
             if (result.success) {
                 alert("تم تأكيد الحجز وإضافته للتقويم!");
+
+                // إرسال رسالة التأكيد عبر الواتساب فوراً
+                const formattedTime = new Date(app.startTime).toLocaleString('ar-BH');
+                const confirmMsg = `تم تأكيد حجزك بنجاح\n\nعزيزي ${app.name}، تم استلام العربون وتأكيد موعدك في صالون حسين الشكر.\nالموعد: ${formattedTime}\n\nننتظرك في الموعد المحدد. شكراً لك.`;
+                sendWhatsAppMessage(app.phone, encodeURIComponent(confirmMsg));
+
                 renderAppointmentsTable();
             }
         } catch (e) { alert("خطأ في التأكيد"); }
