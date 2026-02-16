@@ -36,11 +36,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateUI();
     if (document.getElementById('search-date')) document.getElementById('search-date').valueAsDate = new Date();
 
-    // تحديث تلقائي كل 20 ثانية لجلب الحجوزات الجديدة بدون ريفريش
+    // تحديث تلقائي كل 5 ثوانٍ لجلب الحجوزات والبيانات الجديدة بدون ريفريش
     setInterval(async () => {
         await loadData();
         if (state.currentPage === 'appointments') renderAppointmentsTable();
-    }, 20000);
+        updateGlobalStats();
+    }, 5000);
 });
 
 async function loadData() {
