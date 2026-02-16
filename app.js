@@ -206,8 +206,8 @@ async function renderAppointmentsTable() {
             const startTimeFormatted = new Date(app.startTime).toLocaleString('ar-BH');
 
             // روابط الواتساب المجهزة
-            const depositMsg = `تحية طيبة صالون "حسين الشكر"،\nمرحباً ${app.name}، لقد استلمنا حجزك المبدئي:\n⏰ الموعد: ${startTimeFormatted}\n✂️ الخدمة: ${app.service}\n\nيرجى إرسال صورة إيصال دفع العربون (نصف المبلغ) عبر بينفت أو آيبان لتأكيد الموعد نهائياً.\nشكراً لك.`;
-            const confirmMsg = `تم التأكيد ✅\nعزيزي ${app.name}، تم استلام العربون وتأكيد موعدك بنجاح.\n⏰ ننتظرك في: ${startTimeFormatted}\n\nشكراً لاختيارك صالون حسين الشكر.`;
+            const depositMsg = `تحية طيبة "حلاق الشكر"،\nمرحباً ${app.name}، لقد استلمنا حجزك المبدئي:\n⏰ الموعد: ${startTimeFormatted}\n✂️ الخدمة: ${app.service}\n\nيرجى إرسال صورة إيصال دفع العربون (1.000 دينار) عبر بينفت أو آيبان لتأكيد الموعد نهائياً.\nشكراً لك.`;
+            const confirmMsg = `تم التأكيد ✅\nعزيزي ${app.name}، تم استلام العربون وتأكيد موعدك بنجاح.\n⏰ ننتظرك في: ${startTimeFormatted}\n\nشكراً لاختيارك حلاق الشكر.`;
 
             return `
             <tr style="${isPending ? 'border-right: 4px solid orange;' : 'border-right: 4px solid var(--success);'}">

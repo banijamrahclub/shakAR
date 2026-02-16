@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 3000;
 const DB_FILE = path.resolve(__dirname, 'db.json');
 
 // الرابط الخاص بجسر قوقل كلندر المجاني
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbJEEwkR_viwTYKSJcj5f5bPXRI3IiI4AUtlnDwCemhJXqtP69BSrnkTUgt5hThYllh/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyPZSbr_vKRODsj9YP2aBPaoE53z-0Jsmn3HBebX84skye35CiS_70AplD-GDLnMs4W/exec';
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
@@ -73,19 +73,18 @@ app.post('/api/calendar/confirm', async (req, res) => {
             app.status = 'confirmed';
             fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
 
-            // الآن نرسل لقوقل كلندر بعد التأكيد
+            // الآن نرسل لقوقل كلندر بعد التأكيد (باستخدام GET المضمونة)
             if (GAS_URL && !GAS_URL.includes('ضع_رابط')) {
-                await fetch(GAS_URL, {
-                    method: 'POST',
-                    follow: 20,
-                    body: JSON.stringify({
-                        name: app.name,
-                        phone: app.phone,
-                        service: app.service,
-                        startTime: app.startTime,
-                        endTime: app.endTime
-                    })
-                });
+                try {
+                    const encodedName = encodeURIComponent(app.name);
+                    const encodedPhone = encodeURIComponent(app.phone);
+                    const encodedService = encodeURIComponent(app.service);
+                    const encodedStart = encodeURIComponent(app.startTime);
+                    const encodedEnd = encodeURIComponent(app.endTime);
+
+                    const bookUrl = `${GAS_URL}?action=book&name=${encodedName}&phone=${encodedPhone}&service=${encodedService}&startTime=${encodedStart}&endTime=${encodedEnd}`;
+                    await fetch(bookUrl);
+                } catch (e) { console.error("GAS Booking Error:", e); }
             }
             res.json({ success: true });
         } else {
