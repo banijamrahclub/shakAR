@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="booking-style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/jpeg" href="https://l.top4top.io/p_3696h0fkb1.jpg">
 </head>
 
 <body>
@@ -69,12 +70,16 @@
                     </div>
 
                     <p style="font-size: 0.8rem; margin-top: 15px;">يرجى كتابة النص التالي في وصف المعاملة:</p>
-                    <div style="display: flex; gap: 5px; margin-bottom: 15px;">
+                    <div style="display: flex; gap: 5px; margin-bottom: 5px;">
                         <input type="text" id="copy-desc" readonly class="input-field"
                             style="margin-bottom:0; font-size:0.8rem; padding:8px;">
                         <button onclick="copyDesc()"
                             style="background: var(--primary); color: white; border: none; border-radius: 8px; padding: 0 15px; cursor: pointer; font-size: 0.8rem;">نسخ</button>
                     </div>
+
+                    <p style="color: var(--danger); font-size: 0.8rem; margin-bottom: 15px; font-weight: 600;">⚠️
+                        ملاحظة:
+                        عدم دفعك العربون مبكراً قد يؤدي إلى إلغاء حجزك</p>
 
                     <p style="font-size: 0.85rem;">بعد الدفع، أرسل صورة الحوالة لتأكيد موعدك:</p>
                     <button class="btn-confirm" id="btn-whatsapp-confirm"

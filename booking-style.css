@@ -6,6 +6,7 @@
     --text-main: #f8fafc;
     --text-muted: #64748b;
     --border: rgba(148, 163, 184, 0.1);
+    --danger: #ef4444;
 }
 
 * {
@@ -222,4 +223,45 @@ footer {
     margin-top: 30px;
     color: var(--text-muted);
     font-size: 0.8rem;
+}
+
+.status-badge {
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.status-pending {
+    background: rgba(255, 165, 0, 0.1);
+    color: orange;
+    border: 1px solid rgba(255, 165, 0, 0.2);
+}
+
+.status-confirmed {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.btn-pay {
+    background: #25d366;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    margin-top: 15px;
+    width: 100%;
+    display: block;
+    text-align: center;
+    text-decoration: none;
+    font-size: 1rem;
+    transition: 0.3s;
+}
+
+.btn-pay:hover {
+    background: #128c7e;
+    transform: translateY(-2px);
 }

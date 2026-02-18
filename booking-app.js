@@ -33,14 +33,33 @@ async function fetchMyApps() {
             return;
         }
 
-        list.innerHTML = myApps.map((app, index) => `
-            <div class="app-item">
-                <div style="font-weight:700; color:var(--primary);">${new Date(app.startTime).toLocaleDateString('ar-BH')} - ${new Date(app.startTime).toLocaleTimeString('ar-BH', { hour: '2-digit', minute: '2-digit' })}</div>
-                <div style="font-size:0.9rem; margin:5px 0;">${app.service}</div>
-                <button class="btn-back" style="color:var(--danger); border:1px solid var(--danger); padding:5px 10px; border-radius:8px; margin-top:5px; text-decoration:none;" 
-                    onclick="cancelApp('${phone}', ${index})">إلغاء الموعد</button>
-            </div>
-        `).join('');
+        list.innerHTML = myApps.map((app, index) => {
+            const isPending = app.status === 'pending';
+            const startTimeFormatted = new Date(app.startTime).toLocaleDateString('ar-BH') + ' - ' + new Date(app.startTime).toLocaleTimeString('ar-BH', { hour: '2-digit', minute: '2-digit' });
+
+            // تجهيز رسالة الواتساب
+            const waMsg = `تحية طيبة من حلاق الشكر\nلقد قمت بتقديم طلب حجز موعد\n\nتفاصيل الحجز\nالاسم: ${app.name}\nالخدمات: ${app.service}\nالموعد: ${startTimeFormatted}\n\nمرفق لكم ايصال تحويل العربون (1.000 دينار) لتأكيد الموعد\nشكرا لكم`;
+            const waLink = `https://wa.me/97337055332?text=${encodeURIComponent(waMsg)}`;
+
+            return `
+                <div class="app-item">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <span class="status-badge ${isPending ? 'status-pending' : 'status-confirmed'}">
+                            ${isPending ? '⏳ قيد المراجعة' : '✅ مؤكد'}
+                        </span>
+                        <div style="font-weight:700; color:var(--primary);">${startTimeFormatted}</div>
+                    </div>
+                    <div style="font-size:0.9rem; margin:5px 0;">${app.service}</div>
+                    
+                    ${isPending ? `
+                        <a href="${waLink}" target="_blank" class="btn-pay">💰 ادفع العربون الآن</a>
+                    ` : ''}
+
+                    <button class="btn-back" style="color:var(--danger); border:1px solid var(--danger); padding:5px 10px; border-radius:8px; margin-top:10px; width:100%; transition: 0.3s;" 
+                        onclick="cancelApp('${phone}', ${index})">إلغاء الموعد</button>
+                </div>
+            `;
+        }).join('');
     } catch (e) {
         list.innerHTML = 'خطأ في جلب البيانات';
     }
@@ -211,8 +230,11 @@ async function confirmBooking() {
     if (!name || !phone) return alert("يرجى ملئ البيانات");
 
     const startTime = new Date(`${bookingData.date}T${bookingData.time}:00`).toISOString();
-    const durationMinutes = Math.max(30, bookingData.selectedServices.length * 20);
-    const endTime = new Date(new Date(startTime).getTime() + durationMinutes * 60000).toISOString();
+
+    // حساب المدة الإجمالية بناءً على الخدمات المختارة
+    const totalDuration = bookingData.selectedServices.reduce((sum, s) => sum + (s.duration || 30), 0);
+    const endTime = new Date(new Date(startTime).getTime() + totalDuration * 60000).toISOString();
+
     const servicesNames = bookingData.selectedServices.map(s => s.name).join(' + ');
     const totalPrice = bookingData.selectedServices.reduce((sum, s) => sum + s.price, 0);
 
@@ -236,7 +258,7 @@ async function confirmBooking() {
             document.getElementById('copy-desc').value = desc;
 
             const waBtn = document.getElementById('btn-whatsapp-confirm');
-            const waMsg = `تحية طيبة حلاق الشكر\nلقد قمت بتقديم طلب حجز موعد صالون\n\nتفاصيل الحجز\nالاسم: ${name}\nالخدمات: ${servicesNames}\nالتاريخ: ${bookingData.date}\nالوقت: ${bookingData.time}\nالإجمالي: ${totalPrice.toFixed(3)} دب\n\nمرفق لكم ايصال تحويل العربون لتأكيد الموعد\nشكرا لكم`;
+            const waMsg = `تحية طيبة من حلاق الشكر\nلقد قمت بتقديم طلب حجز موعد\n\nتفاصيل الحجز\nالاسم: ${name}\nالخدمات: ${servicesNames}\nالتاريخ: ${bookingData.date}\nالوقت: ${bookingData.time}\nالإجمالي: ${totalPrice.toFixed(3)} دب\n\nمرفق لكم ايصال تحويل العربون لتأكيد الموعد\nشكرا لكم`;
             waBtn.onclick = () => window.open(`https://wa.me/97337055332?text=${encodeURIComponent(waMsg)}`);
         }
     } catch (e) { alert("خطأ في الاتصال"); }

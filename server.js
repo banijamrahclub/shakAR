@@ -38,18 +38,70 @@ initializeDB();
 
 // --- API ROUTES ---
 
+// دالة لتنظيف الحجوزات المعلقة التي مضى وقتها ولم تؤكد
+function cleanExpiredPending() {
+    try {
+        const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+        const now = new Date().getTime();
+
+        const initialCount = data.appointments.length;
+        data.appointments = data.appointments.filter(app => {
+            // إذا كان مؤكد، يبقى
+            if (app.status === 'confirmed') return true;
+
+            const startTime = new Date(app.startTime).getTime();
+
+            // يحذف فقط إذا كان معلق ومضى وقته بالكامل
+            if (startTime < now) return false;
+
+            return true;
+        });
+
+        if (data.appointments.length !== initialCount) {
+            fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+            console.log("Cleaned up past pending appointments.");
+        }
+    } catch (e) { console.error("Cleanup error:", e); }
+}
+
 app.get('/api/calendar/busy', async (req, res) => {
     const { start } = req.query;
-    if (!GAS_URL || GAS_URL.includes('ضع_رابط')) return res.json([]);
+    if (!start) return res.json([]);
+
+    cleanExpiredPending();
+
+    const requestDay = start.split('T')[0];
+    let allBusy = [];
+
+    // 1. جلب المواعيد المحلية أولاً (لأنها الأهم والأساس)
     try {
-        const response = await fetch(`${GAS_URL}?date=${start.split('T')[0]}`);
-        const busyData = await response.json();
-        res.json(busyData);
-    } catch (err) { res.json([]); }
+        const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+        const localBusy = (data.appointments || [])
+            .filter(app => app.startTime && app.startTime.startsWith(requestDay))
+            .map(app => ({
+                start: app.startTime,
+                end: app.endTime
+            }));
+        allBusy = [...localBusy];
+    } catch (e) { console.error("Local Busy Error:", e); }
+
+    // 2. دمج مواعيد قوقل كلندر إذا كانت متوفرة
+    if (GAS_URL && !GAS_URL.includes('ضع_رابط')) {
+        try {
+            const response = await fetch(`${GAS_URL}?date=${requestDay}`);
+            const gasBusy = await response.json();
+            if (Array.isArray(gasBusy)) {
+                allBusy = [...allBusy, ...gasBusy];
+            }
+        } catch (err) { console.error("GAS Fetch Error:", err); }
+    }
+
+    res.json(allBusy);
 });
 
 app.post('/api/calendar/book', async (req, res) => {
     const { name, phone, service, price, startTime, endTime } = req.body;
+    cleanExpiredPending(); // تنظيف قبل الحجز الجديد
     try {
         const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
         if (!data.appointments) data.appointments = [];

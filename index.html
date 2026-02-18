@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/jpeg" href="https://l.top4top.io/p_3696h0fkb1.jpg">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -35,6 +36,16 @@
             <div class="brand">
                 <img src="https://l.top4top.io/p_3696h0fkb1.jpg" alt="Logo" class="logo-img">
                 <h2 style="font-size: 1.2rem; font-weight: 800; color: var(--text-main);">حلاق الشكر</h2>
+            </div>
+
+            <!-- مؤشر تاريخ النظام الحالي -->
+            <div id="active-date-display"
+                style="margin: 10px 15px; padding: 10px; background: rgba(148, 163, 184, 0.05); border-radius: 12px; font-size: 0.8rem; text-align: center; border: 1px solid var(--border);">
+                <div style="color: var(--text-muted); margin-bottom: 5px;">📅 تاريخ العمليات الحالي:</div>
+                <b id="current-system-date" style="color: var(--primary); font-size: 1rem;">2026-02-18</b>
+                <button onclick="resetSystemDate()"
+                    style="display:none; width:100%; background:none; border:none; color:var(--danger); cursor:pointer; font-size:0.75rem; text-decoration:underline; font-weight:700; margin-top:5px;"
+                    id="reset-date-btn">🔙 استعادة اليوم</button>
             </div>
             <nav class="nav-menu">
                 <div class="nav-link active" onclick="handleNav('employee')">
@@ -286,9 +297,10 @@
                         والأسماء الحالية.</p>
 
                     <div
-                        style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 15px; margin-bottom: 30px; background: rgba(255,255,255,0.02); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
+                        style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 15px; margin-bottom: 30px; background: rgba(255,255,255,0.02); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
                         <input type="text" id="new-service-name" placeholder="اسم الخدمة الجديدة">
                         <input type="number" id="new-service-price" placeholder="السعر (د.ب)">
+                        <input type="number" id="new-service-duration" placeholder="المدة (دقيقة)">
                         <button class="btn-action" style="width: auto; padding: 0 30px;" onclick="addService()">إضافة
                             خدمة</button>
                     </div>
@@ -299,6 +311,7 @@
                                 <tr>
                                     <th>اسم الخدمة</th>
                                     <th>السعر (د.ب)</th>
+                                    <th>المدة (دقيقة)</th>
                                     <th>الإجراءات</th>
                                 </tr>
                             </thead>

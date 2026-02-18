@@ -19,7 +19,8 @@ let state = {
     expenses: [],
     fixedExpenses: [],
     services: defaultServices,
-    appointments: []
+    appointments: [],
+    managedDate: new Date().toISOString().split('T')[0] // التاريخ الذي يتم إدارته حالياً (الافتراضي هو اليوم)
 };
 
 const PASSWORD = "1";
@@ -185,13 +186,36 @@ function updateUI() {
     if (state.currentPage === 'manage-services') renderManageServices();
     if (state.currentPage === 'appointments') renderAppointmentsTable();
     updateGlobalStats();
+
+    // تحديث عرض التاريخ الحالي
+    const dateEl = document.getElementById('current-system-date');
+    const resetBtn = document.getElementById('reset-date-btn');
+    if (dateEl) {
+        dateEl.innerText = state.managedDate;
+        const today = new Date().toISOString().split('T')[0];
+        if (resetBtn) resetBtn.style.display = state.managedDate === today ? 'none' : 'block';
+    }
+}
+
+function resetSystemDate() {
+    state.managedDate = new Date().toISOString().split('T')[0];
+    updateUI();
+    alert("تمت العودة لتاريخ اليوم الأصلي");
+}
+
+function setManagedDate(date) {
+    state.managedDate = date;
+    updateUI();
+    alert("تم تغيير تاريخ النظام إلى: " + date + "\nيمكنك الآن تسجيل المبيعات والمصاريف لهذا التاريخ.");
 }
 
 async function renderAppointmentsTable() {
     const body = document.querySelector('#appointments-table tbody');
     if (!body) return;
 
-    body.innerHTML = '<tr><td colspan="5">جاري تحميل الحجوزات...</td></tr>';
+    if (body.innerHTML === '') {
+        body.innerHTML = '<tr><td colspan="5" style="text-align:center;">جاري تحميل الحجوزات...</td></tr>';
+    }
 
     try {
         const res = await fetch(`${API_BASE}/api/data`);
@@ -206,7 +230,7 @@ async function renderAppointmentsTable() {
             const startTimeFormatted = new Date(app.startTime).toLocaleString('ar-BH');
 
             // روابط الواتساب المجهزة
-            const depositMsg = `تحية طيبة "حلاق الشكر"،\nمرحباً ${app.name}، لقد استلمنا حجزك المبدئي:\n⏰ الموعد: ${startTimeFormatted}\n✂️ الخدمة: ${app.service}\n\nيرجى إرسال صورة إيصال دفع العربون (1.000 دينار) عبر بينفت أو آيبان لتأكيد الموعد نهائياً.\nشكراً لك.`;
+            const depositMsg = `تحية طيبة من "حلاق الشكر"،\nمرحباً ${app.name}، لقد استلمنا حجزك المبدئي:\n⏰ الموعد: ${startTimeFormatted}\n✂️ الخدمة: ${app.service}\n\nيرجى إرسال صورة إيصال دفع العربون (1.000 دينار) عبر بينفت أو آيبان لتأكيد الموعد نهائياً.\nشكراً لك.`;
             const confirmMsg = `تم التأكيد ✅\nعزيزي ${app.name}، تم استلام العربون وتأكيد موعدك بنجاح.\n⏰ ننتظرك في: ${startTimeFormatted}\n\nشكراً لاختيارك حلاق الشكر.`;
 
             return `
@@ -296,11 +320,11 @@ async function completeAppointment(index) {
         const sale = {
             id: Date.now(),
             time: new Date().toLocaleTimeString('ar-BH'),
-            date: new Date().toISOString().split('T')[0],
+            date: state.managedDate, // استخدام التاريخ المختار
             role: state.currentRole,
             total: finalPrice,
-            items: `حجز: ${app.service}`,
-            paymentMethod: pMethod // مضافة حديثاً
+            items: app.service,
+            paymentMethod: pMethod
         };
         state.history.unshift(sale);
 
@@ -377,7 +401,7 @@ async function confirmSale() {
     const sale = {
         id: Date.now(),
         time: new Date().toLocaleTimeString('ar-BH'),
-        date: new Date().toISOString().split('T')[0],
+        date: state.managedDate, // استخدام التاريخ المختار
         role: state.currentRole,
         total: state.cart.reduce((a, b) => a + b.price, 0),
         items: state.cart.map(c => c.name).join(', '),
@@ -470,7 +494,7 @@ async function saveExpense() {
     const amt = parseFloat(document.getElementById('exp-amount').value);
     const note = document.getElementById('exp-note').value;
     if (isNaN(amt) || amt <= 0) return alert("مبلغ غير صحيح");
-    state.expenses.unshift({ id: Date.now(), date: new Date().toISOString().split('T')[0], amount: amt, note });
+    state.expenses.unshift({ id: Date.now(), date: state.managedDate, amount: amt, note });
     await save();
     alert("تم حفظ المصروف بنجاح");
     document.getElementById('exp-amount').value = '';
@@ -522,6 +546,7 @@ function performSearch() {
                 <div style="color: #60a5fa;">🏦 بينفت: <b>${s.benefit.toFixed(3)}</b></div>
             </div>
         </div>
+        <button class="btn-action" style="margin-top:20px; background:var(--primary); color:black;" onclick="setManagedDate('${date}')">⚙️ إدارة هذا التاريخ (تسجيل مصروفات/خدمات فيه)</button>
     `;
 }
 
@@ -540,24 +565,34 @@ function renderTopServices() {
 function renderManageServices() {
     const body = document.querySelector('#manage-services-table tbody');
     if (!body) return;
-    body.innerHTML = state.services.map((s, i) => `<tr><td><input type="text" value="${s.name}" style="background:transparent; border:1px solid var(--border); color:white; padding:5px; width:100%; border-radius:5px;" onchange="updateService(${i}, 'name', this.value)"></td><td><input type="number" step="0.5" value="${s.price.toFixed(3)}" style="background:transparent; border:1px solid var(--border); color:white; padding:5px; width:100%; border-radius:5px;" onchange="updateService(${i}, 'price', this.value)"></td><td><button class="btn-action" style="padding: 5px 15px; background: var(--danger); color: white; border-radius:8px;" onclick="deleteService(${i})">حذف</button></td></tr>`).join('');
+    body.innerHTML = state.services.map((s, i) => `
+        <tr>
+            <td><input type="text" value="${s.name}" style="background:transparent; border:1px solid var(--border); color:white; padding:5px; width:100%; border-radius:5px;" onchange="updateService(${i}, 'name', this.value)"></td>
+            <td><input type="number" step="0.5" value="${s.price.toFixed(3)}" style="background:transparent; border:1px solid var(--border); color:white; padding:5px; width:100%; border-radius:5px;" onchange="updateService(${i}, 'price', this.value)"></td>
+            <td><input type="number" value="${s.duration || 30}" style="background:transparent; border:1px solid var(--border); color:white; padding:5px; width:100%; border-radius:5px;" onchange="updateService(${i}, 'duration', this.value)"></td>
+            <td><button class="btn-action" style="padding: 5px 15px; background: var(--danger); color: white; border-radius:8px;" onclick="deleteService(${i})">حذف</button></td>
+        </tr>
+    `).join('');
 }
 
 async function addService() {
     const name = document.getElementById('new-service-name').value;
     const price = parseFloat(document.getElementById('new-service-price').value);
+    const duration = parseInt(document.getElementById('new-service-duration').value) || 30;
     if (!name || isNaN(price)) return alert("يرجى إدخال اسم وسعر صحيح");
-    state.services.push({ name, price });
+    state.services.push({ name, price, duration });
     await save();
     renderManageServices();
     renderServices();
     document.getElementById('new-service-name').value = '';
     document.getElementById('new-service-price').value = '';
+    document.getElementById('new-service-duration').value = '';
 }
 
 async function updateService(index, field, value) {
     if (field === 'price') value = parseFloat(value);
-    if (field === 'price' && isNaN(value)) return;
+    if (field === 'duration') value = parseInt(value);
+    if ((field === 'price' || field === 'duration') && isNaN(value)) return;
     state.services[index][field] = value;
     await save();
     renderServices();
