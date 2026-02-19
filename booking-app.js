@@ -7,6 +7,12 @@ let bookingData = {
     services: []
 };
 
+// دالة تحويل الأرقام العربية إلى إنجليزية تلقائياً
+function arToEn(str) {
+    if (!str) return "";
+    return str.replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d));
+}
+
 function switchMainTab(tab) {
     document.getElementById('main-tab-book').style.display = tab === 'book' ? 'block' : 'none';
     document.getElementById('main-tab-my-apps').style.display = tab === 'my-apps' ? 'block' : 'none';
@@ -17,7 +23,8 @@ function switchMainTab(tab) {
 }
 
 async function fetchMyApps() {
-    const phone = document.getElementById('search-phone').value;
+    let phone = document.getElementById('search-phone').value;
+    phone = arToEn(phone); // تحويل الأرقام
     if (!phone) return alert("أدخل رقم الهاتف");
 
     const list = document.getElementById('my-apps-list');
@@ -226,7 +233,8 @@ function goToStep(n) {
 
 async function confirmBooking() {
     const name = document.getElementById('cust-name').value;
-    const phone = document.getElementById('cust-phone').value;
+    let phone = document.getElementById('cust-phone').value;
+    phone = arToEn(phone); // تحويل الأرقام
     if (!name || !phone) return alert("يرجى ملئ البيانات");
 
     const startTime = new Date(`${bookingData.date}T${bookingData.time}:00`).toISOString();
@@ -258,7 +266,7 @@ async function confirmBooking() {
             document.getElementById('copy-desc').value = desc;
 
             const waBtn = document.getElementById('btn-whatsapp-confirm');
-            const waMsg = `تحية طيبة من حلاق الشكر\nلقد قمت بتقديم طلب حجز موعد\n\nتفاصيل الحجز\nالاسم: ${name}\nالخدمات: ${servicesNames}\nالتاريخ: ${bookingData.date}\nالوقت: ${bookingData.time}\nالإجمالي: ${totalPrice.toFixed(3)} دب\n\nمرفق لكم ايصال تحويل العربون لتأكيد الموعد\nشكرا لكم`;
+            const waMsg = `تحية طيبة من حلاق الشكر\nلقد قمت بتقديم طلب حجز موعد\n\nتفاصيل الحجز\nالاسم: ${name}\nالخدمات: ${servicesNames}\nالتاريخ: ${bookingData.date}\nالوقت: ${bookingData.time}\nالإجمالي: ${totalPrice.toFixed(3)} دب\n\nمرفق لكم ايصال تحويل العربون لشراء وقتك وتأكيد الموعد\nشكرا لكم`;
             waBtn.onclick = () => window.open(`https://wa.me/97337055332?text=${encodeURIComponent(waMsg)}`);
         }
     } catch (e) { alert("خطأ في الاتصال"); }
