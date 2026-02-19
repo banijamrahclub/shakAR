@@ -231,7 +231,7 @@ async function renderAppointmentsTable() {
 
             // روابط الواتساب المجهزة
             const depositMsg = `تحية طيبة من "حلاق الشكر"،\nمرحباً ${app.name}، لقد استلمنا حجزك المبدئي:\n⏰ الموعد: ${startTimeFormatted}\n✂️ الخدمة: ${app.service}\n\nيرجى إرسال صورة إيصال دفع العربون (1.000 دينار) عبر بينفت أو آيبان لتأكيد الموعد نهائياً.\nشكراً لك.`;
-            const confirmMsg = `تم التأكيد ✅\nعزيزي ${app.name}، تم استلام العربون وتأكيد موعدك بنجاح.\n⏰ ننتظرك في: ${startTimeFormatted}\n\nشكراً لاختيارك حلاق الشكر.`;
+            const confirmMsg = `تم التأكيد ✅\nعزيزي ${app.name}، تم استلام العربون وتأكيد موعدك بنجاح.\n⏰ ننتظرك في: ${startTimeFormatted}\n\n⚠️ ملاحظة: لن يتم ارجاع العربون اذا تم الغاء الحجز قبل اقل من 24 ساعة منه.\n\nشكراً لاختيارك حلاق الشكر.`;
 
             return `
             <tr style="${isPending ? 'border-right: 4px solid orange;' : 'border-right: 4px solid var(--success);'}">
@@ -284,7 +284,7 @@ async function verifyBooking(index) {
 
                 // إرسال رسالة التأكيد عبر الواتساب فوراً
                 const formattedTime = new Date(app.startTime).toLocaleString('ar-BH');
-                const confirmMsg = `تم تأكيد حجزك بنجاح\n\nعزيزي ${app.name}، تم استلام العربون وتأكيد موعدك في صالون حسين الشكر.\nالموعد: ${formattedTime}\n\nننتظرك في الموعد المحدد. شكراً لك.`;
+                const confirmMsg = `تم تأكيد حجزك بنجاح ✅\n\nعزيزي ${app.name}، تم استلام العربون وتأكيد موعدك بنجاح.\nالموعد: ${formattedTime}\n\n⚠️ ملاحظة: لن يتم ارجاع العربون اذا تم الغاء الحجز قبل اقل من 24 ساعة منه.\n\nننتظرك في الموعد المحدد. شكراً لاختيارك حلاق الشكر.`;
                 sendWhatsAppMessage(app.phone, encodeURIComponent(confirmMsg));
 
                 renderAppointmentsTable();
