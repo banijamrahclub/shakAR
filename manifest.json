@@ -1,0 +1,21 @@
+{
+    "name": "حلاق الشكر",
+    "short_name": "الشكر",
+    "description": "أفضل نظام حجز مواعيد للحلاقة في البحرين",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0a0c10",
+    "theme_color": "#94a3b8",
+    "icons": [
+        {
+            "src": "https://l.top4top.io/p_3696h0fkb1.jpg",
+            "sizes": "192x192",
+            "type": "image/jpeg"
+        },
+        {
+            "src": "https://l.top4top.io/p_3696h0fkb1.jpg",
+            "sizes": "512x512",
+            "type": "image/jpeg"
+        }
+    ]
+}

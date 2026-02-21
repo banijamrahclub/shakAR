@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /h-shakar
+Disallow: /api/
+
+Sitemap: https://salonalshakar.com/sitemap.xml
