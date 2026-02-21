@@ -215,6 +215,11 @@ async function loadTimeSlots() {
 
         const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 
+        // تحويل العرض إلى نظام 12 ساعة (AM/PM)
+        const displayH = h % 12 || 12;
+        const ampm = h < 12 || h >= 24 ? 'AM' : 'PM';
+        const displayTime = `${displayH}:${String(m).padStart(2, '0')} ${ampm}`;
+
         // تحديد تاريخ الموعد (ممكن يكون اليوم التالي لو طاف الساعة 12 بالليل)
         let slotDate = date;
         if (currentLoopTotal >= 1440) {
@@ -243,7 +248,7 @@ async function loadTimeSlots() {
         html += `
             <div class="option-item ${disabled ? 'busy' : ''}" 
                  onclick="${disabled ? '' : `selectTime('${timeStr}')`}">
-                ${timeStr}
+                ${displayTime}
                 ${isPast ? '<div style="font-size:0.6rem; color:var(--danger)">مضى</div>' : ''}
             </div>
         `;
