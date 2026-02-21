@@ -70,6 +70,21 @@ aside {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    overflow-y: auto;
+    /* تمكين السكرول العمودي */
+    scrollbar-width: thin;
+    /* شريط تمرير نحيف للمتصفحات الحديثة */
+    scrollbar-color: var(--border) transparent;
+}
+
+/* تخصيص شكل السكرول بار للمتصفحات القديمة */
+.nav-menu::-webkit-scrollbar {
+    width: 4px;
+}
+
+.nav-menu::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 10px;
 }
 
 .nav-link {

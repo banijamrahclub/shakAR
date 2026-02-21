@@ -19,6 +19,10 @@ let state = {
     expenses: [],
     fixedExpenses: [],
     services: defaultServices,
+    barbers: [
+        { id: 'owner', name: 'الحلاق الشكر', role: 'owner' },
+        { id: 'employee', name: 'الموظف 1', role: 'employee' }
+    ],
     appointments: [],
     settings: { openTime: '10:00', closeTime: '22:00' }, // إعدادات افتراضية
     managedDate: new Date().toISOString().split('T')[0] // التاريخ الذي يتم إدارته حالياً (الافتراضي هو اليوم)
@@ -56,6 +60,7 @@ async function loadData() {
         state.expenses = cloudData.expenses || [];
         state.fixedExpenses = cloudData.fixedExpenses || [];
         state.services = (cloudData.services && cloudData.services.length > 0) ? cloudData.services : defaultServices;
+        state.barbers = cloudData.barbers || [{ id: 'owner', name: 'الحلاق الشكر', role: 'owner' }, { id: 'employee', name: 'الموظف 1', role: 'employee' }];
         state.appointments = cloudData.appointments || [];
         state.settings = cloudData.settings || { openTime: '10:00', closeTime: '22:00' };
 
@@ -64,6 +69,7 @@ async function loadData() {
         localStorage.setItem('sh_expenses', JSON.stringify(state.expenses));
         localStorage.setItem('sh_fixed', JSON.stringify(state.fixedExpenses));
         localStorage.setItem('sh_services', JSON.stringify(state.services));
+        localStorage.setItem('sh_barbers', JSON.stringify(state.barbers));
         localStorage.setItem('sh_settings', JSON.stringify(state.settings));
 
         console.log("Data synced from server correctly.");
@@ -73,6 +79,7 @@ async function loadData() {
         state.expenses = JSON.parse(localStorage.getItem('sh_expenses')) || [];
         state.fixedExpenses = JSON.parse(localStorage.getItem('sh_fixed')) || [];
         state.services = JSON.parse(localStorage.getItem('sh_services')) || defaultServices;
+        state.barbers = JSON.parse(localStorage.getItem('sh_barbers')) || [{ id: 'owner', name: 'الحلاق الشكر', role: 'owner' }, { id: 'employee', name: 'الموظف 1', role: 'employee' }];
         state.settings = JSON.parse(localStorage.getItem('sh_settings')) || { openTime: '10:00', closeTime: '22:00' };
         state.appointments = [];
     }
@@ -96,6 +103,7 @@ async function save() {
                 expenses: state.expenses,
                 fixedExpenses: state.fixedExpenses,
                 services: state.services,
+                barbers: state.barbers,
                 appointments: state.appointments,
                 settings: state.settings
             })
@@ -151,8 +159,9 @@ function verifyAdmin() {
 }
 
 function processNav(target) {
-    if (target === 'owner') {
-        state.currentRole = 'owner';
+    const barber = state.barbers.find(b => b.id === target);
+    if (barber) {
+        state.currentRole = barber.id;
         state.currentPage = 'pos';
     } else {
         state.currentPage = target;
@@ -163,36 +172,41 @@ function processNav(target) {
 function closeAuth() { document.getElementById('auth-overlay').style.display = 'none'; }
 
 function updateUI() {
+    renderBarberLinks();
+
     document.querySelectorAll('.nav-link').forEach(link => {
         link.classList.remove('active');
-        const text = link.innerText;
-        if (text.includes('موظف') && state.currentPage === 'pos' && state.currentRole === 'employee') link.classList.add('active');
-        if (text.includes('الشكر') && state.currentPage === 'pos' && state.currentRole === 'owner') link.classList.add('active');
-        if (text.includes('الرسوم') && state.currentPage === 'analytics') link.classList.add('active');
-        if (text.includes('المصاريف الثابتة') && state.currentPage === 'fixed-exp') link.classList.add('active');
-        if (text.includes('طارئة') && state.currentPage === 'emergency-exp') link.classList.add('active');
-        if (text.includes('كشف') && state.currentPage === 'history') link.classList.add('active');
-        if (text.includes('أكثر طلباً') && state.currentPage === 'top-services') link.classList.add('active');
-        if (text.includes('إدارة الخدمات') && state.currentPage === 'manage-services') link.classList.add('active');
-        if (text.includes('أوقات العمل') && state.currentPage === 'settings') link.classList.add('active');
-        if (text.includes('الحجوزات') && state.currentPage === 'appointments') link.classList.add('active');
+        const onclick = link.getAttribute('onclick');
+        if (onclick && onclick.includes(`handleNav('${state.currentPage}')`)) {
+            link.classList.add('active');
+        }
+        // خاص بنقاط البيع للموظفين
+        if (state.currentPage === 'pos') {
+            if (onclick && onclick.includes(`handleNav('${state.currentRole}')`)) {
+                link.classList.add('active');
+            }
+        }
     });
 
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     const targetPage = document.getElementById(`page-${state.currentPage}`);
     if (targetPage) targetPage.classList.add('active');
 
-    document.getElementById('role-status').innerText = `المسؤول: ${state.currentRole === 'owner' ? 'الشكر' : 'الموظف'}`;
+    const currentBarber = state.barbers.find(b => b.id === state.currentRole);
+    document.getElementById('role-status').innerText = `المسؤول: ${currentBarber ? currentBarber.name : 'موظف'}`;
+
     const ownerOnlyElements = document.querySelectorAll('.owner-only');
-    ownerOnlyElements.forEach(el => el.style.display = (state.isAuthorized || state.currentRole === 'owner' ? 'block' : 'none'));
+    ownerOnlyElements.forEach(el => el.style.display = (state.isAuthorized ? 'block' : 'none'));
 
     if (state.currentPage === 'analytics') initProfitChart();
     if (state.currentPage === 'fixed-exp') renderFixedTable();
     if (state.currentPage === 'history') renderHistoryTable();
     if (state.currentPage === 'top-services') renderTopServices();
+    if (state.currentPage === 'manage-barbers') renderManageBarbers();
     if (state.currentPage === 'manage-services') renderManageServices();
-    if (state.currentPage === 'settings') renderSettings();
     if (state.currentPage === 'appointments') renderAppointmentsTable();
+    if (state.currentPage === 'settings') renderSettings();
+
     updateGlobalStats();
 
     // تحديث عرض التاريخ الحالي
@@ -203,6 +217,16 @@ function updateUI() {
         const today = new Date().toISOString().split('T')[0];
         if (resetBtn) resetBtn.style.display = state.managedDate === today ? 'none' : 'block';
     }
+}
+
+function renderBarberLinks() {
+    const container = document.getElementById('dynamic-barber-links');
+    if (!container) return;
+    container.innerHTML = state.barbers.map(b => `
+        <div class="nav-link ${state.currentPage === 'pos' && state.currentRole === b.id ? 'active' : ''}" onclick="handleNav('${b.id}')">
+            <span>${b.role === 'owner' ? '✂️' : '🏠'} كاشير (${b.name})</span>
+        </div>
+    `).join('');
 }
 
 function resetSystemDate() {
@@ -314,7 +338,7 @@ async function completeAppointment(index) {
     // سؤال عن طريقة الدفع
     const pMethod = confirm(`هل دفع ${app.name} بقية المبلغ عن طريق "بينفت"؟\n(موافق = بينفت ، إلغاء = كاش)`) ? 'benefit' : 'cash';
 
-    if (confirm(`هل انتهيت من حलाقة ${app.name}؟ (سيتم تسجيل ${finalPrice.toFixed(3)} د.ب في الأرباح وحذفه من قوقل)`)) {
+    if (confirm(`هل انتهيت من حلاقة ${app.name}؟ (سيتم تسجيل ${finalPrice.toFixed(3)} د.ب في الأرباح وحذفه من قوقل)`)) {
         // 1. إرسال طلب حذف من قوقل كلندر
         try {
             await fetch(`${API_BASE}/api/calendar/cancel`, {
@@ -697,6 +721,48 @@ async function saveSettings() {
     state.settings = { openTime, closeTime };
     await save();
     alert("تم حفظ أوقات العمل بنجاح! سيتم تطبيقها على الحجوزات الجديدة.");
+}
+
+// --- EMPLOYEE MANAGEMENT ---
+
+function renderManageBarbers() {
+    const tbody = document.getElementById('manage-barbers-table-body');
+    if (!tbody) return;
+    tbody.innerHTML = state.barbers.map((b, index) => `
+        <tr>
+            <td><input type="text" value="${b.name}" onchange="updateBarber(${index}, 'name', this.value)" class="input-field" style="padding: 5px;"></td>
+            <td>${b.role === 'owner' ? 'مسؤول (مالك)' : 'حلاق موظف'}</td>
+            <td>
+                ${b.role !== 'owner' ? `<button onclick="deleteBarber(${index})" style="color:var(--danger); background:none; border:1px solid var(--danger); padding:4px 8px; border-radius:6px; cursor:pointer;">حذف</button>` : '<span style="color:var(--text-muted)">أساسي</span>'}
+            </td>
+        </tr>
+    `).join('');
+}
+
+async function addBarber() {
+    const name = document.getElementById('new-barber-name').value;
+    if (!name) return alert("يرجى كتابة اسم الموظف");
+    const id = 'barber_' + Date.now();
+    state.barbers.push({ id, name, role: 'employee' });
+    await save();
+    renderManageBarbers();
+    renderBarberLinks();
+    document.getElementById('new-barber-name').value = '';
+}
+
+async function updateBarber(index, field, value) {
+    state.barbers[index][field] = value;
+    await save();
+    renderBarberLinks();
+}
+
+async function deleteBarber(index) {
+    if (confirm(`هل أنت متأكد من حذف الموظف "${state.barbers[index].name}"؟`)) {
+        state.barbers.splice(index, 1);
+        await save();
+        renderManageBarbers();
+        renderBarberLinks();
+    }
 }
 
 function updateGlobalStats() {

@@ -39,6 +39,10 @@ function initializeDB() {
             fixedExpenses: [],
             services: defaultServices,
             appointments: [],
+            barbers: [
+                { id: 'owner', name: 'الحلاق الشكر', role: 'owner' },
+                { id: 'employee', name: 'الموظف 1', role: 'employee' }
+            ],
             settings: { openTime: '10:00', closeTime: '22:00' }
         }, null, 2));
     }

@@ -198,17 +198,31 @@ async function loadTimeSlots() {
     const [closeH, closeM] = (settings.closeTime || '22:00').split(':').map(Number);
 
     const startTotalMinutes = (openH * 60) + (openM || 0);
-    const endTotalMinutes = (closeH * 60) + (closeM || 0);
+    let endTotalMinutes = (closeH * 60) + (closeM || 0);
+
+    // إذا كان وقت الإغلاق أقل من وقت الفتح، فهذا يعني أن الإغلاق في اليوم التالي (فجر)
+    if (endTotalMinutes <= startTotalMinutes) {
+        endTotalMinutes += 1440; // إضافة 24 ساعة
+    }
 
     let html = "";
 
     // Loop every 30 minutes from start to end
     for (let totalMin = startTotalMinutes; totalMin < endTotalMinutes; totalMin += 30) {
-        const h = Math.floor(totalMin / 60);
-        const m = totalMin % 60;
+        let currentLoopTotal = totalMin;
+        const h = Math.floor((currentLoopTotal % 1440) / 60);
+        const m = currentLoopTotal % 60;
 
         const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-        const slotDateTime = new Date(`${date}T${timeStr}:00`);
+
+        // تحديد تاريخ الموعد (ممكن يكون اليوم التالي لو طاف الساعة 12 بالليل)
+        let slotDate = date;
+        if (currentLoopTotal >= 1440) {
+            const nextDay = new Date(new Date(date).getTime() + 86400000);
+            slotDate = nextDay.toISOString().split('T')[0];
+        }
+
+        const slotDateTime = new Date(`${slotDate}T${timeStr}:00`);
         const slotStart = slotDateTime.getTime();
 
         // 1. فحص إذا كان الوقت قد مضى (لليوم الحالي)
