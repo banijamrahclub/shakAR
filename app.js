@@ -511,7 +511,7 @@ async function saveExpense() {
 
 async function deleteSale(id) {
     if (confirm("هل أنت متأكد من حذف هذه العملية؟")) {
-        state.history = state.history.filter(h => h.id !== id);
+        state.history = state.history.filter(h => (h._id || h.id) != id);
         await save();
         performSearch(); // تحديث النتائج
         updateGlobalStats();
@@ -520,7 +520,7 @@ async function deleteSale(id) {
 
 async function deleteExpense(id) {
     if (confirm("هل أنت متأكد من حذف هذا المصروف؟")) {
-        state.expenses = state.expenses.filter(e => e.id !== id);
+        state.expenses = state.expenses.filter(e => (e._id || e.id) != id);
         await save();
         performSearch(); // تحديث النتائج
         updateGlobalStats();
@@ -591,7 +591,7 @@ function performSearch() {
                     ${daySales.map(h => `
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; padding-bottom:5px; border-bottom:1px dashed rgba(255,255,255,0.05);">
                             <span>${h.time} - ${h.items} (${h.total.toFixed(3)})</span>
-                            <span onclick="deleteSale(${h.id})" style="color:var(--danger); cursor:pointer; font-size:0.9rem;">🗑️</span>
+                            <span onclick="deleteSale('${h._id || h.id}')" style="color:var(--danger); cursor:pointer; font-size:0.9rem;">🗑️</span>
                         </div>
                     `).join('') || '<div style="color:var(--text-muted)">لا توجد مبيعات</div>'}
                 </div>
@@ -603,7 +603,7 @@ function performSearch() {
                     ${dayExps.map(e => `
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; padding-bottom:5px; border-bottom:1px dashed rgba(255,255,255,0.05);">
                             <span>${e.note || 'مصرف'}: ${e.amount.toFixed(3)}</span>
-                            <span onclick="deleteExpense(${e.id})" style="color:var(--danger); cursor:pointer; font-size:0.9rem;">🗑️</span>
+                            <span onclick="deleteExpense('${e._id || e.id}')" style="color:var(--danger); cursor:pointer; font-size:0.9rem;">🗑️</span>
                         </div>
                     `).join('') || '<div style="color:var(--text-muted)">لا توجد مصاريف</div>'}
                 </div>

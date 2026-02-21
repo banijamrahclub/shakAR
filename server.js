@@ -20,18 +20,25 @@ app.use(express.json({ limit: '50mb' }));
 
 // --- CONNECT TO MONGODB ---
 let isCloud = false;
-if (MONGODB_URI) {
-    mongoose.connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-        .then(() => {
+
+async function startServer() {
+    if (MONGODB_URI) {
+        try {
+            console.log("Connecting to MongoDB Cloud... ⏳");
+            await mongoose.connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true });
             console.log("Connected to MongoDB Cloud ✅");
             isCloud = true;
-        })
-        .catch(err => {
-            console.error("MongoDB Connection Error: ", err);
+            await initializeDB();
+        } catch (err) {
+            console.error("!!! MongoDB Connection Failed !!! ❌", err.message);
             console.log("Falling back to local db.json ⚠️");
-        });
-} else {
-    console.log("MONGODB_URI not found. Running with local db.json ⚠️");
+            await initializeDB();
+        }
+    } else {
+        console.log("No MONGODB_URI found. Running with local db.json ⚠️");
+        await initializeDB();
+    }
+    app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT} (Cloud: ${isCloud}) 🚀`));
 }
 
 const defaultServices = [
@@ -77,7 +84,6 @@ async function initializeDB() {
         }
     }
 }
-setTimeout(initializeDB, 5000); // Wait a bit for connection
 
 // --- API ROUTES ---
 
@@ -85,7 +91,6 @@ async function cleanExpiredPending() {
     try {
         const now = new Date().getTime();
         if (isCloud) {
-            // حذف المواعيد المعلقة التي بدأت قبل الآن
             await Appointment.deleteMany({
                 status: 'pending',
                 startTime: { $lt: new Date().toISOString() }
@@ -111,21 +116,15 @@ app.get('/api/calendar/busy', async (req, res) => {
     await cleanExpiredPending();
     const requestDay = start.split('T')[0];
     let allBusy = [];
-
     try {
         if (isCloud) {
-            const localApps = await Appointment.find({
-                startTime: { $regex: '^' + requestDay }
-            });
+            const localApps = await Appointment.find({ startTime: { $regex: '^' + requestDay } });
             allBusy = localApps.map(app => ({ start: app.startTime, end: app.endTime }));
         } else {
             const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-            allBusy = (data.appointments || [])
-                .filter(app => app.startTime && app.startTime.startsWith(requestDay))
-                .map(app => ({ start: app.startTime, end: app.endTime }));
+            allBusy = (data.appointments || []).filter(app => app.startTime && app.startTime.startsWith(requestDay)).map(app => ({ start: app.startTime, end: app.endTime }));
         }
     } catch (e) { console.error("Local Busy Error:", e); }
-
     if (GAS_URL && !GAS_URL.includes('ضع_رابط')) {
         try {
             const response = await fetch(`${GAS_URL}?date=${requestDay}`);
@@ -165,7 +164,6 @@ app.post('/api/calendar/confirm', async (req, res) => {
                 fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
             }
         }
-
         if (appData) {
             if (GAS_URL && !GAS_URL.includes('ضع_رابط')) {
                 try {
@@ -174,9 +172,7 @@ app.post('/api/calendar/confirm', async (req, res) => {
                 } catch (e) { console.error("GAS Booking Error:", e); }
             }
             res.json({ success: true });
-        } else {
-            res.json({ success: false, error: "Not found" });
-        }
+        } else { res.json({ success: false, error: "Not found" }); }
     } catch (err) { res.status(500).json({ success: false }); }
 });
 
@@ -226,7 +222,6 @@ app.post('/api/calendar/cancel', async (req, res) => {
                 fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
             }
         }
-
         if (appToCancel) {
             if (GAS_URL && !GAS_URL.includes('ضع_رابط')) {
                 try {
@@ -244,25 +239,48 @@ app.post('/api/save', async (req, res) => {
     try {
         if (isCloud) {
             const { history, expenses, fixedExpenses, services, settings } = req.body;
-            // تحديث جماعي (بسيط لتجنب التعقيد)
+
+            // 1. مزامنة المبيعات (History)
             if (history) {
+                const incomingIds = history.map(h => (h._id || h.id));
+                // حذف العمليات التي لم تعد موجودة في الواجهة
+                await Sale.deleteMany({ _id: { $nin: incomingIds.filter(id => id && id.length > 15) } }); // حذف حسب MongoDB ID
+                // إضافة الجديد أو تحديث الحالي
                 for (let h of history) {
-                    if (!h._id) await new Sale(h).save();
+                    if (h._id) {
+                        await Sale.findByIdAndUpdate(h._id, h);
+                    } else {
+                        await new Sale(h).save();
+                    }
                 }
             }
+
+            // 2. مزامنة المصاريف
             if (expenses) {
+                const incomingIds = expenses.map(e => (e._id || e.id));
+                await Expense.deleteMany({ _id: { $nin: incomingIds.filter(id => id && id.length > 15) } });
                 for (let e of expenses) {
-                    if (!e._id) await new Expense(e).save();
+                    if (e._id) {
+                        await Expense.findByIdAndUpdate(e._id, e);
+                    } else {
+                        await new Expense(e).save();
+                    }
                 }
             }
+
+            // 3. المصاريف الثابتة
             if (fixedExpenses) {
                 await FixedExpense.deleteMany({});
                 await FixedExpense.insertMany(fixedExpenses);
             }
+
+            // 4. الخدمات
             if (services) {
                 await Service.deleteMany({});
                 await Service.insertMany(services);
             }
+
+            // 5. الإعدادات
             if (settings) {
                 for (let key in settings) {
                     await Setting.findOneAndUpdate({ key }, { value: settings[key] }, { upsert: true });
@@ -272,7 +290,10 @@ app.post('/api/save', async (req, res) => {
             fs.writeFileSync(DB_FILE, JSON.stringify(req.body, null, 2));
         }
         res.json({ success: true });
-    } catch (e) { res.status(500).json({ success: false }); }
+    } catch (e) {
+        console.error("Save Error:", e);
+        res.status(500).json({ success: false });
+    }
 });
 
 app.get('/', (req, res) => res.sendFile(path.resolve(__dirname, 'booking.html')));
@@ -280,4 +301,4 @@ app.get('/h-shakar', (req, res) => res.sendFile(path.resolve(__dirname, 'index.h
 app.use(express.static(__dirname));
 app.get('*', (req, res) => res.sendFile(path.resolve(__dirname, 'booking.html')));
 
-app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
+startServer();
