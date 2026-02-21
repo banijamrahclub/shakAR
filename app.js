@@ -64,6 +64,7 @@ async function loadData() {
         localStorage.setItem('sh_expenses', JSON.stringify(state.expenses));
         localStorage.setItem('sh_fixed', JSON.stringify(state.fixedExpenses));
         localStorage.setItem('sh_services', JSON.stringify(state.services));
+        localStorage.setItem('sh_settings', JSON.stringify(state.settings));
 
         console.log("Data synced from server correctly.");
     } catch (err) {

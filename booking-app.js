@@ -98,6 +98,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         const data = await res.json();
         bookingData.services = data.services || [];
         bookingData.settings = data.settings || { openTime: '10:00', closeTime: '22:00' };
+
+        // Save fetched data to localStorage
+        localStorage.setItem('sh_services', JSON.stringify(bookingData.services));
+        localStorage.setItem('sh_settings', JSON.stringify(bookingData.settings));
+
         renderServices();
     } catch (e) { console.error("Load error:", e); }
 
@@ -185,41 +190,55 @@ async function loadTimeSlots() {
         busyTime = await res.json();
     } catch (e) { console.error("Calendar fetch error:", e); }
 
-    // Generate slots based on settings
-    const openHour = parseInt((bookingData.settings.openTime || '10:00').split(':')[0]);
-    const closeHour = parseInt((bookingData.settings.closeTime || '22:00').split(':')[0]);
+    // Generate slots based on settings (Minute-based for precision)
+    const settings = bookingData.settings || { openTime: '10:00', closeTime: '22:00' };
+
+    // Convert current settings to total minutes
+    const [openH, openM] = (settings.openTime || '10:00').split(':').map(Number);
+    const [closeH, closeM] = (settings.closeTime || '22:00').split(':').map(Number);
+
+    const startTotalMinutes = (openH * 60) + (openM || 0);
+    const endTotalMinutes = (closeH * 60) + (closeM || 0);
 
     let html = "";
-    for (let h = openHour; h < closeHour; h++) {
-        for (let m of ["00", "30"]) {
-            const timeStr = `${String(h).padStart(2, '0')}:${m}`;
-            const slotDateTime = new Date(`${date}T${timeStr}:00`);
-            const slotStart = slotDateTime.getTime();
 
-            // 1. فحص إذا كان الوقت قد مضى (لليوم الحالي)
-            let isPast = false;
-            if (date === currentDay) {
-                if (slotDateTime < now) isPast = true;
-            }
+    // Loop every 30 minutes from start to end
+    for (let totalMin = startTotalMinutes; totalMin < endTotalMinutes; totalMin += 30) {
+        const h = Math.floor(totalMin / 60);
+        const m = totalMin % 60;
 
-            // 2. فحص إذا كان الموعد محجوز في قوقل
-            const isBusy = busyTime.some(b => {
-                const bStart = new Date(b.start).getTime();
-                const bEnd = new Date(b.end).getTime();
-                return (slotStart >= bStart && slotStart < bEnd);
-            });
+        const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+        const slotDateTime = new Date(`${date}T${timeStr}:00`);
+        const slotStart = slotDateTime.getTime();
 
-            const disabled = isPast || isBusy;
-
-            html += `
-                <div class="option-item ${disabled ? 'busy' : ''}" 
-                     onclick="${disabled ? '' : `selectTime('${timeStr}')`}">
-                    ${timeStr}
-                    ${isPast ? '<div style="font-size:0.6rem; color:var(--danger)">مضى</div>' : ''}
-                </div>
-            `;
+        // 1. فحص إذا كان الوقت قد مضى (لليوم الحالي)
+        let isPast = false;
+        if (date === currentDay) {
+            if (slotDateTime < now) isPast = true;
         }
+
+        // 2. فحص إذا كان الموعد محجوز في قوقل
+        const isBusy = busyTime.some(b => {
+            const bStart = new Date(b.start).getTime();
+            const bEnd = new Date(b.end).getTime();
+            return (slotStart >= bStart && slotStart < bEnd);
+        });
+
+        const disabled = isPast || isBusy;
+
+        html += `
+            <div class="option-item ${disabled ? 'busy' : ''}" 
+                 onclick="${disabled ? '' : `selectTime('${timeStr}')`}">
+                ${timeStr}
+                ${isPast ? '<div style="font-size:0.6rem; color:var(--danger)">مضى</div>' : ''}
+            </div>
+        `;
+
+        // Safety break
+        if (totalMin > 1440) break;
     }
+
+    if (!html) html = '<p style="grid-column: span 2; color: var(--danger);">لا توجد مواعيد متاحة في هذا الوقت.</p>';
     grid.innerHTML = html;
 }
 
