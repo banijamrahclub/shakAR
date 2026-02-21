@@ -502,6 +502,34 @@ async function saveExpense() {
     updateGlobalStats();
 }
 
+async function deleteSale(id) {
+    if (confirm("هل أنت متأكد من حذف هذه العملية؟")) {
+        state.history = state.history.filter(h => h.id !== id);
+        await save();
+        performSearch(); // تحديث النتائج
+        updateGlobalStats();
+    }
+}
+
+async function deleteExpense(id) {
+    if (confirm("هل أنت متأكد من حذف هذا المصروف؟")) {
+        state.expenses = state.expenses.filter(e => e.id !== id);
+        await save();
+        performSearch(); // تحديث النتائج
+        updateGlobalStats();
+    }
+}
+
+async function clearDayAccounting(date) {
+    if (confirm(`تحذير: سيتم مسح جميع مبيعات ومصاريف يوم ${date}. هل أنت متأكد؟`)) {
+        state.history = state.history.filter(h => h.date !== date);
+        state.expenses = state.expenses.filter(e => e.date !== date);
+        await save();
+        performSearch(); // تحديث النتائج
+        updateGlobalStats();
+    }
+}
+
 function renderHistoryTable() {
     const monthSelect = document.getElementById('history-month');
     const yearSelect = document.getElementById('history-year');
@@ -530,23 +558,61 @@ function performSearch() {
     if (!date) return;
     const s = getStatsForDate(date);
     const box = document.getElementById('search-result');
+    if (!box) return;
     box.style.display = 'block';
+
+    const daySales = state.history.filter(h => h.date === date);
+    const dayExps = state.expenses.filter(e => e.date === date);
+
     box.innerHTML = `
-        <h4 style="margin-bottom:15px; border-bottom:1px solid var(--primary); padding-bottom:10px;">تقرير يوم: ${date}</h4>
+        <h4 style="margin-bottom:15px; border-bottom:1px solid var(--primary); padding-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+            تقرير يوم: ${date}
+            <button onclick="clearDayAccounting('${date}')" style="background:var(--danger); color:white; border:none; padding:5px 10px; border-radius:8px; font-size:0.7rem; cursor:pointer;">🗑️ مسح محاسبة اليوم</button>
+        </h4>
+        
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; font-size:1.1rem; margin-bottom: 20px;">
             <div>دخل الحلاق: <span style="font-weight:700;">${s.barber.toFixed(3)}</span></div>
             <div>دخل الموظف: <span style="font-weight:700;">${s.employee.toFixed(3)}</span></div>
             <div>المصاريف: <span style="color:var(--danger); font-weight:700;">${s.expenses.toFixed(3)}</span></div>
             <div>صافي الربح: <span style="color:${s.net < 0 ? 'var(--danger)' : 'var(--success)'}; font-weight:800; border:1px solid; padding:2px 10px; border-radius:10px;">${s.net.toFixed(3)}</span></div>
         </div>
-        <div style="background: rgba(255,255,255,0.02); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
-            <h5 style="margin-bottom: 10px; color: var(--primary);">تفصيل الدفع:</h5>
-            <div style="display: flex; gap: 20px;">
-                <div style="color: var(--success);">💵 كاش: <b>${s.cash.toFixed(3)}</b></div>
-                <div style="color: #60a5fa;">🏦 بينفت: <b>${s.benefit.toFixed(3)}</b></div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:20px;">
+             <div style="background: rgba(255,255,255,0.02); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
+                <h5 style="margin-bottom: 10px; color: var(--success); border-bottom:1px solid var(--border);">📊 العمليات (${daySales.length})</h5>
+                <div style="max-height: 200px; overflow-y: auto; font-size:0.85rem;">
+                    ${daySales.map(h => `
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; padding-bottom:5px; border-bottom:1px dashed rgba(255,255,255,0.05);">
+                            <span>${h.time} - ${h.items} (${h.total.toFixed(3)})</span>
+                            <span onclick="deleteSale(${h.id})" style="color:var(--danger); cursor:pointer; font-size:0.9rem;">🗑️</span>
+                        </div>
+                    `).join('') || '<div style="color:var(--text-muted)">لا توجد مبيعات</div>'}
+                </div>
+            </div>
+            
+            <div style="background: rgba(255,255,255,0.02); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
+                <h5 style="margin-bottom: 10px; color: var(--danger); border-bottom:1px solid var(--border);">💸 المصاريف (${dayExps.length})</h5>
+                <div style="max-height: 200px; overflow-y: auto; font-size:0.85rem;">
+                    ${dayExps.map(e => `
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; padding-bottom:5px; border-bottom:1px dashed rgba(255,255,255,0.05);">
+                            <span>${e.note || 'مصرف'}: ${e.amount.toFixed(3)}</span>
+                            <span onclick="deleteExpense(${e.id})" style="color:var(--danger); cursor:pointer; font-size:0.9rem;">🗑️</span>
+                        </div>
+                    `).join('') || '<div style="color:var(--text-muted)">لا توجد مصاريف</div>'}
+                </div>
             </div>
         </div>
-        <button class="btn-action" style="margin-top:20px; background:var(--primary); color:black;" onclick="setManagedDate('${date}')">⚙️ إدارة هذا التاريخ (تسجيل مصروفات/خدمات فيه)</button>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; background: rgba(255,255,255,0.02); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
+            <div>
+                <h5 style="margin-bottom: 5px; color: var(--primary);">تفصيل الدفع:</h5>
+                <div style="display: flex; gap: 20px;">
+                    <div style="color: var(--success);">💵 كاش: <b>${s.cash.toFixed(3)}</b></div>
+                    <div style="color: #60a5fa;">🏦 بينفت: <b>${s.benefit.toFixed(3)}</b></div>
+                </div>
+            </div>
+            <button class="btn-action" style="width:auto; padding:10px 20px; background:var(--primary); color:black;" onclick="setManagedDate('${date}')">⚙️ إدارة هذا التاريخ</button>
+        </div>
     `;
 }
 
