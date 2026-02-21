@@ -8,8 +8,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const DB_FILE = path.resolve(__dirname, 'db.json');
 
-// الرابط الخاص بجسر قوقل كلندر المجاني
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyPZSbr_vKRODsj9YP2aBPaoE53z-0Jsmn3HBebX84skye35CiS_70AplD-GDLnMs4W/exec';
+// الرابط الخاص بجسر قوقل الخارق (Sheets + Calendar)
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxCZPQnATAWrq3KFUgioT1SMeHvvG7jhXpoWAt9DPibBNQqc909vYRWzp5eOK-R1QPg/exec';
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
@@ -31,7 +31,27 @@ const defaultServices = [
     { name: "البروتين", price: 15.0, duration: 90 }
 ];
 
-function initializeDB() {
+// --- SYNC WITH GOOGLE SHEETS ---
+
+async function syncWithCloud() {
+    console.log("🔄 Syncing with Google Sheets...");
+    try {
+        const res = await fetch(`${GAS_URL}?action=loadState`);
+        const cloudData = await res.json();
+        if (cloudData && typeof cloudData === 'object' && Object.keys(cloudData).length > 0) {
+            fs.writeFileSync(DB_FILE, JSON.stringify(cloudData, null, 2));
+            console.log("✅ Data synced from Google Sheets!");
+        } else {
+            console.log("⚠️ Google Sheets is empty, using local or defaults.");
+            initializeLocalDB();
+        }
+    } catch (e) {
+        console.error("❌ Cloud Sync Failed:", e.message);
+        initializeLocalDB();
+    }
+}
+
+function initializeLocalDB() {
     if (!fs.existsSync(DB_FILE)) {
         fs.writeFileSync(DB_FILE, JSON.stringify({
             history: [],
@@ -47,12 +67,30 @@ function initializeDB() {
         }, null, 2));
     }
 }
-initializeDB();
+
+async function saveToCloud(data) {
+    try {
+        await fetch(`${GAS_URL}?action=saveState`, {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+        console.log("☁️ State backed up to Google Sheets!");
+    } catch (e) { console.error("Cloud Backup Failed:", e); }
+}
+
+// Start sequence
+async function startServer() {
+    await syncWithCloud();
+    app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT} (Cloud Sync Enabled) 🚀`));
+}
 
 // --- API ROUTES ---
 
 function readDB() { return JSON.parse(fs.readFileSync(DB_FILE, 'utf8')); }
-function writeDB(data) { fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2)); }
+function writeDB(data) {
+    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+    saveToCloud(data); // نسخة خلفية في قوقل شيت دائماً
+}
 
 async function cleanExpiredPending() {
     try {
@@ -81,13 +119,12 @@ app.get('/api/calendar/busy', async (req, res) => {
             .map(app => ({ start: app.startTime, end: app.endTime }));
     } catch (e) { console.error("Local Busy Error:", e); }
 
-    if (GAS_URL && !GAS_URL.includes('ضع_رابط')) {
-        try {
-            const response = await fetch(`${GAS_URL}?date=${requestDay}`);
-            const gasBusy = await response.json();
-            if (Array.isArray(gasBusy)) allBusy = [...allBusy, ...gasBusy];
-        } catch (err) { console.error("GAS Fetch Error:", err); }
-    }
+    try {
+        const response = await fetch(`${GAS_URL}?action=getBusy&date=${requestDay}`);
+        const gasBusy = await response.json();
+        if (Array.isArray(gasBusy)) allBusy = [...allBusy, ...gasBusy];
+    } catch (err) { console.error("GAS Fetch Error:", err); }
+
     res.json(allBusy);
 });
 
@@ -110,12 +147,14 @@ app.post('/api/calendar/confirm', async (req, res) => {
         if (appData) {
             appData.status = 'confirmed';
             writeDB(data);
-            if (GAS_URL && !GAS_URL.includes('ضع_رابط')) {
-                try {
-                    const params = `action=book&name=${encodeURIComponent(appData.name)}&phone=${encodeURIComponent(appData.phone)}&service=${encodeURIComponent(appData.service)}&startTime=${encodeURIComponent(appData.startTime)}&endTime=${encodeURIComponent(appData.endTime)}`;
-                    await fetch(`${GAS_URL}?${params}`);
-                } catch (e) { console.error("GAS Booking Error:", e); }
-            }
+            try {
+                const params = `action=book&name=${encodeURIComponent(appData.name)}&phone=${encodeURIComponent(appData.phone)}&service=${encodeURIComponent(appData.service)}&startTime=${encodeURIComponent(appData.startTime)}&endTime=${encodeURIComponent(appData.endTime)}`;
+                await fetch(GAS_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: params
+                });
+            } catch (e) { console.error("GAS Booking Error:", e); }
             res.json({ success: true });
         } else { res.json({ success: false, error: "Not found" }); }
     } catch (err) { res.status(500).json({ success: false }); }
@@ -124,7 +163,7 @@ app.post('/api/calendar/confirm', async (req, res) => {
 app.get('/api/data', (req, res) => {
     try {
         res.json(readDB());
-    } catch (e) { res.json({ history: [], expenses: [], fixedExpenses: [], services: [], appointments: [], settings: { openTime: '10:00', closeTime: '22:00' } }); }
+    } catch (e) { res.json({ history: [], expenses: [], fixedExpenses: [], services: [], barbers: [], appointments: [], settings: { openTime: '10:00', closeTime: '22:00' } }); }
 });
 
 app.post('/api/calendar/cancel', async (req, res) => {
@@ -141,13 +180,11 @@ app.post('/api/calendar/cancel', async (req, res) => {
         if (appToCancel) {
             data.appointments = data.appointments.filter(a => !(a.name === appToCancel.name && a.startTime === appToCancel.startTime));
             writeDB(data);
-            if (GAS_URL && !GAS_URL.includes('ضع_رابط')) {
-                try {
-                    const end = appToCancel.endTime || new Date(new Date(appToCancel.startTime).getTime() + 30 * 60000).toISOString();
-                    const deleteUrl = `${GAS_URL}?action=delete&name=${encodeURIComponent(appToCancel.name)}&startTime=${encodeURIComponent(appToCancel.startTime)}&endTime=${encodeURIComponent(end)}`;
-                    await fetch(deleteUrl);
-                } catch (e) { console.error("GAS Delete Error:", e); }
-            }
+            try {
+                const end = appToCancel.endTime || new Date(new Date(appToCancel.startTime).getTime() + 30 * 60000).toISOString();
+                const deleteUrl = `${GAS_URL}?action=delete&name=${encodeURIComponent(appToCancel.name)}&startTime=${encodeURIComponent(appToCancel.startTime)}&endTime=${encodeURIComponent(end)}`;
+                await fetch(deleteUrl);
+            } catch (e) { console.error("GAS Delete Error:", e); }
             res.json({ success: true });
         } else { res.json({ success: false, error: "Not found" }); }
     } catch (e) { res.status(500).json({ success: false }); }
@@ -165,4 +202,4 @@ app.get('/h-shakar', (req, res) => res.sendFile(path.resolve(__dirname, 'index.h
 app.use(express.static(__dirname));
 app.get('*', (req, res) => res.sendFile(path.resolve(__dirname, 'booking.html')));
 
-app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT} (Local Mode) 🚀`));
+startServer();
