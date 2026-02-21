@@ -77,6 +77,9 @@
                 <div class="nav-link" onclick="handleNav('appointments')">
                     <span>📅 الحجوزات القادمة</span>
                 </div>
+                <div class="nav-link" onclick="handleNav('settings')">
+                    <span>⚙️ أوقات العمل</span>
+                </div>
             </nav>
             <div style="padding: 20px; border-top: 1px solid var(--border);">
                 <p id="role-status" style="color: var(--primary); font-size: 0.8rem; text-align: center;">المسؤول:
@@ -319,6 +322,39 @@
                                 <!-- JS Generated -->
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE: SETTINGS -->
+            <div id="page-settings" class="page">
+                <div class="card-glass">
+                    <h2 style="margin-bottom: 20px;">⚙️ إعدادات أوقات العمل</h2>
+                    <p style="color: var(--text-muted); margin-bottom: 25px;">حدد أوقات بدء ونهاية الدوام ليتمكن الزبائن
+                        من الحجز خلالها فقط.</p>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 500px;">
+                        <div class="input-group">
+                            <label style="display: block; margin-bottom: 10px; color: var(--primary);">وقت فتح
+                                الصالون:</label>
+                            <input type="time" id="setting-open-time" class="input-field"
+                                style="background:var(--bg-input); color:white; border-radius:12px; border:1px solid var(--border); padding:12px; font-weight:700;">
+                        </div>
+                        <div class="input-group">
+                            <label style="display: block; margin-bottom: 10px; color: var(--primary);">وقت إغلاق
+                                الصالون:</label>
+                            <input type="time" id="setting-close-time" class="input-field"
+                                style="background:var(--bg-input); color:white; border-radius:12px; border:1px solid var(--border); padding:12px; font-weight:700;">
+                        </div>
+                    </div>
+
+                    <button class="btn-action"
+                        style="margin-top: 30px; max-width: 250px; background:var(--primary); color:black;"
+                        onclick="saveSettings()">💾 حفظ أوقات الدوام</button>
+
+                    <div
+                        style="margin-top: 30px; padding: 15px; background: rgba(255,165,0,0.1); border: 1px solid orange; border-radius: 12px; color: orange; font-size: 0.85rem;">
+                        ⚠️ ملاحظة: المواعيد السابقة لن تتأثر، التغيير سيطبق على الحجوزات الجديدة فقط.
                     </div>
                 </div>
             </div>

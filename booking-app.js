@@ -97,6 +97,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const res = await fetch(`${API_BASE}/api/data`);
         const data = await res.json();
         bookingData.services = data.services || [];
+        bookingData.settings = data.settings || { openTime: '10:00', closeTime: '22:00' };
         renderServices();
     } catch (e) { console.error("Load error:", e); }
 
@@ -184,9 +185,12 @@ async function loadTimeSlots() {
         busyTime = await res.json();
     } catch (e) { console.error("Calendar fetch error:", e); }
 
-    // Generate slots (from 9 AM to 11 PM, every 30 mins)
+    // Generate slots based on settings
+    const openHour = parseInt((bookingData.settings.openTime || '10:00').split(':')[0]);
+    const closeHour = parseInt((bookingData.settings.closeTime || '22:00').split(':')[0]);
+
     let html = "";
-    for (let h = 9; h < 23; h++) {
+    for (let h = openHour; h < closeHour; h++) {
         for (let m of ["00", "30"]) {
             const timeStr = `${String(h).padStart(2, '0')}:${m}`;
             const slotDateTime = new Date(`${date}T${timeStr}:00`);

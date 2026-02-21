@@ -20,6 +20,7 @@ let state = {
     fixedExpenses: [],
     services: defaultServices,
     appointments: [],
+    settings: { openTime: '10:00', closeTime: '22:00' }, // إعدادات افتراضية
     managedDate: new Date().toISOString().split('T')[0] // التاريخ الذي يتم إدارته حالياً (الافتراضي هو اليوم)
 };
 
@@ -56,6 +57,7 @@ async function loadData() {
         state.fixedExpenses = cloudData.fixedExpenses || [];
         state.services = (cloudData.services && cloudData.services.length > 0) ? cloudData.services : defaultServices;
         state.appointments = cloudData.appointments || [];
+        state.settings = cloudData.settings || { openTime: '10:00', closeTime: '22:00' };
 
         // نحفظ في المتصفح فقط كاحتياط (نسخة محلية)
         localStorage.setItem('sh_history', JSON.stringify(state.history));
@@ -70,6 +72,7 @@ async function loadData() {
         state.expenses = JSON.parse(localStorage.getItem('sh_expenses')) || [];
         state.fixedExpenses = JSON.parse(localStorage.getItem('sh_fixed')) || [];
         state.services = JSON.parse(localStorage.getItem('sh_services')) || defaultServices;
+        state.settings = JSON.parse(localStorage.getItem('sh_settings')) || { openTime: '10:00', closeTime: '22:00' };
         state.appointments = [];
     }
 }
@@ -80,6 +83,7 @@ async function save() {
     localStorage.setItem('sh_expenses', JSON.stringify(state.expenses));
     localStorage.setItem('sh_fixed', JSON.stringify(state.fixedExpenses));
     localStorage.setItem('sh_services', JSON.stringify(state.services));
+    localStorage.setItem('sh_settings', JSON.stringify(state.settings));
 
     // 2. إرسال للسيرفر ليحفظها في ملف db.json
     try {
@@ -91,7 +95,8 @@ async function save() {
                 expenses: state.expenses,
                 fixedExpenses: state.fixedExpenses,
                 services: state.services,
-                appointments: state.appointments
+                appointments: state.appointments,
+                settings: state.settings
             })
         });
     } catch (err) {
@@ -168,6 +173,7 @@ function updateUI() {
         if (text.includes('كشف') && state.currentPage === 'history') link.classList.add('active');
         if (text.includes('أكثر طلباً') && state.currentPage === 'top-services') link.classList.add('active');
         if (text.includes('إدارة الخدمات') && state.currentPage === 'manage-services') link.classList.add('active');
+        if (text.includes('أوقات العمل') && state.currentPage === 'settings') link.classList.add('active');
         if (text.includes('الحجوزات') && state.currentPage === 'appointments') link.classList.add('active');
     });
 
@@ -184,6 +190,7 @@ function updateUI() {
     if (state.currentPage === 'history') renderHistoryTable();
     if (state.currentPage === 'top-services') renderTopServices();
     if (state.currentPage === 'manage-services') renderManageServices();
+    if (state.currentPage === 'settings') renderSettings();
     if (state.currentPage === 'appointments') renderAppointmentsTable();
     updateGlobalStats();
 
@@ -671,6 +678,24 @@ async function deleteService(index) {
         renderManageServices();
         renderServices();
     }
+}
+
+function renderSettings() {
+    if (state.settings) {
+        document.getElementById('setting-open-time').value = state.settings.openTime || '10:00';
+        document.getElementById('setting-close-time').value = state.settings.closeTime || '22:00';
+    }
+}
+
+async function saveSettings() {
+    const openTime = document.getElementById('setting-open-time').value;
+    const closeTime = document.getElementById('setting-close-time').value;
+
+    if (!openTime || !closeTime) return alert("يرجى تحديد أوقات الفتح والإغلاق");
+
+    state.settings = { openTime, closeTime };
+    await save();
+    alert("تم حفظ أوقات العمل بنجاح! سيتم تطبيقها على الحجوزات الجديدة.");
 }
 
 function updateGlobalStats() {

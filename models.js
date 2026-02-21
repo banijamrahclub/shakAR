@@ -37,10 +37,16 @@ const serviceSchema = new mongoose.Schema({
     duration: { type: Number, default: 30 }
 });
 
+const settingSchema = new mongoose.Schema({
+    key: { type: String, unique: true },
+    value: mongoose.Schema.Types.Mixed
+});
+
 module.exports = {
     Appointment: mongoose.model('Appointment', appointmentSchema),
     Sale: mongoose.model('Sale', saleSchema),
     Expense: mongoose.model('Expense', expenseSchema),
     FixedExpense: mongoose.model('FixedExpense', fixedExpenseSchema),
-    Service: mongoose.model('Service', serviceSchema)
+    Service: mongoose.model('Service', serviceSchema),
+    Setting: mongoose.model('Setting', settingSchema)
 };

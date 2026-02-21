@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const fetch = require('node-fetch');
 const mongoose = require('mongoose');
-const { Appointment, Sale, Expense, FixedExpense, Service } = require('./models');
+const { Appointment, Sale, Expense, FixedExpense, Service, Setting } = require('./models');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -53,11 +53,17 @@ const defaultServices = [
 
 async function initializeDB() {
     if (isCloud) {
+        // Seed Services
         const count = await Service.countDocuments();
         if (count === 0) {
             await Service.insertMany(defaultServices);
             console.log("Default services seeded to Cloud.");
         }
+        // Seed Default Settings (Opening Hours)
+        const openTime = await Setting.findOne({ key: 'openTime' });
+        if (!openTime) await new Setting({ key: 'openTime', value: '10:00' }).save();
+        const closeTime = await Setting.findOne({ key: 'closeTime' });
+        if (!closeTime) await new Setting({ key: 'closeTime', value: '22:00' }).save();
     } else {
         if (!fs.existsSync(DB_FILE)) {
             fs.writeFileSync(DB_FILE, JSON.stringify({
@@ -65,7 +71,8 @@ async function initializeDB() {
                 expenses: [],
                 fixedExpenses: [],
                 services: defaultServices,
-                appointments: []
+                appointments: [],
+                settings: { openTime: '10:00', closeTime: '22:00' }
             }, null, 2));
         }
     }
@@ -176,19 +183,22 @@ app.post('/api/calendar/confirm', async (req, res) => {
 app.get('/api/data', async (req, res) => {
     try {
         if (isCloud) {
-            const [history, expenses, fixedExpenses, services, appointments] = await Promise.all([
+            const [history, expenses, fixedExpenses, services, appointments, settingsList] = await Promise.all([
                 Sale.find().sort({ _id: -1 }).limit(1000),
                 Expense.find().sort({ _id: -1 }),
                 FixedExpense.find(),
                 Service.find(),
-                Appointment.find()
+                Appointment.find(),
+                Setting.find()
             ]);
-            res.json({ history, expenses, fixedExpenses, services, appointments });
+            const settings = {};
+            settingsList.forEach(s => settings[s.key] = s.value);
+            res.json({ history, expenses, fixedExpenses, services, appointments, settings });
         } else {
             const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
             res.json(data);
         }
-    } catch (e) { res.json({ history: [], expenses: [], fixedExpenses: [], services: [], appointments: [] }); }
+    } catch (e) { res.json({ history: [], expenses: [], fixedExpenses: [], services: [], appointments: [], settings: { openTime: '10:00', closeTime: '22:00' } }); }
 });
 
 app.post('/api/calendar/cancel', async (req, res) => {
@@ -233,7 +243,7 @@ app.post('/api/calendar/cancel', async (req, res) => {
 app.post('/api/save', async (req, res) => {
     try {
         if (isCloud) {
-            const { history, expenses, fixedExpenses, services } = req.body;
+            const { history, expenses, fixedExpenses, services, settings } = req.body;
             // تحديث جماعي (بسيط لتجنب التعقيد)
             if (history) {
                 for (let h of history) {
@@ -252,6 +262,11 @@ app.post('/api/save', async (req, res) => {
             if (services) {
                 await Service.deleteMany({});
                 await Service.insertMany(services);
+            }
+            if (settings) {
+                for (let key in settings) {
+                    await Setting.findOneAndUpdate({ key }, { value: settings[key] }, { upsert: true });
+                }
             }
         } else {
             fs.writeFileSync(DB_FILE, JSON.stringify(req.body, null, 2));
