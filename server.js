@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 3000;
 const DB_FILE = path.resolve(__dirname, 'db.json');
 
 // الرابط الخاص بجسر قوقل الخارق (Sheets + Calendar)
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxCZPQnATAWrq3KFUgioT1SMeHvvG7jhXpoWAt9DPibBNQqc909vYRWzp5eOK-R1QPg/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzhQOIGbGO6DWXT7DlZoBtw7eAdOPigh5vqpxsmWdV5uYxGyx-morDu13zYFjUu94V-/exec';
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
