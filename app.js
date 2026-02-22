@@ -50,12 +50,51 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, 5000);
 });
 
+let isSaving = false;
+let savePending = false;
+
+async function save() {
+    // 1. التحديث المحلي فوري (لحماية البيانات لو أغلق المتصفح)
+    localStorage.setItem('sh_history', JSON.stringify(state.history));
+    localStorage.setItem('sh_expenses', JSON.stringify(state.expenses));
+    localStorage.setItem('sh_fixed', JSON.stringify(state.fixedExpenses));
+    localStorage.setItem('sh_services', JSON.stringify(state.services));
+    localStorage.setItem('sh_barbers', JSON.stringify(state.barbers));
+    localStorage.setItem('sh_settings', JSON.stringify(state.settings));
+
+    if (isSaving) {
+        savePending = true; // نؤشر أن هناك بيانات أحدث يجب حفظها لاحقاً
+        return;
+    }
+
+    isSaving = true;
+    try {
+        const response = await fetch(`${API_BASE}/api/save`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(state)
+        });
+        if (!response.ok) throw new Error("Save error");
+    } catch (err) {
+        console.error("Cloud Save Error:", err);
+    } finally {
+        isSaving = false;
+        // إذا حدث تغيير أثناء الحفظ الحالي، نقوم بتشغيل المزامنة مرة أخرى فوراً
+        if (savePending) {
+            savePending = false;
+            save();
+        }
+    }
+}
+
+// تعديل loadData لمنع مسح البيانات المحلية غير المحفوظة
 async function loadData() {
+    if (isSaving || savePending) return; // لا تسحب بيانات من السيرفر لو كنت جاري الرفع لكي لا يحدث تضارب
+
     try {
         const res = await fetch(`${API_BASE}/api/data`);
         const cloudData = await res.json();
 
-        // تحديث حالة النظام ببيانات السيرفر إذا كانت موجودة
         state.history = cloudData.history || [];
         state.expenses = cloudData.expenses || [];
         state.fixedExpenses = cloudData.fixedExpenses || [];
@@ -64,7 +103,7 @@ async function loadData() {
         state.appointments = cloudData.appointments || [];
         state.settings = cloudData.settings || { openTime: '10:00', closeTime: '22:00' };
 
-        // نحفظ في المتصفح فقط كاحتياط (نسخة محلية)
+        // تحديث الباك اب المحلي
         localStorage.setItem('sh_history', JSON.stringify(state.history));
         localStorage.setItem('sh_expenses', JSON.stringify(state.expenses));
         localStorage.setItem('sh_fixed', JSON.stringify(state.fixedExpenses));
@@ -72,9 +111,9 @@ async function loadData() {
         localStorage.setItem('sh_barbers', JSON.stringify(state.barbers));
         localStorage.setItem('sh_settings', JSON.stringify(state.settings));
 
-        console.log("Data synced from server correctly.");
-    } catch (err) {
-        console.log("Server not found, using local storage...");
+        console.log("Sync down complete.");
+    } catch (e) {
+        console.log("Offline mode: reading from local storage");
         state.history = JSON.parse(localStorage.getItem('sh_history')) || [];
         state.expenses = JSON.parse(localStorage.getItem('sh_expenses')) || [];
         state.fixedExpenses = JSON.parse(localStorage.getItem('sh_fixed')) || [];
@@ -85,32 +124,8 @@ async function loadData() {
     }
 }
 
-async function save() {
-    // 1. حفظ في المتصفح كاحتياط
-    localStorage.setItem('sh_history', JSON.stringify(state.history));
-    localStorage.setItem('sh_expenses', JSON.stringify(state.expenses));
-    localStorage.setItem('sh_fixed', JSON.stringify(state.fixedExpenses));
-    localStorage.setItem('sh_services', JSON.stringify(state.services));
-    localStorage.setItem('sh_settings', JSON.stringify(state.settings));
-
-    // 2. إرسال للسيرفر ليحفظها في ملف db.json
-    try {
-        await fetch(`${API_BASE}/api/save`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                history: state.history,
-                expenses: state.expenses,
-                fixedExpenses: state.fixedExpenses,
-                services: state.services,
-                barbers: state.barbers,
-                appointments: state.appointments,
-                settings: state.settings
-            })
-        });
-    } catch (err) {
-        console.error("Failed to save to server:", err);
-    }
+function toggleActionButtons(disabled) {
+    // لم نعد نحتاج لتعطيل الأزرار بفضل نظام الطابور الجديد
 }
 
 // --- بقية وظائف النظام ---
@@ -440,10 +455,22 @@ async function confirmSale() {
         paymentMethod: paymentMethod // مضافة حديثاً
     };
     state.history.unshift(sale);
-    await save();
+    save(); // الحفظ يعمل في خلفية صامتة الآن
     clearCart();
     updateGlobalStats();
-    alert("تم تسجيل العملية بنجاح (" + (paymentMethod === 'cash' ? 'كاش' : 'بينفت') + ")");
+    showToast("تم تسجيل العملية بنجاح (" + (paymentMethod === 'cash' ? 'كاش' : 'بينفت') + ")");
+}
+
+function showToast(msg) {
+    const toast = document.createElement('div');
+    toast.innerText = msg;
+    toast.style.cssText = "position:fixed; bottom:20px; right:20px; background:var(--success); color:black; padding:15px 25px; border-radius:12px; z-index:9999; font-weight:800; animation: slideIn 0.3s ease;";
+    document.body.appendChild(toast);
+    setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transition = "0.5s";
+        setTimeout(() => toast.remove(), 500);
+    }, 3000);
 }
 
 function initProfitChart() {
@@ -527,8 +554,8 @@ async function saveExpense() {
     const note = document.getElementById('exp-note').value;
     if (isNaN(amt) || amt <= 0) return alert("مبلغ غير صحيح");
     state.expenses.unshift({ id: Date.now(), date: state.managedDate, amount: amt, note });
-    await save();
-    alert("تم حفظ المصروف بنجاح");
+    save();
+    showToast("تم حفظ المصروف بنجاح");
     document.getElementById('exp-amount').value = '';
     document.getElementById('exp-note').value = '';
     updateGlobalStats();
