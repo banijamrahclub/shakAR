@@ -68,14 +68,24 @@ function initializeLocalDB() {
     }
 }
 
+let isCloudSaving = false;
 async function saveToCloud(data) {
+    if (isCloudSaving) {
+        console.log("☁️ Cloud save already in progress, skipping duplicate...");
+        return;
+    }
+    isCloudSaving = true;
     try {
         await fetch(`${GAS_URL}?action=saveState`, {
             method: 'POST',
             body: JSON.stringify(data)
         });
         console.log("☁️ State backed up to Google Sheets!");
-    } catch (e) { console.error("Cloud Backup Failed:", e); }
+    } catch (e) { 
+        console.error("Cloud Backup Failed:", e); 
+    } finally {
+        isCloudSaving = false;
+    }
 }
 
 // Start sequence
@@ -87,9 +97,9 @@ async function startServer() {
 // --- API ROUTES ---
 
 function readDB() { return JSON.parse(fs.readFileSync(DB_FILE, 'utf8')); }
-function writeDB(data) {
+async function writeDB(data) {
     fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
-    saveToCloud(data); // نسخة خلفية في قوقل شيت دائماً
+    await saveToCloud(data); // ننتظر النسخة الخلفية لضمان عدم ضياع البيانات
 }
 
 async function cleanExpiredPending() {
@@ -102,7 +112,7 @@ async function cleanExpiredPending() {
             const startTime = new Date(app.startTime).getTime();
             return startTime >= now;
         });
-        if (data.appointments.length !== initialCount) writeDB(data);
+        if (data.appointments.length !== initialCount) await writeDB(data);
     } catch (e) { console.error("Cleanup error:", e); }
 }
 
@@ -134,7 +144,7 @@ app.post('/api/calendar/book', async (req, res) => {
     try {
         const data = readDB();
         data.appointments.push({ name, phone, service, price, startTime, endTime, status: 'pending', date: new Date().toISOString() });
-        writeDB(data);
+        await writeDB(data);
         res.json({ success: true });
     } catch (err) { res.status(500).json({ success: false }); }
 });
@@ -146,7 +156,7 @@ app.post('/api/calendar/confirm', async (req, res) => {
         const appData = data.appointments.find(a => a.name === name && a.startTime === startTime);
         if (appData) {
             appData.status = 'confirmed';
-            writeDB(data);
+            await writeDB(data);
             try {
                 const params = `action=book&name=${encodeURIComponent(appData.name)}&phone=${encodeURIComponent(appData.phone)}&service=${encodeURIComponent(appData.service)}&startTime=${encodeURIComponent(appData.startTime)}&endTime=${encodeURIComponent(appData.endTime)}`;
                 await fetch(GAS_URL, {
@@ -179,7 +189,7 @@ app.post('/api/calendar/cancel', async (req, res) => {
         }
         if (appToCancel) {
             data.appointments = data.appointments.filter(a => !(a.name === appToCancel.name && a.startTime === appToCancel.startTime));
-            writeDB(data);
+            await writeDB(data);
             try {
                 const end = appToCancel.endTime || new Date(new Date(appToCancel.startTime).getTime() + 30 * 60000).toISOString();
                 const deleteUrl = `${GAS_URL}?action=delete&name=${encodeURIComponent(appToCancel.name)}&startTime=${encodeURIComponent(appToCancel.startTime)}&endTime=${encodeURIComponent(end)}`;
@@ -190,9 +200,9 @@ app.post('/api/calendar/cancel', async (req, res) => {
     } catch (e) { res.status(500).json({ success: false }); }
 });
 
-app.post('/api/save', (req, res) => {
+app.post('/api/save', async (req, res) => {
     try {
-        writeDB(req.body);
+        await writeDB(req.body);
         res.json({ success: true });
     } catch (e) { res.status(500).json({ success: false }); }
 });

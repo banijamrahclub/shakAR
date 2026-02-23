@@ -54,6 +54,7 @@ let isSaving = false;
 let savePending = false;
 
 async function save() {
+    updateSyncStatus('saving');
     // 1. التحديث المحلي فوري (لحماية البيانات لو أغلق المتصفح)
     localStorage.setItem('sh_history', JSON.stringify(state.history));
     localStorage.setItem('sh_expenses', JSON.stringify(state.expenses));
@@ -63,7 +64,7 @@ async function save() {
     localStorage.setItem('sh_settings', JSON.stringify(state.settings));
 
     if (isSaving) {
-        savePending = true; // نؤشر أن هناك بيانات أحدث يجب حفظها لاحقاً
+        savePending = true;
         return;
     }
 
@@ -75,11 +76,12 @@ async function save() {
             body: JSON.stringify(state)
         });
         if (!response.ok) throw new Error("Save error");
+        updateSyncStatus('synced');
     } catch (err) {
         console.error("Cloud Save Error:", err);
+        updateSyncStatus('error');
     } finally {
         isSaving = false;
-        // إذا حدث تغيير أثناء الحفظ الحالي، نقوم بتشغيل المزامنة مرة أخرى فوراً
         if (savePending) {
             savePending = false;
             save();
@@ -87,13 +89,46 @@ async function save() {
     }
 }
 
-// تعديل loadData لمنع مسح البيانات المحلية غير المحفوظة
+function updateSyncStatus(status) {
+    let el = document.getElementById('sync-indicator');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'sync-indicator';
+        el.style.cssText = "position:fixed; top:10px; left:10px; padding:5px 12px; border-radius:20px; font-size:12px; font-weight:bold; z-index:10000; transition:0.3s;";
+        document.body.appendChild(el);
+    }
+
+    if (status === 'saving') {
+        el.innerText = '⏳ جاري الحفظ...';
+        el.style.background = 'orange';
+        el.style.color = 'black';
+    } else if (status === 'synced') {
+        el.innerText = '✅ تم الحفظ';
+        el.style.background = 'var(--success)';
+        el.style.color = 'black';
+        setTimeout(() => el.style.opacity = '0', 2000);
+    } else if (status === 'error') {
+        el.innerText = '❌ فشل الحفظ';
+        el.style.background = 'var(--danger)';
+        el.style.color = 'white';
+        el.style.opacity = '1';
+    }
+    if (status !== 'synced') el.style.opacity = '1';
+}
+
 async function loadData() {
-    if (isSaving || savePending) return; // لا تسحب بيانات من السيرفر لو كنت جاري الرفع لكي لا يحدث تضارب
+    // إذا كنت في منتصف عملية حفظ، لا تسحب بيانات قديمة
+    if (isSaving || savePending) return;
 
     try {
         const res = await fetch(`${API_BASE}/api/data`);
         const cloudData = await res.json();
+
+        // فحص مرة أخرى بعد انتهاء الطلب للتأكد أن المستخدم لم يضغط "حفظ" في هذه اللحظة
+        if (isSaving || savePending) {
+            console.log("Discarding loadData results to protect new changes.");
+            return;
+        }
 
         state.history = cloudData.history || [];
         state.expenses = cloudData.expenses || [];
@@ -103,25 +138,31 @@ async function loadData() {
         state.appointments = cloudData.appointments || [];
         state.settings = cloudData.settings || { openTime: '10:00', closeTime: '22:00' };
 
-        // تحديث الباك اب المحلي
-        localStorage.setItem('sh_history', JSON.stringify(state.history));
-        localStorage.setItem('sh_expenses', JSON.stringify(state.expenses));
-        localStorage.setItem('sh_fixed', JSON.stringify(state.fixedExpenses));
-        localStorage.setItem('sh_services', JSON.stringify(state.services));
-        localStorage.setItem('sh_barbers', JSON.stringify(state.barbers));
-        localStorage.setItem('sh_settings', JSON.stringify(state.settings));
-
+        saveLocalBackup();
         console.log("Sync down complete.");
     } catch (e) {
         console.log("Offline mode: reading from local storage");
-        state.history = JSON.parse(localStorage.getItem('sh_history')) || [];
-        state.expenses = JSON.parse(localStorage.getItem('sh_expenses')) || [];
-        state.fixedExpenses = JSON.parse(localStorage.getItem('sh_fixed')) || [];
-        state.services = JSON.parse(localStorage.getItem('sh_services')) || defaultServices;
-        state.barbers = JSON.parse(localStorage.getItem('sh_barbers')) || [{ id: 'owner', name: 'الحلاق الشكر', role: 'owner' }, { id: 'employee', name: 'الموظف 1', role: 'employee' }];
-        state.settings = JSON.parse(localStorage.getItem('sh_settings')) || { openTime: '10:00', closeTime: '22:00' };
-        state.appointments = [];
+        restoreFromLocal();
     }
+}
+
+function saveLocalBackup() {
+    localStorage.setItem('sh_history', JSON.stringify(state.history));
+    localStorage.setItem('sh_expenses', JSON.stringify(state.expenses));
+    localStorage.setItem('sh_fixed', JSON.stringify(state.fixedExpenses));
+    localStorage.setItem('sh_services', JSON.stringify(state.services));
+    localStorage.setItem('sh_barbers', JSON.stringify(state.barbers));
+    localStorage.setItem('sh_settings', JSON.stringify(state.settings));
+}
+
+function restoreFromLocal() {
+    state.history = JSON.parse(localStorage.getItem('sh_history')) || [];
+    state.expenses = JSON.parse(localStorage.getItem('sh_expenses')) || [];
+    state.fixedExpenses = JSON.parse(localStorage.getItem('sh_fixed')) || [];
+    state.services = JSON.parse(localStorage.getItem('sh_services')) || defaultServices;
+    state.barbers = JSON.parse(localStorage.getItem('sh_barbers')) || [{ id: 'owner', name: 'الحلاق الشكر', role: 'owner' }, { id: 'employee', name: 'الموظف 1', role: 'employee' }];
+    state.settings = JSON.parse(localStorage.getItem('sh_settings')) || { openTime: '10:00', closeTime: '22:00' };
+    state.appointments = [];
 }
 
 function toggleActionButtons(disabled) {
