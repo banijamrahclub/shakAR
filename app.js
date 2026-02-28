@@ -265,7 +265,7 @@ function updateUI() {
 
     updateGlobalStats();
 
-    // تحديث عرض التاريخ الحالي
+    // تحديث عرض التاريخ الحالي والملخص في صفحة البيع
     const dateEl = document.getElementById('current-system-date');
     const resetBtn = document.getElementById('reset-date-btn');
     if (dateEl) {
@@ -273,16 +273,32 @@ function updateUI() {
         const today = new Date().toISOString().split('T')[0];
         if (resetBtn) resetBtn.style.display = state.managedDate === today ? 'none' : 'block';
     }
+
+    // تحديث ملخص الحلاق في صفحة البيع (POS)
+    if (currentBarber && document.getElementById('pos-barber-name')) {
+        document.getElementById('pos-barber-name').innerText = currentBarber.name;
+        const count = state.history.filter(h => h.date === state.managedDate && h.role === state.currentRole).length;
+        document.getElementById('pos-barber-count').innerText = count;
+    }
 }
 
 function renderBarberLinks() {
     const container = document.getElementById('dynamic-barber-links');
     if (!container) return;
-    container.innerHTML = state.barbers.map(b => `
+
+    // حساب عمليات اليوم لكل حلاق (بناءً على التاريخ المدار حالياً)
+    const dailySales = state.history.filter(h => h.date === state.managedDate);
+
+    container.innerHTML = state.barbers.map(b => {
+        const count = dailySales.filter(h => h.role === b.id).length;
+        return `
         <div class="nav-link ${state.currentPage === 'pos' && state.currentRole === b.id ? 'active' : ''}" onclick="handleNav('${b.id}')">
-            <span>${b.role === 'owner' ? '✂️' : '🏠'} كاشير (${b.name})</span>
+            <span style="display: flex; align-items: center; gap: 8px; width: 100%;">
+                <span>${b.role === 'owner' ? '✂️' : '🏠'} ${b.name}</span>
+                <span style="margin-right: auto; background: var(--primary); color: black; padding: 2px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: 800;">${count}</span>
+            </span>
         </div>
-    `).join('');
+    `}).join('');
 }
 
 function resetSystemDate() {
@@ -319,7 +335,7 @@ async function renderAppointmentsTable() {
 
             // روابط الواتساب المجهزة
             const depositMsg = `تحية طيبة من "حلاق الشكر"،\nمرحباً ${app.name}، لقد استلمنا حجزك المبدئي:\n⏰ الموعد: ${startTimeFormatted}\n✂️ الخدمة: ${app.service}\n\nيرجى إرسال صورة إيصال دفع العربون (1.000 دينار) لشراء وقتك وتأكيد حجزك نهائياً عبر بينفت أو آيبان.\nشكراً لك.`;
-            const confirmMsg = `تم التأكيد ✅\nعزيزي ${app.name}، تم استلام العربون وتأكيد موعدك بنجاح.\n⏰ ننتظرك في: ${startTimeFormatted}\n\n⚠️ ملاحظة: لن يتم ارجاع العربون اذا تم الغاء الحجز قبل اقل من 24 ساعة منه.\n\nشكراً لاختيارك حلاق الشكر.`;
+            const confirmMsg = `تم التأكيد ✅\nعزيزي ${app.name}، تم استلام العربون وتأكيد موعدك بنجاح.\n⏰ ننتظرك في: ${startTimeFormatted}\n\n⚠️ ملاحظة 1: لن يتم ارجاع العربون اذا تم الغاء الحجز قبل اقل من 24 ساعة منه.\n⚠️ ملاحظة 2: سيتم الغاء الحجز اذا تأخر الزبون 15 دقيقة.\n\nشكراً لاختيارك حلاق الشكر.`;
 
             return `
             <tr style="${isPending ? 'border-right: 4px solid orange;' : 'border-right: 4px solid var(--success);'}">
@@ -372,7 +388,7 @@ async function verifyBooking(index) {
 
                 // إرسال رسالة التأكيد عبر الواتساب فوراً
                 const formattedTime = new Date(app.startTime).toLocaleString('ar-BH');
-                const confirmMsg = `تم تأكيد حجزك بنجاح ✅\n\nعزيزي ${app.name}، تم استلام العربون وتأكيد موعدك بنجاح.\nالموعد: ${formattedTime}\n\n⚠️ ملاحظة: لن يتم ارجاع العربون اذا تم الغاء الحجز قبل اقل من 24 ساعة منه.\n\nننتظرك في الموعد المحدد. شكراً لاختيارك حلاق الشكر.`;
+                const confirmMsg = `تم تأكيد حجزك بنجاح ✅\n\nعزيزي ${app.name}، تم استلام العربون وتأكيد موعدك بنجاح.\nالموعد: ${formattedTime}\n\n⚠️ ملاحظة 1: لن يتم ارجاع العربون اذا تم الغاء الحجز قبل اقل من 24 ساعة منه.\n⚠️ ملاحظة 2: سيتم الغاء الحجز اذا تأخر الزبون 15 دقيقة.\n\nننتظرك في الموعد المحدد. شكراً لاختيارك حلاق الشكر.`;
                 sendWhatsAppMessage(app.phone, encodeURIComponent(confirmMsg));
 
                 renderAppointmentsTable();
@@ -499,6 +515,14 @@ async function confirmSale() {
     save(); // الحفظ يعمل في خلفية صامتة الآن
     clearCart();
     updateGlobalStats();
+    renderBarberLinks(); // تحديث عداد العمليات في القائمة الجانبية فوراً
+
+    // تحديث العداد في صفحة الـ POS فوراً
+    if (document.getElementById('pos-barber-count')) {
+        const count = state.history.filter(h => h.date === state.managedDate && h.role === state.currentRole).length;
+        document.getElementById('pos-barber-count').innerText = count;
+    }
+
     showToast("تم تسجيل العملية بنجاح (" + (paymentMethod === 'cash' ? 'كاش' : 'بينفت') + ")");
 }
 
@@ -796,15 +820,24 @@ async function saveSettings() {
 function renderManageBarbers() {
     const tbody = document.getElementById('manage-barbers-table-body');
     if (!tbody) return;
-    tbody.innerHTML = state.barbers.map((b, index) => `
+
+    // حساب عدد العمليات لكل حلاق للتاريخ الحالي
+    const dailySales = state.history.filter(h => h.date === state.managedDate);
+
+    tbody.innerHTML = state.barbers.map((b, index) => {
+        const count = dailySales.filter(h => h.role === b.id).length;
+        return `
         <tr>
             <td><input type="text" value="${b.name}" onchange="updateBarber(${index}, 'name', this.value)" class="input-field" style="padding: 5px;"></td>
-            <td>${b.role === 'owner' ? 'مسؤول (مالك)' : 'حلاق موظف'}</td>
+            <td>
+                ${b.role === 'owner' ? 'مسؤول (مالك)' : 'حلاق موظف'}
+                <div style="font-size: 0.75rem; color: var(--primary); margin-top: 4px; font-weight: 700;">${count} عملية اليوم</div>
+            </td>
             <td>
                 ${b.role !== 'owner' ? `<button onclick="deleteBarber(${index})" style="color:var(--danger); background:none; border:1px solid var(--danger); padding:4px 8px; border-radius:6px; cursor:pointer;">حذف</button>` : '<span style="color:var(--text-muted)">أساسي</span>'}
             </td>
         </tr>
-    `).join('');
+    `}).join('');
 }
 
 async function addBarber() {
@@ -852,15 +885,27 @@ function getStatsForDate(date) {
     const sales = state.history.filter(h => h.date === date);
     const exps = state.expenses.filter(e => e.date === date);
     const total = sales.reduce((a, b) => a + b.total, 0);
-    const barber = sales.filter(h => h.role === 'owner').reduce((a, b) => a + b.total, 0);
-    const employee = sales.filter(h => h.role === 'employee').reduce((a, b) => a + b.total, 0);
+
+    // تحسين حساب الحلاقين والموظفين لدعم تعدد الموظفين
+    let barberTotal = 0;
+    let employeeTotal = 0;
+
+    sales.forEach(h => {
+        const bObj = state.barbers.find(b => b.id === h.role);
+        if (bObj && bObj.role === 'owner') barberTotal += h.total;
+        else if (bObj && bObj.role === 'employee') employeeTotal += h.total;
+        // ملاحظة: إذا كان الحلاق قديماً (محذوف حالياً) نعتمد على الـ role المخزن لو كان متاحاً
+        else if (h.role === 'owner') barberTotal += h.total;
+        else if (h.role === 'employee') employeeTotal += h.total;
+    });
+
     const expenses = exps.reduce((a, b) => a + b.amount, 0);
 
     // حساب الكاش والبينفت
     const cash = sales.filter(h => h.paymentMethod === 'cash' || !h.paymentMethod).reduce((a, b) => a + b.total, 0);
     const benefit = sales.filter(h => h.paymentMethod === 'benefit').reduce((a, b) => a + b.total, 0);
 
-    return { barber, employee, total, expenses, net: total - expenses, cash, benefit };
+    return { barber: barberTotal, employee: employeeTotal, total, expenses, net: total - expenses, cash, benefit };
 }
 
 async function resetData() {

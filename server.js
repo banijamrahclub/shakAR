@@ -81,8 +81,8 @@ async function saveToCloud(data) {
             body: JSON.stringify(data)
         });
         console.log("☁️ State backed up to Google Sheets!");
-    } catch (e) { 
-        console.error("Cloud Backup Failed:", e); 
+    } catch (e) {
+        console.error("Cloud Backup Failed:", e);
     } finally {
         isCloudSaving = false;
     }
@@ -143,6 +143,19 @@ app.post('/api/calendar/book', async (req, res) => {
     await cleanExpiredPending();
     try {
         const data = readDB();
+
+        // منع التكرار: التأكد أن نفس العميل لم يحجز نفس الوقت خلال آخر دقيقة
+        const isDuplicate = data.appointments.some(app =>
+            app.phone === phone &&
+            app.startTime === startTime &&
+            (new Date() - new Date(app.date)) < 60000
+        );
+
+        if (isDuplicate) {
+            console.log("⚠️ Duplicate booking detected, skipping...");
+            return res.json({ success: true, duplicated: true });
+        }
+
         data.appointments.push({ name, phone, service, price, startTime, endTime, status: 'pending', date: new Date().toISOString() });
         await writeDB(data);
         res.json({ success: true });

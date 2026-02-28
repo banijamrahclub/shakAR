@@ -113,7 +113,17 @@
             <div id="page-pos" class="page active">
                 <div class="pos-grid">
                     <div class="card-glass">
-                        <h2 style="margin-bottom: 20px;">الخدمات المتاحة</h2>
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h2 style="margin: 0;">الخدمات المتاحة</h2>
+                            <div id="barber-daily-summary"
+                                style="background: var(--bg-input); padding: 8px 15px; border-radius: 12px; border: 1px solid var(--border); font-size: 0.9rem;">
+                                👤 <span id="pos-barber-name" style="color: var(--primary); font-weight: 700;">-</span>:
+                                <b id="pos-barber-count"
+                                    style="color: var(--success); font-size: 1.1rem; margin-right: 5px;">0</b> عملية
+                                اليوم
+                            </div>
+                        </div>
                         <div class="services-list" id="services-grid"></div>
                     </div>
                     <div class="cart-box">

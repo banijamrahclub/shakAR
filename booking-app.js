@@ -273,11 +273,23 @@ function goToStep(n) {
     if (target) target.classList.add('active');
 }
 
+let isSubmitting = false;
 async function confirmBooking() {
+    if (isSubmitting) return;
+
     const name = document.getElementById('cust-name').value;
     let phone = document.getElementById('cust-phone').value;
+    const btn = document.querySelector('#step-3 .btn-confirm');
+
     phone = arToEn(phone); // تحويل الأرقام
     if (!name || !phone) return alert("يرجى ملئ البيانات");
+
+    isSubmitting = true;
+    if (btn) {
+        btn.disabled = true;
+        btn.innerText = "جاري التأكيد...";
+        btn.style.opacity = "0.7";
+    }
 
     const startTime = new Date(`${bookingData.date}T${bookingData.time}:00`).toISOString();
 
@@ -300,8 +312,14 @@ async function confirmBooking() {
             })
         });
 
+        const data = await res.json();
+
         if (res.ok) {
+            // تخزين بيانات الحجز للتحقق من الإلغاء
+            bookingData.currentBooking = { name, startTime };
+
             goToStep('success');
+            startCancellationCheck(); // بدء فحص الإلغاء التلقائي
 
             // تجهيز نص الوصف للنسخ (بدون ايموجي)
             const desc = `حجز: ${name} - ${bookingData.date} - ${bookingData.time}`;
@@ -310,8 +328,19 @@ async function confirmBooking() {
             const waBtn = document.getElementById('btn-whatsapp-confirm');
             const waMsg = `تحية طيبة من حلاق الشكر\nلقد قمت بتقديم طلب حجز موعد\n\nتفاصيل الحجز\nالاسم: ${name}\nالخدمات: ${servicesNames}\nالتاريخ: ${bookingData.date}\nالوقت: ${bookingData.time}\nالإجمالي: ${totalPrice.toFixed(3)} دب\n\nمرفق لكم ايصال تحويل العربون لشراء وقتك وتأكيد الموعد\nشكرا لكم`;
             waBtn.onclick = () => window.open(`https://wa.me/97337055332?text=${encodeURIComponent(waMsg)}`);
+        } else {
+            alert("حدث خطأ أثناء الحجز، يرجى المحاولة مرة أخرى.");
         }
-    } catch (e) { alert("خطأ في الاتصال"); }
+    } catch (e) {
+        alert("خطأ في الاتصال بالسيرفر");
+    } finally {
+        isSubmitting = false;
+        if (btn) {
+            btn.disabled = false;
+            btn.innerText = "تأكيد الحجز";
+            btn.style.opacity = "1";
+        }
+    }
 }
 
 function copyDesc() {
@@ -320,4 +349,52 @@ function copyDesc() {
     copyText.setSelectionRange(0, 99999);
     navigator.clipboard.writeText(copyText.value);
     alert("تم نسخ وصف المعاملة: " + copyText.value);
+}
+
+let cancelCheckInterval = null;
+function startCancellationCheck() {
+    if (cancelCheckInterval) clearInterval(cancelCheckInterval);
+
+    cancelCheckInterval = setInterval(async () => {
+        if (!bookingData.currentBooking) {
+            clearInterval(cancelCheckInterval);
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_BASE}/api/data`);
+            const data = await res.json();
+
+            // البحث عن الحجز في القائمة
+            const exists = (data.appointments || []).some(a =>
+                a.name === bookingData.currentBooking.name &&
+                a.startTime === bookingData.currentBooking.startTime
+            );
+
+            if (!exists) {
+                clearInterval(cancelCheckInterval);
+                showCancellationOverlay();
+            }
+        } catch (e) {
+            console.error("Check error:", e);
+        }
+    }, 5000); // فحص كل 5 ثوانٍ
+}
+
+function showCancellationOverlay() {
+    const stepSuccess = document.getElementById('step-success');
+    if (stepSuccess) {
+        stepSuccess.innerHTML = `
+            <div style="text-align: center; padding: 40px 20px;">
+                <div style="font-size: 5rem; margin-bottom: 20px;">🚫</div>
+                <h2 style="color: var(--danger); margin-bottom: 15px;">عذراً، تم إلغاء حجزك</h2>
+                <p style="color: var(--text-muted); line-height: 1.6; margin-bottom: 25px;">
+                    لقد تم إزالة هذا الحجز من النظام من قبل الإدارة. <br>
+                    يرجى إعادة الحجز في وقت آخر أو التواصل معنا للاستفسار: <br>
+                    <b style="color: var(--primary); font-size: 1.5rem; display: block; margin-top: 10px;">37055332</b>
+                </p>
+                <button class="btn-confirm" onclick="location.reload()">العودة للحجز من جديد</button>
+            </div>
+        `;
+    }
 }
