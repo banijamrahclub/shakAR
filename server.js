@@ -68,28 +68,27 @@ function initializeLocalDB() {
     }
 }
 
-let isCloudSaving = false;
 async function saveToCloud(data) {
-    if (isCloudSaving) {
-        console.log("☁️ Cloud save already in progress, skipping duplicate...");
-        return;
-    }
-    isCloudSaving = true;
     try {
-        await fetch(`${GAS_URL}?action=saveState`, {
+        console.log("☁️ Sending update to Google Sheets...");
+        const response = await fetch(GAS_URL + "?action=saveState", {
             method: 'POST',
-            body: JSON.stringify(data)
+            body: JSON.stringify(data),
+            follow: 20
         });
-        console.log("☁️ State backed up to Google Sheets!");
+        if (response.ok) {
+            console.log("✅ State backed up to Google Sheets!");
+        } else {
+            console.error("❌ Google Sheets Error:", response.status);
+        }
     } catch (e) {
-        console.error("Cloud Backup Failed:", e);
-    } finally {
-        isCloudSaving = false;
+        console.error("❌ Cloud Backup Failed:", e.message);
     }
 }
 
 // Start sequence
 async function startServer() {
+    // محاولة أولية للمزامنة 
     await syncWithCloud();
     app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT} (Cloud Sync Enabled) 🚀`));
 }
@@ -187,6 +186,13 @@ app.get('/api/data', (req, res) => {
     try {
         res.json(readDB());
     } catch (e) { res.json({ history: [], expenses: [], fixedExpenses: [], services: [], barbers: [], appointments: [], settings: { openTime: '10:00', closeTime: '22:00' } }); }
+});
+
+app.get('/api/sync-down', async (req, res) => {
+    try {
+        await syncWithCloud();
+        res.json({ success: true, data: readDB() });
+    } catch (e) { res.status(500).json({ success: false }); }
 });
 
 app.post('/api/calendar/cancel', async (req, res) => {

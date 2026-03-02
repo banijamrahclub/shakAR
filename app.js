@@ -155,6 +155,34 @@ function saveLocalBackup() {
     localStorage.setItem('sh_settings', JSON.stringify(state.settings));
 }
 
+async function refreshFromCloud() {
+    if (isSaving || savePending) return alert("يرجى الانتظار حتى اكتمال الحفظ الحالي");
+
+    updateSyncStatus('saving');
+    try {
+        const res = await fetch(`${API_BASE}/api/sync-down`);
+        const result = await res.json();
+        if (result.success) {
+            state.history = result.data.history || [];
+            state.expenses = result.data.expenses || [];
+            state.fixedExpenses = result.data.fixedExpenses || [];
+            state.services = result.data.services || state.services;
+            state.appointments = result.data.appointments || [];
+
+            saveLocalBackup();
+            updateUI();
+            updateSyncStatus('synced');
+            showToast("✅ تم جلب أحدث البيانات من قوقل شيت");
+        } else {
+            throw new Error("Sync failed");
+        }
+    } catch (e) {
+        console.error("Manual Sync Error:", e);
+        updateSyncStatus('error');
+        alert("فشل جلب البيانات من قوقل شيت، تأكد من اتصال الإنترنت");
+    }
+}
+
 function restoreFromLocal() {
     state.history = JSON.parse(localStorage.getItem('sh_history')) || [];
     state.expenses = JSON.parse(localStorage.getItem('sh_expenses')) || [];
