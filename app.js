@@ -42,11 +42,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateUI();
     if (document.getElementById('search-date')) document.getElementById('search-date').valueAsDate = new Date();
 
-    // تحديث تلقائي كل 5 ثوانٍ لجلب الحجوزات والبيانات الجديدة بدون ريفريش
+    // تحديث تلقائي كل 5 ثوانٍ لجلب المعلومات الجديدة
     setInterval(async () => {
         await loadData();
         if (state.currentPage === 'appointments') renderAppointmentsTable();
-        updateGlobalStats();
+        updateUI(); // هذا يضمن تحديث العدادات وكل شيء تلقائياً
     }, 5000);
 });
 
@@ -308,6 +308,12 @@ function updateUI() {
         const count = state.history.filter(h => h.date === state.managedDate && h.role === state.currentRole).length;
         document.getElementById('pos-barber-count').innerText = count;
     }
+
+    // إذا كنا في صفحة التاريخ والبحث مفتوح، نحدث النتائج
+    const searchRes = document.getElementById('search-result');
+    if (state.currentPage === 'history' && searchRes && searchRes.style.display === 'block') {
+        performSearch();
+    }
 }
 
 function renderBarberLinks() {
@@ -540,17 +546,9 @@ async function confirmSale() {
         paymentMethod: paymentMethod // مضافة حديثاً
     };
     state.history.unshift(sale);
-    save(); // الحفظ يعمل في خلفية صامتة الآن
+    save();
     clearCart();
-    updateGlobalStats();
-    renderBarberLinks(); // تحديث عداد العمليات في القائمة الجانبية فوراً
-
-    // تحديث العداد في صفحة الـ POS فوراً
-    if (document.getElementById('pos-barber-count')) {
-        const count = state.history.filter(h => h.date === state.managedDate && h.role === state.currentRole).length;
-        document.getElementById('pos-barber-count').innerText = count;
-    }
-
+    updateUI(); // تحديث فوري وشامل لكل أجزاء الواجهة
     showToast("تم تسجيل العملية بنجاح (" + (paymentMethod === 'cash' ? 'كاش' : 'بينفت') + ")");
 }
 
@@ -651,15 +649,14 @@ async function saveExpense() {
     showToast("تم حفظ المصروف بنجاح");
     document.getElementById('exp-amount').value = '';
     document.getElementById('exp-note').value = '';
-    updateGlobalStats();
+    updateUI();
 }
 
 async function deleteSale(id) {
     if (confirm("هل أنت متأكد من حذف هذه العملية؟")) {
         state.history = state.history.filter(h => h.id != id);
         await save();
-        performSearch(); // تحديث النتائج
-        updateGlobalStats();
+        updateUI();
     }
 }
 
@@ -667,8 +664,7 @@ async function deleteExpense(id) {
     if (confirm("هل أنت متأكد من حذف هذا المصروف؟")) {
         state.expenses = state.expenses.filter(e => e.id != id);
         await save();
-        performSearch(); // تحديث النتائج
-        updateGlobalStats();
+        updateUI();
     }
 }
 
@@ -677,8 +673,7 @@ async function clearDayAccounting(date) {
         state.history = state.history.filter(h => h.date !== date);
         state.expenses = state.expenses.filter(e => e.date !== date);
         await save();
-        performSearch(); // تحديث النتائج
-        updateGlobalStats();
+        updateUI();
     }
 }
 
