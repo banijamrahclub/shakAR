@@ -9,6 +9,11 @@ const defaultServices = [
     { name: "التمليس", price: 3.0 }, { name: "البروتين", price: 15.0 }
 ];
 
+const defaultPackages = [
+    { name: "بكج الشكر المميز", price: 5.0, duration: 60, description: "قص شعر ولحية + تنظيف وجه + سكراب" },
+    { name: "بكج التوفير", price: 3.0, duration: 40, description: "قص شعر ولحية + غسل شعر + تسريحة" }
+];
+
 let state = {
     isAuthorized: false,
     currentRole: 'employee',
@@ -19,13 +24,15 @@ let state = {
     expenses: [],
     fixedExpenses: [],
     services: defaultServices,
+    packages: defaultPackages,
     barbers: [
         { id: 'owner', name: 'الحلاق الشكر', role: 'owner' },
         { id: 'employee', name: 'الموظف 1', role: 'employee' }
     ],
     appointments: [],
     settings: { openTime: '10:00', closeTime: '22:00' }, // إعدادات افتراضية
-    managedDate: new Date().toISOString().split('T')[0] // التاريخ الذي يتم إدارته حالياً (الافتراضي هو اليوم)
+    managedDate: new Date().toISOString().split('T')[0], // التاريخ الذي يتم إدارته حالياً (الافتراضي هو اليوم)
+    currentPosType: 'service' // النوع المختار في صفحة البيع (خدمات أو بكجات)
 };
 
 const PASSWORD = "1";
@@ -60,6 +67,7 @@ async function save() {
     localStorage.setItem('sh_expenses', JSON.stringify(state.expenses));
     localStorage.setItem('sh_fixed', JSON.stringify(state.fixedExpenses));
     localStorage.setItem('sh_services', JSON.stringify(state.services));
+    localStorage.setItem('sh_packages', JSON.stringify(state.packages));
     localStorage.setItem('sh_barbers', JSON.stringify(state.barbers));
     localStorage.setItem('sh_settings', JSON.stringify(state.settings));
 
@@ -133,7 +141,8 @@ async function loadData() {
         state.history = cloudData.history || [];
         state.expenses = cloudData.expenses || [];
         state.fixedExpenses = cloudData.fixedExpenses || [];
-        state.services = (cloudData.services && cloudData.services.length > 0) ? cloudData.services : defaultServices;
+        if (cloudData.services) state.services = cloudData.services;
+        if (cloudData.packages) state.packages = cloudData.packages;
         state.barbers = cloudData.barbers || [{ id: 'owner', name: 'الحلاق الشكر', role: 'owner' }, { id: 'employee', name: 'الموظف 1', role: 'employee' }];
         state.appointments = cloudData.appointments || [];
         state.settings = cloudData.settings || { openTime: '10:00', closeTime: '22:00' };
@@ -151,6 +160,7 @@ function saveLocalBackup() {
     localStorage.setItem('sh_expenses', JSON.stringify(state.expenses));
     localStorage.setItem('sh_fixed', JSON.stringify(state.fixedExpenses));
     localStorage.setItem('sh_services', JSON.stringify(state.services));
+    localStorage.setItem('sh_packages', JSON.stringify(state.packages));
     localStorage.setItem('sh_barbers', JSON.stringify(state.barbers));
     localStorage.setItem('sh_settings', JSON.stringify(state.settings));
 }
@@ -167,6 +177,7 @@ async function refreshFromCloud() {
             state.expenses = result.data.expenses || [];
             state.fixedExpenses = result.data.fixedExpenses || [];
             state.services = result.data.services || state.services;
+            state.packages = result.data.packages || state.packages;
             state.appointments = result.data.appointments || [];
 
             saveLocalBackup();
@@ -188,6 +199,7 @@ function restoreFromLocal() {
     state.expenses = JSON.parse(localStorage.getItem('sh_expenses')) || [];
     state.fixedExpenses = JSON.parse(localStorage.getItem('sh_fixed')) || [];
     state.services = JSON.parse(localStorage.getItem('sh_services')) || defaultServices;
+    state.packages = JSON.parse(localStorage.getItem('sh_packages')) || defaultPackages;
     state.barbers = JSON.parse(localStorage.getItem('sh_barbers')) || [{ id: 'owner', name: 'الحلاق الشكر', role: 'owner' }, { id: 'employee', name: 'الموظف 1', role: 'employee' }];
     state.settings = JSON.parse(localStorage.getItem('sh_settings')) || { openTime: '10:00', closeTime: '22:00' };
     state.appointments = [];
@@ -288,6 +300,7 @@ function updateUI() {
     if (state.currentPage === 'top-services') renderTopServices();
     if (state.currentPage === 'manage-barbers') renderManageBarbers();
     if (state.currentPage === 'manage-services') renderManageServices();
+    if (state.currentPage === 'manage-packages') renderManagePackages();
     if (state.currentPage === 'appointments') renderAppointmentsTable();
     if (state.currentPage === 'settings') renderSettings();
 
@@ -369,7 +382,7 @@ async function renderAppointmentsTable() {
 
             // روابط الواتساب المجهزة
             const depositMsg = `تحية طيبة من "حلاق الشكر"،\nمرحباً ${app.name}، لقد استلمنا حجزك المبدئي:\n⏰ الموعد: ${startTimeFormatted}\n✂️ الخدمة: ${app.service}\n\nيرجى إرسال صورة إيصال دفع العربون (1.000 دينار) لشراء وقتك وتأكيد حجزك نهائياً عبر بينفت أو آيبان.\nشكراً لك.`;
-            const confirmMsg = `تم التأكيد ✅\nعزيزي ${app.name}، تم استلام العربون وتأكيد موعدك بنجاح.\n⏰ ننتظرك في: ${startTimeFormatted}\n\n⚠️ ملاحظة 1: لن يتم ارجاع العربون اذا تم الغاء الحجز قبل اقل من 24 ساعة منه.\n⚠️ ملاحظة 2: سيتم الغاء الحجز اذا تأخر الزبون 15 دقيقة.\n\nشكراً لاختيارك حلاق الشكر.`;
+            const confirmMsg = `تم التأكيد ✅\nعزيزي ${app.name}، تم استلام العربون وتأكيد موعدك بنجاح.\n⏰ ننتظرك في: ${startTimeFormatted}\n\n⚠️ ملاحظة 1: لن يتم ارجاع العربون اذا تم الغاء الحجز قبل اقل من 24 ساعة منه.\n⚠️ ملاحظة 2: سيتم الغاء الموعد اذا تأخر الزبون 15 دقيقة عن الموعد.\n\nشكراً لاختيارك حلاق الشكر.`;
 
             return `
             <tr style="${isPending ? 'border-right: 4px solid orange;' : 'border-right: 4px solid var(--success);'}">
@@ -422,7 +435,7 @@ async function verifyBooking(index) {
 
                 // إرسال رسالة التأكيد عبر الواتساب فوراً
                 const formattedTime = new Date(app.startTime).toLocaleString('ar-BH');
-                const confirmMsg = `تم تأكيد حجزك بنجاح ✅\n\nعزيزي ${app.name}، تم استلام العربون وتأكيد موعدك بنجاح.\nالموعد: ${formattedTime}\n\n⚠️ ملاحظة 1: لن يتم ارجاع العربون اذا تم الغاء الحجز قبل اقل من 24 ساعة منه.\n⚠️ ملاحظة 2: سيتم الغاء الحجز اذا تأخر الزبون 15 دقيقة.\n\nننتظرك في الموعد المحدد. شكراً لاختيارك حلاق الشكر.`;
+                const confirmMsg = `تم التأكيد ✅\n\nعزيزي ${app.name}، تم استلام العربون وتأكيد موعدك بنجاح.\n⏰ ننتظرك في: ${formattedTime}\n\n⚠️ ملاحظة 1: لن يتم ارجاع العربون اذا تم الغاء الحجز قبل اقل من 24 ساعة منه.\n⚠️ ملاحظة 2: سيتم الغاء الموعد اذا تأخر الزبون 15 دقيقة عن الموعد.\n\nشكراً لاختيارك حلاق الشكر.`;
                 sendWhatsAppMessage(app.phone, encodeURIComponent(confirmMsg));
 
                 renderAppointmentsTable();
@@ -491,19 +504,52 @@ async function deleteAppointment(index) {
     }
 }
 
+function switchPosType(type) {
+    state.currentPosType = type;
+    document.getElementById('pos-tab-services').classList.toggle('active', type === 'service');
+    document.getElementById('pos-tab-packages').classList.toggle('active', type === 'package');
+    renderServices();
+}
+
 function renderServices() {
     const grid = document.getElementById('services-grid');
     if (!grid) return;
-    grid.innerHTML = state.services.map((s, i) => `
-        <div class="service-item" onclick="addToCart(${i})">
-            <div style="font-weight:700; font-size:1rem; margin-bottom:5px;">${s.name}</div>
-            <div style="color:var(--primary); font-weight:800;">${s.price.toFixed(3)}</div>
-        </div>
-    `).join('');
+
+    let html = '';
+
+    if (state.currentPosType === 'service') {
+        // الخدمات العادية
+        if (state.services.length > 0) {
+            html += state.services.map((s, i) => `
+                <div class="service-item" onclick="addToCart('service', ${i})">
+                    <div style="font-weight:700; font-size:1rem; margin-bottom:5px;">${s.name}</div>
+                    <div style="color:var(--primary); font-weight:800;">${s.price.toFixed(3)}</div>
+                </div>
+            `).join('');
+        } else {
+            html = '<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--text-muted);">لا توجد خدمات مضافة</div>';
+        }
+    } else {
+        // البكجات
+        if (state.packages.length > 0) {
+            html += state.packages.map((p, i) => `
+                <div class="service-item" onclick="addToCart('package', ${i})" style="border: 1px solid gold; background: rgba(255, 215, 0, 0.05);">
+                    <div style="font-weight:700; font-size:1rem; margin-bottom:2px;">${p.name}</div>
+                    <div style="font-size:0.7rem; color:var(--text-muted); margin-bottom:5px;">${p.description || ''}</div>
+                    <div style="color:gold; font-weight:800;">${p.price.toFixed(3)}</div>
+                </div>
+            `).join('');
+        } else {
+            html = '<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--text-muted);">لا توجد بكجات مضافة</div>';
+        }
+    }
+
+    grid.innerHTML = html;
 }
 
-function addToCart(i) {
-    state.cart.push(state.services[i]);
+function addToCart(type, i) {
+    const item = type === 'service' ? state.services[i] : state.packages[i];
+    state.cart.push(item);
     renderCart();
 }
 
@@ -550,6 +596,43 @@ async function confirmSale() {
     clearCart();
     updateUI(); // تحديث فوري وشامل لكل أجزاء الواجهة
     showToast("تم تسجيل العملية بنجاح (" + (paymentMethod === 'cash' ? 'كاش' : 'بينفت') + ")");
+}
+
+async function addQuickProfit() {
+    const amountInput = document.getElementById('quick-profit-amount');
+    const noteInput = document.getElementById('quick-profit-note');
+    const amount = parseFloat(amountInput.value);
+    const note = noteInput.value.trim() || 'ربح سريع';
+
+    if (isNaN(amount) || amount <= 0) {
+        return alert("يرجى إدخال مبلغ صحيح");
+    }
+
+    const methodEl = document.querySelector('input[name="quick-payment-method"]:checked');
+    const paymentMethod = methodEl ? methodEl.value : 'cash';
+
+    const sale = {
+        id: Date.now(),
+        time: new Date().toLocaleTimeString('ar-BH'),
+        date: state.managedDate,
+        role: state.currentRole,
+        total: amount,
+        items: note,
+        paymentMethod: paymentMethod
+    };
+
+    state.history.unshift(sale);
+    await save();
+    updateUI();
+
+    amountInput.value = '';
+    noteInput.value = '';
+    showToast(`🚀 تم إضافة ${amount.toFixed(3)} د.ب بنجاح`);
+}
+
+function setQuickAmount(val) {
+    const input = document.getElementById('quick-profit-amount');
+    if (input) input.value = val.toFixed(3);
 }
 
 function showToast(msg) {
@@ -782,7 +865,7 @@ function renderManageServices() {
         <tr>
             <td><input type="text" value="${s.name}" style="background:transparent; border:1px solid var(--border); color:white; padding:5px; width:100%; border-radius:5px;" onchange="updateService(${i}, 'name', this.value)"></td>
             <td><input type="number" step="0.5" value="${s.price.toFixed(3)}" style="background:transparent; border:1px solid var(--border); color:white; padding:5px; width:100%; border-radius:5px;" onchange="updateService(${i}, 'price', this.value)"></td>
-            <td><input type="number" value="${s.duration || 30}" style="background:transparent; border:1px solid var(--border); color:white; padding:5px; width:100%; border-radius:5px;" onchange="updateService(${i}, 'duration', this.value)"></td>
+            <td><input type="number" value="${s.duration !== undefined ? s.duration : 30}" style="background:transparent; border:1px solid var(--border); color:white; padding:5px; width:100%; border-radius:5px;" onchange="updateService(${i}, 'duration', this.value)"></td>
             <td><button class="btn-action" style="padding: 5px 15px; background: var(--danger); color: white; border-radius:8px;" onclick="deleteService(${i})">حذف</button></td>
         </tr>
     `).join('');
@@ -791,7 +874,8 @@ function renderManageServices() {
 async function addService() {
     const name = document.getElementById('new-service-name').value;
     const price = parseFloat(document.getElementById('new-service-price').value);
-    const duration = parseInt(document.getElementById('new-service-duration').value) || 30;
+    const durationInput = document.getElementById('new-service-duration').value;
+    const duration = durationInput === "" ? 30 : parseInt(durationInput);
     if (!name || isNaN(price)) return alert("يرجى إدخال اسم وسعر صحيح");
     state.services.push({ name, price, duration });
     await save();
@@ -836,6 +920,60 @@ async function saveSettings() {
     state.settings = { openTime, closeTime };
     await save();
     alert("تم حفظ أوقات العمل بنجاح! سيتم تطبيقها على الحجوزات الجديدة.");
+}
+
+// --- PACKAGE MANAGEMENT ---
+
+function renderManagePackages() {
+    const body = document.querySelector('#manage-packages-table-body');
+    if (!body) return;
+    body.innerHTML = state.packages.map((p, i) => `
+        <tr>
+            <td><input type="text" value="${p.name}" style="background:transparent; border:1px solid var(--border); color:white; padding:5px; width:100%; border-radius:5px;" onchange="updatePackage(${i}, 'name', this.value)"></td>
+            <td><input type="text" value="${p.description || ''}" style="background:transparent; border:1px solid var(--border); color:white; padding:5px; width:100%; border-radius:5px;" onchange="updatePackage(${i}, 'description', this.value)"></td>
+            <td><input type="number" step="0.5" value="${p.price.toFixed(3)}" style="background:transparent; border:1px solid var(--border); color:white; padding:5px; width:100%; border-radius:5px;" onchange="updatePackage(${i}, 'price', this.value)"></td>
+            <td><input type="number" value="${p.duration !== undefined ? p.duration : 30}" style="background:transparent; border:1px solid var(--border); color:white; padding:5px; width:100%; border-radius:5px;" onchange="updatePackage(${i}, 'duration', this.value)"></td>
+            <td><button class="btn-action" style="padding: 5px 15px; background: var(--danger); color: white; border-radius:8px;" onclick="deletePackage(${i})">حذف</button></td>
+        </tr>
+    `).join('');
+}
+
+async function addPackage() {
+    const name = document.getElementById('new-package-name').value;
+    const price = parseFloat(document.getElementById('new-package-price').value);
+    const durationInput = document.getElementById('new-package-duration').value;
+    const duration = durationInput === "" ? 30 : parseInt(durationInput);
+    const description = document.getElementById('new-package-desc').value;
+
+    if (!name || isNaN(price)) return alert("يرجى إدخال اسم وسعر صحيح للبكج");
+
+    state.packages.push({ name, price, duration, description });
+    await save();
+    renderManagePackages();
+    renderServices();
+
+    document.getElementById('new-package-name').value = '';
+    document.getElementById('new-package-price').value = '';
+    document.getElementById('new-package-duration').value = '';
+    document.getElementById('new-package-desc').value = '';
+}
+
+async function updatePackage(index, field, value) {
+    if (field === 'price') value = parseFloat(value);
+    if (field === 'duration') value = parseInt(value);
+    if ((field === 'price' || field === 'duration') && isNaN(value)) return;
+    state.packages[index][field] = value;
+    await save();
+    renderServices();
+}
+
+async function deletePackage(index) {
+    if (confirm(`هل أنت متأكد من حذف بكج "${state.packages[index].name}"؟`)) {
+        state.packages.splice(index, 1);
+        await save();
+        renderManagePackages();
+        renderServices();
+    }
 }
 
 // --- EMPLOYEE MANAGEMENT ---

@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 3000;
 const DB_FILE = path.resolve(__dirname, 'db.json');
 
 // الرابط الخاص بجسر قوقل الخارق (Sheets + Calendar)
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzhQOIGbGO6DWXT7DlZoBtw7eAdOPigh5vqpxsmWdV5uYxGyx-morDu13zYFjUu94V-/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyKLr46PjGylPxJJk11Tr1XpwmNYjY2BNc8rdyKkueTZ9a8BXztllOkeMvF7iudkt3g/exec';
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
@@ -31,22 +31,60 @@ const defaultServices = [
     { name: "البروتين", price: 15.0, duration: 90 }
 ];
 
+const defaultPackages = [
+    { name: "بكج الشكر المميز", price: 5.0, duration: 60, description: "قص شعر ولحية + تنظيف وجه + سكراب" },
+    { name: "بكج التوفير", price: 3.0, duration: 40, description: "قص شعر ولحية + غسل شعر + تسريحة" }
+];
+
 // --- SYNC WITH GOOGLE SHEETS ---
 
 async function syncWithCloud() {
     console.log("🔄 Syncing with Google Sheets...");
     try {
         const res = await fetch(`${GAS_URL}?action=loadState`);
+
+        // فحص إذا كان الرابط يطلب تسجيل دخول (بسبب إعدادات الخصوصية)
+        if (res.url && res.url.includes('accounts.google.com')) {
+            console.log("------------------------------------------------------");
+            console.error("❌ تنبيه: الرابط لا يزال 'خاص' (Private) وليس 'عام' (Anyone).");
+            console.log("يرجى عمل New Deployment في قوقل شيت واختيار 'Anyone'.");
+            console.log("------------------------------------------------------");
+            return;
+        }
+
         const cloudData = await res.json();
         if (cloudData && typeof cloudData === 'object' && Object.keys(cloudData).length > 0) {
-            fs.writeFileSync(DB_FILE, JSON.stringify(cloudData, null, 2));
-            console.log("✅ Data synced from Google Sheets!");
+            let currentLocalData = {};
+            try {
+                if (fs.existsSync(DB_FILE)) {
+                    currentLocalData = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+                }
+            } catch (e) { }
+
+            // دمج البيانات السحابية مع البيانات المحلية (لحماية المفاتيح الجديدة مثل البكجات)
+            const mergedData = { ...currentLocalData, ...cloudData };
+
+            // حماية الخدمات والبكجات: إذا كانت موجودة محلياً وغير موجودة أو فارغة في السحاب، نحتفظ بالمحلي
+            if ((!mergedData.services || mergedData.services.length === 0) && currentLocalData.services && currentLocalData.services.length > 0) {
+                mergedData.services = currentLocalData.services;
+            }
+            if ((!mergedData.packages || mergedData.packages.length === 0) && currentLocalData.packages && currentLocalData.packages.length > 0) {
+                mergedData.packages = currentLocalData.packages;
+            }
+
+            // التأكد من وجود المفاتيح الأساسية دائمًا (Defaults) فقط لو الكل فارغ
+            if (!mergedData.packages || mergedData.packages.length === 0) mergedData.packages = defaultPackages;
+            if (!mergedData.services || mergedData.services.length === 0) mergedData.services = defaultServices;
+
+            fs.writeFileSync(DB_FILE, JSON.stringify(mergedData, null, 2));
+            console.log("✅ Data merged and synced from Google Sheets!");
         } else {
             console.log("⚠️ Google Sheets is empty, using local or defaults.");
             initializeLocalDB();
         }
     } catch (e) {
         console.error("❌ Cloud Sync Failed:", e.message);
+        console.log("💡 نصيحة: تأكد أن إعدادات النشر في قوقل شيت هي (Anyone).");
         initializeLocalDB();
     }
 }
@@ -58,6 +96,7 @@ function initializeLocalDB() {
             expenses: [],
             fixedExpenses: [],
             services: defaultServices,
+            packages: defaultPackages,
             appointments: [],
             barbers: [
                 { id: 'owner', name: 'الحلاق الشكر', role: 'owner' },
@@ -73,13 +112,22 @@ async function saveToCloud(data) {
         console.log("☁️ Sending update to Google Sheets...");
         const response = await fetch(GAS_URL + "?action=saveState", {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data),
-            follow: 20
+            redirect: 'follow'
         });
+
+        if (response.url && response.url.includes('accounts.google.com')) {
+            console.error("❌ فشل الحفظ: قوقل يرفض الوصول (Unauthorized 401). تأكد أن الوصول (Anyone).");
+            return;
+        }
+
         if (response.ok) {
             console.log("✅ State backed up to Google Sheets!");
         } else {
             console.error("❌ Google Sheets Error:", response.status);
+            const text = await response.text();
+            if (text.includes("doctype")) console.log("تنبيه: يبدو أن الرابط يتطلب تسجيل دخول.");
         }
     } catch (e) {
         console.error("❌ Cloud Backup Failed:", e.message);

@@ -37,7 +37,14 @@
             <div class="brand">
                 <img src="https://raw.githubusercontent.com/banijamrahclub/shakar-photo/f4bdba935a23d08c7b13c24ac6e843dd5a1367cd/560520585_17848960644571743_4454414339529875747_n.jpg"
                     alt="Logo" class="logo-img">
-                <h2 style="font-size: 1.2rem; font-weight: 800; color: var(--text-main);">حلاق الشكر</h2>
+                <div style="flex:1;">
+                    <h2 style="font-size: 1.2rem; font-weight: 800; color: var(--text-main); line-height:1.2;">حلاق
+                        الشكر</h2>
+                    <button onclick="refreshFromCloud()"
+                        style="background: var(--primary); color: black; border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.65rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px; border:1px solid rgba(0,0,0,0.1);">
+                        🔄 تحديث من قوقل
+                    </button>
+                </div>
             </div>
 
             <!-- مؤشر تاريخ النظام الحالي -->
@@ -61,6 +68,9 @@
                 <div class="nav-link" onclick="handleNav('fixed-exp')">
                     <span>💰 المصاريف الثابتة</span>
                 </div>
+                <div class="nav-link" onclick="handleNav('quick-profit')">
+                    <span>🚀 ربح سريع</span>
+                </div>
                 <div class="nav-link" onclick="handleNav('emergency-exp')">
                     <span>💸 مصاريف طارئة</span>
                 </div>
@@ -72,6 +82,9 @@
                 </div>
                 <div class="nav-link" onclick="handleNav('manage-services')">
                     <span>🛠️ إدارة الخدمات</span>
+                </div>
+                <div class="nav-link" onclick="handleNav('manage-packages')">
+                    <span>📦 إدارة البكجات</span>
                 </div>
                 <div class="nav-link" onclick="handleNav('appointments')">
                     <span>📅 الحجوزات القادمة</span>
@@ -126,6 +139,15 @@
                                 اليوم
                             </div>
                         </div>
+
+                        <!-- تبديل بين الخدمات والبكجات -->
+                        <div class="finance-sub-nav" style="margin-bottom: 20px;">
+                            <div class="sub-link active" id="pos-tab-services" onclick="switchPosType('service')">✂️
+                                جميع الخدمات</div>
+                            <div class="sub-link" id="pos-tab-packages" onclick="switchPosType('package')">🎁 البكجات
+                                والعروض</div>
+                        </div>
+
                         <div class="services-list" id="services-grid"></div>
                     </div>
                     <div class="cart-box">
@@ -153,6 +175,77 @@
                         <button class="btn-action"
                             style="background: transparent; color: var(--danger); border: 1px solid var(--danger); margin-top: 10px;"
                             onclick="clearCart()">حذف السلة</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE: QUICK PROFIT -->
+            <div id="page-quick-profit" class="page">
+                <div class="card-glass">
+                    <h2 style="margin-bottom: 25px; display:flex; align-items:center; gap:12px;">🚀 إضافة ربح سريع (مبلغ
+                        مخصص)
+                    </h2>
+                    <p style="color: var(--text-muted); margin-bottom: 30px;">إضافة مبالغ إضافية للفاتورة مثل بيع بضاعة
+                        أو
+                        إكراميات.</p>
+
+                    <div
+                        style="background: var(--bg-input); padding: 30px; border-radius: 20px; border: 1px solid var(--border);">
+                        <!-- مبالغ جاهزة -->
+                        <div style="margin-bottom: 25px;">
+                            <label
+                                style="display:block; margin-bottom:10px; color:var(--text-muted); font-size:0.9rem;">إضافة
+                                مبلغ سريع:</label>
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                <button onclick="setQuickAmount(0.5)"
+                                    style="flex:1; background:var(--bg-dark); border:1px solid var(--success); color:var(--success); padding:15px; border-radius:12px; font-weight:800; cursor:pointer; font-size:1.1rem;">+0.500</button>
+                                <button onclick="setQuickAmount(1.0)"
+                                    style="flex:1; background:var(--bg-dark); border:1px solid var(--success); color:var(--success); padding:15px; border-radius:12px; font-weight:800; cursor:pointer; font-size:1.1rem;">+1.000</button>
+                                <button onclick="setQuickAmount(2.0)"
+                                    style="flex:1; background:var(--bg-dark); border:1px solid var(--success); color:var(--success); padding:15px; border-radius:12px; font-weight:800; cursor:pointer; font-size:1.1rem;">+2.000</button>
+                                <button onclick="setQuickAmount(5.0)"
+                                    style="flex:1; background:var(--bg-dark); border:1px solid var(--success); color:var(--success); padding:15px; border-radius:12px; font-weight:800; cursor:pointer; font-size:1.1rem;">+5.000</button>
+                            </div>
+                        </div>
+
+                        <div
+                            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                            <div class="form-group">
+                                <label>المبلغ (د.ب):</label>
+                                <input type="number" id="quick-profit-amount" placeholder="0.000" step="0.100"
+                                    class="input-field"
+                                    style="background: rgba(16, 185, 129, 0.05); border-color: rgba(16, 185, 129, 0.2); font-size: 1.5rem; height: 60px; font-weight: 800; color: var(--success);">
+                            </div>
+                            <div class="form-group">
+                                <label>ملاحظة العملية:</label>
+                                <input type="text" id="quick-profit-note" placeholder="مثلاً: بيع عطر، أدوات حلاقة..."
+                                    class="input-field" style="height: 60px;">
+                            </div>
+                        </div>
+
+                        <div
+                            style="margin-top: 20px; display: flex; gap: 15px; align-items: center; border-top:1px dashed var(--border); padding-top:20px;">
+                            <div style="flex:1;">
+                                <label
+                                    style="display:block; margin-bottom:10px; color:var(--text-muted); font-size:0.8rem;">طريقة
+                                    الدفع:</label>
+                                <div style="display: flex; gap: 10px;">
+                                    <label class="payment-method-btn" style="flex: 1;">
+                                        <input type="radio" name="quick-payment-method" value="cash" checked
+                                            style="display: none;">
+                                        <div class="method-box">كاش</div>
+                                    </label>
+                                    <label class="payment-method-btn" style="flex: 1;">
+                                        <input type="radio" name="quick-payment-method" value="benefit"
+                                            style="display: none;">
+                                        <div class="method-box">بينفت</div>
+                                    </label>
+                                </div>
+                            </div>
+                            <button class="btn-action"
+                                style="background: var(--success); color: white; height: 60px; margin-top:20px; font-size:1.2rem;"
+                                onclick="addQuickProfit()">تسجيل الربح 🚀</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -251,7 +344,8 @@
                             <!-- Years will be added by JS -->
                         </select>
                         <button class="btn-action" style="width: auto; padding: 0 30px;"
-                            onclick="renderHistoryTable()">تحديث العرض</button>
+                            onclick="renderHistoryTable()">تحديث
+                            العرض</button>
                     </div>
 
                     <div style="border-top: 1px solid var(--border); padding-top: 20px;">
@@ -259,7 +353,8 @@
                         <div style="display: flex; gap: 10px; margin-top: 10px;">
                             <input type="date" id="search-date" style="flex: 1;">
                             <button class="btn-action" style="width: auto; padding: 0 40px;"
-                                onclick="performSearch()">تقرير مفصل</button>
+                                onclick="performSearch()">تقرير
+                                مفصل</button>
                         </div>
                     </div>
 
@@ -330,8 +425,50 @@
                                     <th>الإجراءات</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="manage-services-table-body">
                                 <!-- JS Generated -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE: MANAGE PACKAGES -->
+            <div id="page-manage-packages" class="page">
+                <div class="card-glass">
+                    <h2 style="margin-bottom: 20px;">📦 إدارة بكجات الحلاقة</h2>
+                    <p style="color: var(--text-muted); margin-bottom: 25px;">البكجات تظهر للزبائن كعروض خاصة تشمل أكثر
+                        من خدمة بسعر مخفض.</p>
+
+                    <div
+                        style="margin-bottom: 30px; background: rgba(255,255,255,0.02); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
+                        <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                            <input type="text" id="new-package-name" placeholder="اسم البكج الجديد">
+                            <input type="number" id="new-package-price" placeholder="السعر (د.ب)">
+                            <input type="number" id="new-package-duration" placeholder="المدة (دقيقة)">
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr auto; gap: 10px;">
+                            <input type="text" id="new-package-desc"
+                                placeholder="وصف المكونات (مثال: قص شعر + لحية + غسيل)">
+                            <button class="btn-action" style="width: auto; padding: 0 30px;"
+                                onclick="addPackage()">إضافة
+                                البكج</button>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>اسم البكج</th>
+                                    <th>الوصف</th>
+                                    <th>السعر (د.ب)</th>
+                                    <th>المدة</th>
+                                    <th>إجراء</th>
+                                </tr>
+                            </thead>
+                            <tbody id="manage-packages-table-body">
+                                <!-- JS Content -->
                             </tbody>
                         </table>
                     </div>

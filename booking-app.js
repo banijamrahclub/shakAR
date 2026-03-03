@@ -4,7 +4,9 @@ let bookingData = {
     selectedServices: [],
     date: null,
     time: null,
-    services: []
+    services: [],
+    packages: [],
+    currentType: 'service'
 };
 
 // دالة تحويل الأرقام العربية إلى إنجليزية تلقائياً
@@ -97,10 +99,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         const res = await fetch(`${API_BASE}/api/data`);
         const data = await res.json();
         bookingData.services = data.services || [];
+        bookingData.packages = data.packages || [];
         bookingData.settings = data.settings || { openTime: '10:00', closeTime: '22:00' };
 
         // Save fetched data to localStorage
         localStorage.setItem('sh_services', JSON.stringify(bookingData.services));
+        localStorage.setItem('sh_packages', JSON.stringify(bookingData.packages));
         localStorage.setItem('sh_settings', JSON.stringify(bookingData.settings));
 
         renderServices();
@@ -129,14 +133,25 @@ function updateDayLabel(dateStr) {
     if (label) label.innerText = `يوم ${dayName}`;
 }
 
+function switchServiceType(type) {
+    bookingData.currentType = type;
+    document.querySelectorAll('.type-tab-btn').forEach(btn => {
+        btn.classList.toggle('active', (type === 'service' && btn.innerText.includes('منفردة')) || (type === 'package' && btn.innerText.includes('بكجات')));
+    });
+    renderServices();
+}
+
 function renderServices() {
     const list = document.getElementById('services-list');
-    list.innerHTML = bookingData.services.map(s => {
+    const items = bookingData.currentType === 'service' ? bookingData.services : bookingData.packages;
+
+    list.innerHTML = items.map(s => {
         const isSelected = bookingData.selectedServices.some(item => item.name === s.name);
         return `
-            <div class="option-item ${isSelected ? 'selected' : ''}" onclick="toggleService('${s.name}')">
+            <div class="option-item ${isSelected ? 'selected' : ''}" onclick="toggleService('${s.name}')" style="${bookingData.currentType === 'package' ? 'border:1px solid gold; background:rgba(255,215,0,0.02);' : ''}">
                 <div style="font-weight:700;">${s.name}</div>
-                <div style="color:var(--primary); font-size:0.8rem;">${s.price.toFixed(3)} د.ب</div>
+                ${s.description ? `<div style="font-size:0.7rem; color:var(--text-muted); margin-bottom:5px;">${s.description}</div>` : ''}
+                <div style="color:${bookingData.currentType === 'package' ? 'gold' : 'var(--primary)'}; font-size:0.8rem;">${s.price.toFixed(3)} د.ب</div>
                 ${isSelected ? '<div class="check-mark">✓</div>' : ''}
             </div>
         `;
@@ -161,9 +176,13 @@ function renderServices() {
 }
 
 function toggleService(name) {
-    const service = bookingData.services.find(s => s.name === name);
+    const service = [...bookingData.services, ...bookingData.packages].find(s => s.name === name);
     const index = bookingData.selectedServices.findIndex(item => item.name === name);
-    index > -1 ? bookingData.selectedServices.splice(index, 1) : bookingData.selectedServices.push(service);
+    if (index > -1) {
+        bookingData.selectedServices.splice(index, 1);
+    } else {
+        if (service) bookingData.selectedServices.push(service);
+    }
     renderServices();
     updateSummary();
 }
