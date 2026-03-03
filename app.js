@@ -771,16 +771,25 @@ function renderHistoryTable() {
     if (!body) return;
     const arabicDays = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
     let html = "";
+    let monthlyBarber = 0;
+    let monthlyEmployee = 0;
+
     for (let day = 1; day <= daysInMonth; day++) {
         const dStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         const dateObj = new Date(year, month, day);
         const dayName = arabicDays[dateObj.getDay()];
         const s = getStatsForDate(dStr);
         const isToday = dStr === new Date().toISOString().split('T')[0];
+
+        monthlyBarber += s.barber;
+        monthlyEmployee += s.employee;
+
         html += `<tr style="${isToday ? 'background: rgba(148, 163, 184, 0.1);' : ''}"><td>${dayName}</td><td>${dStr}</td><td>${s.barber.toFixed(3)}</td><td>${s.employee.toFixed(3)}</td><td>${s.total.toFixed(3)}</td><td style="color:var(--danger)">${s.expenses.toFixed(3)}</td><td style="color:${s.net < 0 ? 'var(--danger)' : 'var(--success)'}; font-weight:800;">${s.net.toFixed(3)}</td></tr>`;
     }
     body.innerHTML = html;
     document.getElementById('history-month-label').innerText = `${monthSelect.options[month].text} ${year}`;
+    document.getElementById('history-monthly-barber').innerText = monthlyBarber.toFixed(3);
+    document.getElementById('history-monthly-employee').innerText = monthlyEmployee.toFixed(3);
 }
 
 function performSearch() {
