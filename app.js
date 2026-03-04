@@ -946,12 +946,22 @@ async function addService() {
 }
 
 async function updateService(index, field, value) {
-    if (field === 'price') value = parseFloat(value);
-    if (field === 'duration') value = parseInt(value);
-    if ((field === 'price' || field === 'duration') && isNaN(value)) return;
-    state.services[index][field] = value;
-    await save();
-    renderServices();
+    try {
+        if (field === 'price') value = parseFloat(value);
+        if (field === 'duration') value = parseInt(value);
+        if ((field === 'price' || field === 'duration') && isNaN(value)) {
+            renderManageServices();
+            return;
+        }
+        state.services[index][field] = value;
+        await save();
+        renderManageServices();
+        renderServices();
+        showToast("✅ تم تحديث الخدمة");
+    } catch (e) {
+        console.error(e);
+        showToast("❌ فشل تحديث الخدمة");
+    }
 }
 
 async function deleteService(index) {
@@ -1041,12 +1051,22 @@ async function addPackage() {
 }
 
 async function updatePackage(index, field, value) {
-    if (field === 'price') value = parseFloat(value);
-    if (field === 'duration') value = parseInt(value);
-    if ((field === 'price' || field === 'duration') && isNaN(value)) return;
-    state.packages[index][field] = value;
-    await save();
-    renderServices();
+    try {
+        if (field === 'price') value = parseFloat(value);
+        if (field === 'duration') value = parseInt(value);
+        if ((field === 'price' || field === 'duration') && isNaN(value)) {
+            renderManagePackages();
+            return;
+        }
+        state.packages[index][field] = value;
+        await save();
+        renderManagePackages();
+        renderServices();
+        showToast("✅ تم تحديث البكج");
+    } catch (e) {
+        console.error(e);
+        showToast("❌ فشل تحديث البكج");
+    }
 }
 
 async function deletePackage(index) {
@@ -1095,9 +1115,16 @@ async function addBarber() {
 }
 
 async function updateBarber(index, field, value) {
-    state.barbers[index][field] = value;
-    await save();
-    renderBarberLinks();
+    try {
+        state.barbers[index][field] = value;
+        await save();
+        renderManageBarbers();
+        renderBarberLinks();
+        showToast("✅ تم تحديث الموظف");
+    } catch (e) {
+        console.error(e);
+        showToast("❌ فشل التحديث");
+    }
 }
 
 async function deleteBarber(index) {
