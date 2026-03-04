@@ -49,12 +49,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateUI();
     if (document.getElementById('search-date')) document.getElementById('search-date').valueAsDate = new Date();
 
-    // تحديث تلقائي كل 5 ثوانٍ لجلب المعلومات الجديدة
+    // تحديث تلقائي كل 15 ثانية لجلب المعلومات الجديدة (تمت الزيادة لضمان راحة المستخدم عند التعديل)
     setInterval(async () => {
         await loadData();
         if (state.currentPage === 'appointments') renderAppointmentsTable();
         updateUI(); // هذا يضمن تحديث العدادات وكل شيء تلقائياً
-    }, 5000);
+    }, 15000);
 });
 
 let isSaving = false;
@@ -228,13 +228,17 @@ function initHistorySelectors() {
 }
 
 function handleNav(target) {
-    if (target === 'employee') {
-        state.isAuthorized = false;
-        state.currentRole = 'employee';
+    const barber = state.barbers.find(b => b.id === target);
+
+    // السماح لكل موظف يحمل رتبة 'employee' بالدخول لصفحة المبيعات (POS) مباشرة وبدون صلاحيات أدمن
+    if (barber && barber.role === 'employee') {
+        state.isAuthorized = false; // نلغي صلاحيات الأدمن للدخول كحلاق عادي
+        state.currentRole = barber.id;
         state.currentPage = 'pos';
         updateUI();
         return;
     }
+
     if (state.isAuthorized) {
         processNav(target);
     } else {
@@ -268,6 +272,12 @@ function processNav(target) {
 function closeAuth() { document.getElementById('auth-overlay').style.display = 'none'; }
 
 function updateUI() {
+    // منع التحديث التلقائي إذا كان المستخدم يكتب حالياً في أي خانة إدخال
+    // لضمان عدم ضياع التعديلات أو خروج المؤشر من الخانة
+    if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
+        return;
+    }
+
     renderBarberLinks();
 
     document.querySelectorAll('.nav-link').forEach(link => {
@@ -897,6 +907,10 @@ function renderTopServices() {
 function renderManageServices() {
     const body = document.querySelector('#manage-services-table tbody');
     if (!body) return;
+
+    // إذا كان المستخدم يركز حالياً على أي خانة داخل الجدول، نؤجل التحديث لكي لا يقفز المؤشر
+    if (body.contains(document.activeElement)) return;
+
     body.innerHTML = state.services.map((s, i) => `
         <tr>
             <td><input type="text" value="${s.name}" style="background:transparent; border:1px solid var(--border); color:white; padding:5px; width:100%; border-radius:5px;" onchange="updateService(${i}, 'name', this.value)"></td>
@@ -996,6 +1010,10 @@ async function saveSettings() {
 function renderManagePackages() {
     const body = document.querySelector('#manage-packages-table-body');
     if (!body) return;
+
+    // إذا كان المستخدم يركز على خانة، لا نمسح الجدول
+    if (body.contains(document.activeElement)) return;
+
     body.innerHTML = state.packages.map((p, i) => `
         <tr>
             <td><input type="text" value="${p.name}" style="background:transparent; border:1px solid var(--border); color:white; padding:5px; width:100%; border-radius:5px;" onchange="updatePackage(${i}, 'name', this.value)"></td>
@@ -1083,6 +1101,8 @@ async function deletePackage(index) {
 function renderManageBarbers() {
     const tbody = document.getElementById('manage-barbers-table-body');
     if (!tbody) return;
+
+    if (tbody.contains(document.activeElement)) return;
 
     // حساب عدد العمليات لكل حلاق للتاريخ الحالي
     const dailySales = state.history.filter(h => h.date === state.managedDate);
