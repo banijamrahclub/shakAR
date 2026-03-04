@@ -370,13 +370,9 @@
                             <span>كشف مبيعات الشهر</span>
                             <span id="history-month-label" style="color: var(--primary);"></span>
                         </div>
-                        <div
-                            style="display: flex; gap: 20px; font-size: 0.9rem; border-top: 1px solid var(--border); padding-top: 10px;">
-                            <div style="color: var(--text-muted);">إجمالي دخل الحلاق: <span id="history-monthly-barber"
-                                    style="color: var(--primary); font-weight: 700;">0.000</span> د.ب</div>
-                            <div style="color: var(--text-muted);">إجمالي دخل الموظف: <span
-                                    id="history-monthly-employee"
-                                    style="color: var(--primary); font-weight: 700;">0.000</span> د.ب</div>
+                        <div id="history-monthly-summary"
+                            style="display: flex; gap: 20px; flex-wrap: wrap; font-size: 0.9rem; border-top: 1px solid var(--border); padding-top: 10px;">
+                            <!-- JS Generated Breakdown -->
                         </div>
                     </h3>
                     <table id="history-table">
@@ -432,6 +428,7 @@
                                     <th>اسم الخدمة</th>
                                     <th>السعر (د.ب)</th>
                                     <th>المدة (دقيقة)</th>
+                                    <th>الترتيب</th>
                                     <th>الإجراءات</th>
                                 </tr>
                             </thead>
@@ -474,6 +471,7 @@
                                     <th>الوصف</th>
                                     <th>السعر (د.ب)</th>
                                     <th>المدة</th>
+                                    <th>الترتيب</th>
                                     <th>إجراء</th>
                                 </tr>
                             </thead>

@@ -767,12 +767,23 @@ function renderHistoryTable() {
     const month = parseInt(monthSelect.value);
     const year = parseInt(yearSelect.value);
     const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    const tableHeader = document.querySelector('#history-table thead tr');
     const body = document.querySelector('#history-table tbody');
-    if (!body) return;
+    if (!body || !tableHeader) return;
+
+    // تحديث الهيدر بناءً على الحلاقين الحاليين
+    let headerHtml = `<th>اليوم</th><th>التاريخ</th>`;
+    state.barbers.forEach(b => {
+        headerHtml += `<th>${b.name}</th>`;
+    });
+    headerHtml += `<th>المجموع</th><th>المصاريف</th><th>الصافي</th>`;
+    tableHeader.innerHTML = headerHtml;
+
     const arabicDays = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
     let html = "";
-    let monthlyBarber = 0;
-    let monthlyEmployee = 0;
+    const monthlyTotals = {};
+    state.barbers.forEach(b => monthlyTotals[b.id] = 0);
 
     for (let day = 1; day <= daysInMonth; day++) {
         const dStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -781,15 +792,32 @@ function renderHistoryTable() {
         const s = getStatsForDate(dStr);
         const isToday = dStr === new Date().toISOString().split('T')[0];
 
-        monthlyBarber += s.barber;
-        monthlyEmployee += s.employee;
+        let barberCols = "";
+        state.barbers.forEach(b => {
+            const val = s.breakdown[b.id] || 0;
+            monthlyTotals[b.id] += val;
+            barberCols += `<td>${val.toFixed(3)}</td>`;
+        });
 
-        html += `<tr style="${isToday ? 'background: rgba(148, 163, 184, 0.1);' : ''}"><td>${dayName}</td><td>${dStr}</td><td>${s.barber.toFixed(3)}</td><td>${s.employee.toFixed(3)}</td><td>${s.total.toFixed(3)}</td><td style="color:var(--danger)">${s.expenses.toFixed(3)}</td><td style="color:${s.net < 0 ? 'var(--danger)' : 'var(--success)'}; font-weight:800;">${s.net.toFixed(3)}</td></tr>`;
+        html += `<tr style="${isToday ? 'background: rgba(148, 163, 184, 0.1);' : ''}">
+            <td>${dayName}</td>
+            <td>${dStr}</td>
+            ${barberCols}
+            <td>${s.total.toFixed(3)}</td>
+            <td style="color:var(--danger)">${s.expenses.toFixed(3)}</td>
+            <td style="color:${s.net < 0 ? 'var(--danger)' : 'var(--success)'}; font-weight:800;">${s.net.toFixed(3)}</td>
+        </tr>`;
     }
     body.innerHTML = html;
     document.getElementById('history-month-label').innerText = `${monthSelect.options[month].text} ${year}`;
-    document.getElementById('history-monthly-barber').innerText = monthlyBarber.toFixed(3);
-    document.getElementById('history-monthly-employee').innerText = monthlyEmployee.toFixed(3);
+
+    // تحديث ملخص الدخل الشهري في الواجهة (بالأسماء)
+    const summaryContainer = document.getElementById('history-monthly-summary');
+    if (summaryContainer) {
+        summaryContainer.innerHTML = state.barbers.map(b => `
+            <div style="color: var(--text-muted);">${b.name}: <span style="color: var(--primary); font-weight: 700;">${(monthlyTotals[b.id] || 0).toFixed(3)}</span> د.ب</div>
+        `).join('');
+    }
 }
 
 function performSearch() {
@@ -810,8 +838,7 @@ function performSearch() {
         </h4>
         
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; font-size:1.1rem; margin-bottom: 20px;">
-            <div>دخل الحلاق: <span style="font-weight:700;">${s.barber.toFixed(3)}</span></div>
-            <div>دخل الموظف: <span style="font-weight:700;">${s.employee.toFixed(3)}</span></div>
+            ${state.barbers.map(b => `<div>${b.name}: <span style="font-weight:700;">${(s.breakdown[b.id] || 0).toFixed(3)}</span></div>`).join('')}
             <div>المصاريف: <span style="color:var(--danger); font-weight:700;">${s.expenses.toFixed(3)}</span></div>
             <div>صافي الربح: <span style="color:${s.net < 0 ? 'var(--danger)' : 'var(--success)'}; font-weight:800; border:1px solid; padding:2px 10px; border-radius:10px;">${s.net.toFixed(3)}</span></div>
         </div>
@@ -875,9 +902,32 @@ function renderManageServices() {
             <td><input type="text" value="${s.name}" style="background:transparent; border:1px solid var(--border); color:white; padding:5px; width:100%; border-radius:5px;" onchange="updateService(${i}, 'name', this.value)"></td>
             <td><input type="number" step="0.5" value="${s.price.toFixed(3)}" style="background:transparent; border:1px solid var(--border); color:white; padding:5px; width:100%; border-radius:5px;" onchange="updateService(${i}, 'price', this.value)"></td>
             <td><input type="number" value="${s.duration !== undefined ? s.duration : 30}" style="background:transparent; border:1px solid var(--border); color:white; padding:5px; width:100%; border-radius:5px;" onchange="updateService(${i}, 'duration', this.value)"></td>
+            <td style="display:flex; gap:5px;">
+                <button onclick="moveService(${i}, -1)" class="btn-action" style="padding:5px; width:30px; font-size:12px;" ${i === 0 ? 'disabled style="opacity:0.3;"' : ''}>▲</button>
+                <button onclick="moveService(${i}, 1)" class="btn-action" style="padding:5px; width:30px; font-size:12px;" ${i === state.services.length - 1 ? 'disabled style="opacity:0.3;"' : ''}>▼</button>
+            </td>
             <td><button class="btn-action" style="padding: 5px 15px; background: var(--danger); color: white; border-radius:8px;" onclick="deleteService(${i})">حذف</button></td>
         </tr>
     `).join('');
+}
+
+async function moveService(index, direction) {
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= state.services.length) return;
+    [state.services[index], state.services[newIndex]] = [state.services[newIndex], state.services[index]];
+
+    // تحديث الواجهة فوراً
+    renderManageServices();
+    renderServices();
+
+    // إضافة الأنيميشن للصف المحرك
+    setTimeout(() => {
+        const rows = document.querySelectorAll('#manage-services-table tbody tr');
+        if (rows[newIndex]) rows[newIndex].classList.add('row-move-anim');
+    }, 10);
+
+    // الحفظ في الخلفية
+    await save();
 }
 
 async function addService() {
@@ -942,9 +992,32 @@ function renderManagePackages() {
             <td><input type="text" value="${p.description || ''}" style="background:transparent; border:1px solid var(--border); color:white; padding:5px; width:100%; border-radius:5px;" onchange="updatePackage(${i}, 'description', this.value)"></td>
             <td><input type="number" step="0.5" value="${p.price.toFixed(3)}" style="background:transparent; border:1px solid var(--border); color:white; padding:5px; width:100%; border-radius:5px;" onchange="updatePackage(${i}, 'price', this.value)"></td>
             <td><input type="number" value="${p.duration !== undefined ? p.duration : 30}" style="background:transparent; border:1px solid var(--border); color:white; padding:5px; width:100%; border-radius:5px;" onchange="updatePackage(${i}, 'duration', this.value)"></td>
+            <td style="display:flex; gap:5px;">
+                <button onclick="movePackage(${i}, -1)" class="btn-action" style="padding:5px; width:30px; font-size:12px;" ${i === 0 ? 'disabled style="opacity:0.3;"' : ''}>▲</button>
+                <button onclick="movePackage(${i}, 1)" class="btn-action" style="padding:5px; width:30px; font-size:12px;" ${i === state.packages.length - 1 ? 'disabled style="opacity:0.3;"' : ''}>▼</button>
+            </td>
             <td><button class="btn-action" style="padding: 5px 15px; background: var(--danger); color: white; border-radius:8px;" onclick="deletePackage(${i})">حذف</button></td>
         </tr>
     `).join('');
+}
+
+async function movePackage(index, direction) {
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= state.packages.length) return;
+    [state.packages[index], state.packages[newIndex]] = [state.packages[newIndex], state.packages[index]];
+
+    // تحديث الواجهة فوراً
+    renderManagePackages();
+    renderServices();
+
+    // إضافة الأنيميشن للصف المحرك
+    setTimeout(() => {
+        const rows = document.querySelectorAll('#manage-packages-table-body tr');
+        if (rows[newIndex]) rows[newIndex].classList.add('row-move-anim');
+    }, 10);
+
+    // الحفظ في الخلفية
+    await save();
 }
 
 async function addPackage() {
@@ -1056,26 +1129,31 @@ function getStatsForDate(date) {
     const exps = state.expenses.filter(e => e.date === date);
     const total = sales.reduce((a, b) => a + b.total, 0);
 
-    // تحسين حساب الحلاقين والموظفين لدعم تعدد الموظفين
-    let barberTotal = 0;
-    let employeeTotal = 0;
+    // حساب تفصيلي لكل حلاق
+    const breakdown = {};
+    state.barbers.forEach(b => breakdown[b.id] = 0);
 
     sales.forEach(h => {
-        const bObj = state.barbers.find(b => b.id === h.role);
-        if (bObj && bObj.role === 'owner') barberTotal += h.total;
-        else if (bObj && bObj.role === 'employee') employeeTotal += h.total;
-        // ملاحظة: إذا كان الحلاق قديماً (محذوف حالياً) نعتمد على الـ role المخزن لو كان متاحاً
-        else if (h.role === 'owner') barberTotal += h.total;
-        else if (h.role === 'employee') employeeTotal += h.total;
+        if (breakdown[h.role] !== undefined) {
+            breakdown[h.role] += h.total;
+        } else {
+            // معالجة الحالات القديمة أو غير المعروفة
+            const bObj = state.barbers.find(b => b.id === h.role);
+            if (bObj) {
+                breakdown[bObj.id] = (breakdown[bObj.id] || 0) + h.total;
+            } else if (h.role === 'owner') {
+                breakdown['owner'] = (breakdown['owner'] || 0) + h.total;
+            } else {
+                breakdown['other'] = (breakdown['other'] || 0) + h.total;
+            }
+        }
     });
 
     const expenses = exps.reduce((a, b) => a + b.amount, 0);
-
-    // حساب الكاش والبينفت
     const cash = sales.filter(h => h.paymentMethod === 'cash' || !h.paymentMethod).reduce((a, b) => a + b.total, 0);
     const benefit = sales.filter(h => h.paymentMethod === 'benefit').reduce((a, b) => a + b.total, 0);
 
-    return { barber: barberTotal, employee: employeeTotal, total, expenses, net: total - expenses, cash, benefit };
+    return { breakdown, total, expenses, net: total - expenses, cash, benefit };
 }
 
 async function resetData() {
