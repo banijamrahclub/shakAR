@@ -1,0 +1,2029 @@
+{
+  "isAuthorized": true,
+  "currentRole": "owner",
+  "currentPage": "pos",
+  "pendingTarget": "owner",
+  "cart": [
+    {
+      "name": "حلاقة الأطفال",
+      "price": 1,
+      "duration": 30
+    }
+  ],
+  "history": [
+    {
+      "id": 1772760534220,
+      "time": "٤:٢٨:٥٤ ص",
+      "date": "2025-12-27",
+      "role": "owner",
+      "total": 1,
+      "items": "حلاقة الأطفال",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760524154,
+      "time": "٤:٢٨:٤٤ ص",
+      "date": "2025-12-27",
+      "role": "employee",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760521444,
+      "time": "٤:٢٨:٤١ ص",
+      "date": "2025-12-27",
+      "role": "employee",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760517594,
+      "time": "٤:٢٨:٣٧ ص",
+      "date": "2025-12-27",
+      "role": "employee",
+      "total": 1,
+      "items": "قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760515253,
+      "time": "٤:٢٨:٣٥ ص",
+      "date": "2025-12-27",
+      "role": "employee",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760512183,
+      "time": "٤:٢٨:٣٢ ص",
+      "date": "2025-12-27",
+      "role": "employee",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760509660,
+      "time": "٤:٢٨:٢٩ ص",
+      "date": "2025-12-27",
+      "role": "employee",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760507427,
+      "time": "٤:٢٨:٢٧ ص",
+      "date": "2025-12-27",
+      "role": "employee",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760502476,
+      "time": "٤:٢٨:٢٢ ص",
+      "date": "2025-12-27",
+      "role": "employee",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760501266,
+      "time": "٤:٢٨:٢١ ص",
+      "date": "2025-12-27",
+      "role": "employee",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760498068,
+      "time": "٤:٢٨:١٨ ص",
+      "date": "2025-12-27",
+      "role": "employee",
+      "total": 1,
+      "items": "قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760495151,
+      "time": "٤:٢٨:١٥ ص",
+      "date": "2025-12-27",
+      "role": "employee",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760492464,
+      "time": "٤:٢٨:١٢ ص",
+      "date": "2025-12-27",
+      "role": "employee",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760489082,
+      "time": "٤:٢٨:٠٩ ص",
+      "date": "2025-12-27",
+      "role": "employee",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760485873,
+      "time": "٤:٢٨:٠٥ ص",
+      "date": "2025-12-27",
+      "role": "employee",
+      "total": 1,
+      "items": "قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760461946,
+      "time": "٤:٢٧:٤١ ص",
+      "date": "2025-12-27",
+      "role": "employee",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760459277,
+      "time": "٤:٢٧:٣٩ ص",
+      "date": "2025-12-27",
+      "role": "employee",
+      "total": 1,
+      "items": "قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760457187,
+      "time": "٤:٢٧:٣٧ ص",
+      "date": "2025-12-27",
+      "role": "employee",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760400226,
+      "time": "٤:٢٦:٤٠ ص",
+      "date": "2025-12-26",
+      "role": "owner",
+      "total": 1,
+      "items": "حلاقة الأطفال",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760397585,
+      "time": "٤:٢٦:٣٧ ص",
+      "date": "2025-12-26",
+      "role": "owner",
+      "total": 2.5,
+      "items": "قص الشعر, قص اللحية, الخيط",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760390366,
+      "time": "٤:٢٦:٣٠ ص",
+      "date": "2025-12-26",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760387283,
+      "time": "٤:٢٦:٢٧ ص",
+      "date": "2025-12-26",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760383383,
+      "time": "٤:٢٦:٢٣ ص",
+      "date": "2025-12-26",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760379642,
+      "time": "٤:٢٦:١٩ ص",
+      "date": "2025-12-26",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760370482,
+      "time": "٤:٢٦:١٠ ص",
+      "date": "2025-12-26",
+      "role": "employee",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760367073,
+      "time": "٤:٢٦:٠٧ ص",
+      "date": "2025-12-26",
+      "role": "employee",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760362289,
+      "time": "٤:٢٦:٠٢ ص",
+      "date": "2025-12-26",
+      "role": "employee",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760359357,
+      "time": "٤:٢٥:٥٩ ص",
+      "date": "2025-12-26",
+      "role": "employee",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760356161,
+      "time": "٤:٢٥:٥٦ ص",
+      "date": "2025-12-26",
+      "role": "employee",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760354762,
+      "time": "٤:٢٥:٥٤ ص",
+      "date": "2025-12-26",
+      "role": "employee",
+      "total": 1,
+      "items": "قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760294788,
+      "time": "٤:٢٤:٥٤ ص",
+      "date": "2025-12-26",
+      "role": "employee",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760293480,
+      "time": "٤:٢٤:٥٣ ص",
+      "date": "2025-12-26",
+      "role": "employee",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760289153,
+      "time": "٤:٢٤:٤٩ ص",
+      "date": "2025-12-26",
+      "role": "employee",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760286937,
+      "time": "٤:٢٤:٤٦ ص",
+      "date": "2025-12-26",
+      "role": "employee",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760284412,
+      "time": "٤:٢٤:٤٤ ص",
+      "date": "2025-12-26",
+      "role": "employee",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760281511,
+      "time": "٤:٢٤:٤١ ص",
+      "date": "2025-12-26",
+      "role": "employee",
+      "total": 1,
+      "items": "قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760279477,
+      "time": "٤:٢٤:٣٩ ص",
+      "date": "2025-12-26",
+      "role": "employee",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760252675,
+      "time": "٤:٢٤:١٢ ص",
+      "date": "2025-12-25",
+      "role": "employee",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760245976,
+      "time": "٤:٢٤:٠٥ ص",
+      "date": "2025-12-25",
+      "role": "employee",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760243573,
+      "time": "٤:٢٤:٠٣ ص",
+      "date": "2025-12-25",
+      "role": "employee",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760240190,
+      "time": "٤:٢٤:٠٠ ص",
+      "date": "2025-12-25",
+      "role": "employee",
+      "total": 1,
+      "items": "قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760239072,
+      "time": "٤:٢٣:٥٩ ص",
+      "date": "2025-12-25",
+      "role": "employee",
+      "total": 1,
+      "items": "قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760230807,
+      "time": "٤:٢٣:٥٠ ص",
+      "date": "2025-12-25",
+      "role": "owner",
+      "total": 1,
+      "items": "قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760228415,
+      "time": "٤:٢٣:٤٨ ص",
+      "date": "2025-12-25",
+      "role": "owner",
+      "total": 1,
+      "items": "حلاقة الأطفال",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760224556,
+      "time": "٤:٢٣:٤٤ ص",
+      "date": "2025-12-25",
+      "role": "owner",
+      "total": 3,
+      "items": "قص اللحية, تنظيف الوجه",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760219947,
+      "time": "٤:٢٣:٣٩ ص",
+      "date": "2025-12-25",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760216881,
+      "time": "٤:٢٣:٣٦ ص",
+      "date": "2025-12-25",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760214652,
+      "time": "٤:٢٣:٣٤ ص",
+      "date": "2025-12-25",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760212333,
+      "time": "٤:٢٣:٣٢ ص",
+      "date": "2025-12-25",
+      "role": "owner",
+      "total": 1,
+      "items": "قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760210061,
+      "time": "٤:٢٣:٣٠ ص",
+      "date": "2025-12-25",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760207229,
+      "time": "٤:٢٣:٢٧ ص",
+      "date": "2025-12-25",
+      "role": "owner",
+      "total": 1,
+      "items": "حلاقة الأطفال",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760204636,
+      "time": "٤:٢٣:٢٤ ص",
+      "date": "2025-12-25",
+      "role": "owner",
+      "total": 1,
+      "items": "حلاقة الأطفال",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760198946,
+      "time": "٤:٢٣:١٨ ص",
+      "date": "2025-12-25",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760193070,
+      "time": "٤:٢٣:١٣ ص",
+      "date": "2025-12-25",
+      "role": "owner",
+      "total": 2,
+      "items": "تنظيف الوجه",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760177979,
+      "time": "٤:٢٢:٥٧ ص",
+      "date": "2025-12-25",
+      "role": "owner",
+      "total": 2.5,
+      "items": "قص الشعر, قص اللحية, لصقة أنف",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760172686,
+      "time": "٤:٢٢:٥٢ ص",
+      "date": "2025-12-25",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760167331,
+      "time": "٤:٢٢:٤٧ ص",
+      "date": "2025-12-25",
+      "role": "owner",
+      "total": 1,
+      "items": "قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760164737,
+      "time": "٤:٢٢:٤٤ ص",
+      "date": "2025-12-25",
+      "role": "owner",
+      "total": 1,
+      "items": "قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760162216,
+      "time": "٤:٢٢:٤٢ ص",
+      "date": "2025-12-25",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760159952,
+      "time": "٤:٢٢:٣٩ ص",
+      "date": "2025-12-25",
+      "role": "owner",
+      "total": 1,
+      "items": "حلاقة الأطفال",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760157812,
+      "time": "٤:٢٢:٣٧ ص",
+      "date": "2025-12-25",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760155020,
+      "time": "٤:٢٢:٣٥ ص",
+      "date": "2025-12-25",
+      "role": "owner",
+      "total": 2.5,
+      "items": "قص الشعر, قص اللحية, غسل الشعر بالشامبو",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760150719,
+      "time": "٤:٢٢:٣٠ ص",
+      "date": "2025-12-25",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760137502,
+      "time": "٤:٢٢:١٧ ص",
+      "date": "2025-12-24",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760135818,
+      "time": "٤:٢٢:١٥ ص",
+      "date": "2025-12-24",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760131529,
+      "time": "٤:٢٢:١١ ص",
+      "date": "2025-12-24",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760127082,
+      "time": "٤:٢٢:٠٧ ص",
+      "date": "2025-12-24",
+      "role": "owner",
+      "total": 1,
+      "items": "حلاقة الأطفال",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760124366,
+      "time": "٤:٢٢:٠٤ ص",
+      "date": "2025-12-24",
+      "role": "owner",
+      "total": 1,
+      "items": "قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760033041,
+      "time": "٤:٢٠:٣٣ ص",
+      "date": "2025-12-24",
+      "role": "owner",
+      "total": 4,
+      "items": "قص الشعر, لصقة أنف, غسل الشعر بالشامبو, تنظيف الوجه",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760014144,
+      "time": "٤:٢٠:١٤ ص",
+      "date": "2025-12-24",
+      "role": "owner",
+      "total": 1,
+      "items": "قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760005935,
+      "time": "٤:٢٠:٠٥ ص",
+      "date": "2025-12-24",
+      "role": "owner",
+      "total": 1,
+      "items": "حلاقة الأطفال",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760003786,
+      "time": "٤:٢٠:٠٣ ص",
+      "date": "2025-12-24",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760002352,
+      "time": "٤:٢٠:٠٢ ص",
+      "date": "2025-12-24",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772760000992,
+      "time": "٤:٢٠:٠٠ ص",
+      "date": "2025-12-24",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759996220,
+      "time": "٤:١٩:٥٦ ص",
+      "date": "2025-12-24",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759993533,
+      "time": "٤:١٩:٥٣ ص",
+      "date": "2025-12-24",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759990492,
+      "time": "٤:١٩:٥٠ ص",
+      "date": "2025-12-24",
+      "role": "owner",
+      "total": 1,
+      "items": "حلاقة الأطفال",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759987917,
+      "time": "٤:١٩:٤٧ ص",
+      "date": "2025-12-24",
+      "role": "owner",
+      "total": 1,
+      "items": "حلاقة الأطفال",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759985627,
+      "time": "٤:١٩:٤٥ ص",
+      "date": "2025-12-24",
+      "role": "owner",
+      "total": 1,
+      "items": "حلاقة الأطفال",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759983016,
+      "time": "٤:١٩:٤٣ ص",
+      "date": "2025-12-24",
+      "role": "owner",
+      "total": 1,
+      "items": "حلاقة الأطفال",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759980625,
+      "time": "٤:١٩:٤٠ ص",
+      "date": "2025-12-24",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759978356,
+      "time": "٤:١٩:٣٨ ص",
+      "date": "2025-12-24",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759975833,
+      "time": "٤:١٩:٣٥ ص",
+      "date": "2025-12-24",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759973050,
+      "time": "٤:١٩:٣٣ ص",
+      "date": "2025-12-24",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759969007,
+      "time": "٤:١٩:٢٩ ص",
+      "date": "2025-12-24",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759966800,
+      "time": "٤:١٩:٢٦ ص",
+      "date": "2025-12-24",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759933450,
+      "time": "٤:١٨:٥٣ ص",
+      "date": "2025-12-23",
+      "role": "employee",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759910023,
+      "time": "٤:١٨:٣٠ ص",
+      "date": "2025-12-23",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759908440,
+      "time": "٤:١٨:٢٨ ص",
+      "date": "2025-12-23",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759905691,
+      "time": "٤:١٨:٢٥ ص",
+      "date": "2025-12-23",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759903348,
+      "time": "٤:١٨:٢٣ ص",
+      "date": "2025-12-23",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759900605,
+      "time": "٤:١٨:٢٠ ص",
+      "date": "2025-12-23",
+      "role": "owner",
+      "total": 1,
+      "items": "حلاقة الأطفال",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759897980,
+      "time": "٤:١٨:١٧ ص",
+      "date": "2025-12-23",
+      "role": "owner",
+      "total": 1,
+      "items": "قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759896734,
+      "time": "٤:١٨:١٦ ص",
+      "date": "2025-12-23",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759892689,
+      "time": "٤:١٨:١٢ ص",
+      "date": "2025-12-23",
+      "role": "owner",
+      "total": 1,
+      "items": "قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759890255,
+      "time": "٤:١٨:١٠ ص",
+      "date": "2025-12-23",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759887078,
+      "time": "٤:١٨:٠٧ ص",
+      "date": "2025-12-23",
+      "role": "owner",
+      "total": 3,
+      "items": "قص الشعر, قص اللحية, الخيط, غسل الشعر بالشامبو",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759877903,
+      "time": "٤:١٧:٥٧ ص",
+      "date": "2025-12-23",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759851376,
+      "time": "٤:١٧:٣١ ص",
+      "date": "2025-12-22",
+      "role": "employee",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759849474,
+      "time": "٤:١٧:٢٩ ص",
+      "date": "2025-12-22",
+      "role": "employee",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759848117,
+      "time": "٤:١٧:٢٨ ص",
+      "date": "2025-12-22",
+      "role": "employee",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759845810,
+      "time": "٤:١٧:٢٥ ص",
+      "date": "2025-12-22",
+      "role": "employee",
+      "total": 1,
+      "items": "قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759793129,
+      "time": "٤:١٦:٣٣ ص",
+      "date": "2025-12-22",
+      "role": "employee",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759778907,
+      "time": "٤:١٦:١٨ ص",
+      "date": "2025-12-22",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759773588,
+      "time": "٤:١٦:١٣ ص",
+      "date": "2025-12-22",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759771423,
+      "time": "٤:١٦:١١ ص",
+      "date": "2025-12-22",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759769222,
+      "time": "٤:١٦:٠٩ ص",
+      "date": "2025-12-22",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759767287,
+      "time": "٤:١٦:٠٧ ص",
+      "date": "2025-12-22",
+      "role": "owner",
+      "total": 1,
+      "items": "قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759749300,
+      "time": "٤:١٥:٤٩ ص",
+      "date": "2025-12-21",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759747276,
+      "time": "٤:١٥:٤٧ ص",
+      "date": "2025-12-21",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759744421,
+      "time": "٤:١٥:٤٤ ص",
+      "date": "2025-12-21",
+      "role": "owner",
+      "total": 3,
+      "items": "قص الشعر, قص اللحية, شمع الوجه",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759740431,
+      "time": "٤:١٥:٤٠ ص",
+      "date": "2025-12-21",
+      "role": "owner",
+      "total": 1,
+      "items": "قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759738123,
+      "time": "٤:١٥:٣٨ ص",
+      "date": "2025-12-21",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759735539,
+      "time": "٤:١٥:٣٥ ص",
+      "date": "2025-12-21",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759733231,
+      "time": "٤:١٥:٣٣ ص",
+      "date": "2025-12-21",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759729604,
+      "time": "٤:١٥:٢٩ ص",
+      "date": "2025-12-21",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759726542,
+      "time": "٤:١٥:٢٦ ص",
+      "date": "2025-12-21",
+      "role": "owner",
+      "total": 1,
+      "items": "حلاقة الأطفال",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759723951,
+      "time": "٤:١٥:٢٣ ص",
+      "date": "2025-12-21",
+      "role": "owner",
+      "total": 1,
+      "items": "قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759601173,
+      "time": "٤:١٣:٢١ ص",
+      "date": "2025-12-20",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759599293,
+      "time": "٤:١٣:١٩ ص",
+      "date": "2025-12-20",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759597723,
+      "time": "٤:١٣:١٧ ص",
+      "date": "2025-12-20",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759595404,
+      "time": "٤:١٣:١٥ ص",
+      "date": "2025-12-20",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759593069,
+      "time": "٤:١٣:١٣ ص",
+      "date": "2025-12-20",
+      "role": "owner",
+      "total": 1,
+      "items": "قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759591010,
+      "time": "٤:١٣:١١ ص",
+      "date": "2025-12-20",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759589038,
+      "time": "٤:١٣:٠٩ ص",
+      "date": "2025-12-20",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759584319,
+      "time": "٤:١٣:٠٤ ص",
+      "date": "2025-12-20",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759581680,
+      "time": "٤:١٣:٠١ ص",
+      "date": "2025-12-20",
+      "role": "owner",
+      "total": 1,
+      "items": "حلاقة الأطفال",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759579169,
+      "time": "٤:١٢:٥٩ ص",
+      "date": "2025-12-20",
+      "role": "owner",
+      "total": 1,
+      "items": "قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759576410,
+      "time": "٤:١٢:٥٦ ص",
+      "date": "2025-12-20",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759574218,
+      "time": "٤:١٢:٥٤ ص",
+      "date": "2025-12-20",
+      "role": "owner",
+      "total": 1,
+      "items": "قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759571811,
+      "time": "٤:١٢:٥١ ص",
+      "date": "2025-12-20",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759567569,
+      "time": "٤:١٢:٤٧ ص",
+      "date": "2025-12-20",
+      "role": "owner",
+      "total": 1,
+      "items": "حلاقة الأطفال",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759565145,
+      "time": "٤:١٢:٤٥ ص",
+      "date": "2025-12-20",
+      "role": "owner",
+      "total": 1,
+      "items": "حلاقة الأطفال",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759562418,
+      "time": "٤:١٢:٤٢ ص",
+      "date": "2025-12-20",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759560357,
+      "time": "٤:١٢:٤٠ ص",
+      "date": "2025-12-20",
+      "role": "owner",
+      "total": 1,
+      "items": "قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759557376,
+      "time": "٤:١٢:٣٧ ص",
+      "date": "2025-12-20",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759555258,
+      "time": "٤:١٢:٣٥ ص",
+      "date": "2025-12-20",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759552484,
+      "time": "٤:١٢:٣٢ ص",
+      "date": "2025-12-20",
+      "role": "owner",
+      "total": 3,
+      "items": "قص الشعر, قص اللحية, شمع الوجه",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759546257,
+      "time": "٤:١٢:٢٦ ص",
+      "date": "2025-12-20",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759538833,
+      "time": "٤:١٢:١٨ ص",
+      "date": "2025-12-20",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759537140,
+      "time": "٤:١٢:١٧ ص",
+      "date": "2025-12-20",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759492258,
+      "time": "٤:١١:٣٢ ص",
+      "date": "2025-12-19",
+      "role": "owner",
+      "total": 1,
+      "items": "قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759486783,
+      "time": "٤:١١:٢٦ ص",
+      "date": "2025-12-19",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759484333,
+      "time": "٤:١١:٢٤ ص",
+      "date": "2025-12-19",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759482207,
+      "time": "٤:١١:٢٢ ص",
+      "date": "2025-12-19",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759479506,
+      "time": "٤:١١:١٩ ص",
+      "date": "2025-12-19",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759478221,
+      "time": "٤:١١:١٨ ص",
+      "date": "2025-12-19",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759477036,
+      "time": "٤:١١:١٧ ص",
+      "date": "2025-12-19",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759473764,
+      "time": "٤:١١:١٣ ص",
+      "date": "2025-12-19",
+      "role": "owner",
+      "total": 1.5,
+      "items": "قص الشعر, لصقة أنف",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759465189,
+      "time": "٤:١١:٠٥ ص",
+      "date": "2025-12-19",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759463872,
+      "time": "٤:١١:٠٣ ص",
+      "date": "2025-12-19",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759461519,
+      "time": "٤:١١:٠١ ص",
+      "date": "2025-12-19",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759458879,
+      "time": "٤:١٠:٥٨ ص",
+      "date": "2025-12-19",
+      "role": "owner",
+      "total": 2.5,
+      "items": "قص الشعر, قص اللحية, الخيط",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759454220,
+      "time": "٤:١٠:٥٤ ص",
+      "date": "2025-12-19",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759451881,
+      "time": "٤:١٠:٥١ ص",
+      "date": "2025-12-19",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759449887,
+      "time": "٤:١٠:٤٩ ص",
+      "date": "2025-12-19",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759427327,
+      "time": "٤:١٠:٢٧ ص",
+      "date": "2025-12-19",
+      "role": "owner",
+      "total": 1,
+      "items": "حلاقة الأطفال",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759323600,
+      "time": "٤:٠٨:٤٣ ص",
+      "date": "2025-12-18",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759320820,
+      "time": "٤:٠٨:٤٠ ص",
+      "date": "2025-12-18",
+      "role": "owner",
+      "total": 1,
+      "items": "حلاقة الأطفال",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759317911,
+      "time": "٤:٠٨:٣٧ ص",
+      "date": "2025-12-18",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759314895,
+      "time": "٤:٠٨:٣٤ ص",
+      "date": "2025-12-18",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759312360,
+      "time": "٤:٠٨:٣٢ ص",
+      "date": "2025-12-18",
+      "role": "owner",
+      "total": 1.5,
+      "items": "قص الشعر, غسل الشعر بالشامبو",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759305652,
+      "time": "٤:٠٨:٢٥ ص",
+      "date": "2025-12-18",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759302941,
+      "time": "٤:٠٨:٢٢ ص",
+      "date": "2025-12-18",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759299825,
+      "time": "٤:٠٨:١٩ ص",
+      "date": "2025-12-18",
+      "role": "owner",
+      "total": 2.5,
+      "items": "قص اللحية, قص الشعر, غسل الشعر بالشامبو",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759283216,
+      "time": "٤:٠٨:٠٣ ص",
+      "date": "2025-12-18",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759278116,
+      "time": "٤:٠٧:٥٨ ص",
+      "date": "2025-12-18",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759276865,
+      "time": "٤:٠٧:٥٦ ص",
+      "date": "2025-12-18",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759273665,
+      "time": "٤:٠٧:٥٣ ص",
+      "date": "2025-12-18",
+      "role": "owner",
+      "total": 1,
+      "items": "قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759271114,
+      "time": "٤:٠٧:٥١ ص",
+      "date": "2025-12-18",
+      "role": "owner",
+      "total": 1,
+      "items": "حلاقة الأطفال",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759267172,
+      "time": "٤:٠٧:٤٧ ص",
+      "date": "2025-12-18",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759264763,
+      "time": "٤:٠٧:٤٤ ص",
+      "date": "2025-12-18",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759263253,
+      "time": "٤:٠٧:٤٣ ص",
+      "date": "2025-12-18",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759260004,
+      "time": "٤:٠٧:٤٠ ص",
+      "date": "2025-12-18",
+      "role": "owner",
+      "total": 1,
+      "items": "حلاقة الأطفال",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759257572,
+      "time": "٤:٠٧:٣٧ ص",
+      "date": "2025-12-18",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759254963,
+      "time": "٤:٠٧:٣٤ ص",
+      "date": "2025-12-18",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759253463,
+      "time": "٤:٠٧:٣٣ ص",
+      "date": "2025-12-18",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759251964,
+      "time": "٤:٠٧:٣١ ص",
+      "date": "2025-12-18",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759208334,
+      "time": "٤:٠٦:٤٨ ص",
+      "date": "2025-12-17",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759207045,
+      "time": "٤:٠٦:٤٧ ص",
+      "date": "2025-12-17",
+      "role": "owner",
+      "total": 1,
+      "items": "قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759204221,
+      "time": "٤:٠٦:٤٤ ص",
+      "date": "2025-12-17",
+      "role": "owner",
+      "total": 1,
+      "items": "حلاقة الأطفال",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759203133,
+      "time": "٤:٠٦:٤٣ ص",
+      "date": "2025-12-17",
+      "role": "owner",
+      "total": 1,
+      "items": "حلاقة الأطفال",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759202106,
+      "time": "٤:٠٦:٤٢ ص",
+      "date": "2025-12-17",
+      "role": "owner",
+      "total": 1,
+      "items": "حلاقة الأطفال",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759199451,
+      "time": "٤:٠٦:٣٩ ص",
+      "date": "2025-12-17",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759196515,
+      "time": "٤:٠٦:٣٦ ص",
+      "date": "2025-12-17",
+      "role": "owner",
+      "total": 1,
+      "items": "حلاقة الأطفال",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759193862,
+      "time": "٤:٠٦:٣٣ ص",
+      "date": "2025-12-17",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759191229,
+      "time": "٤:٠٦:٣١ ص",
+      "date": "2025-12-17",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759188098,
+      "time": "٤:٠٦:٢٨ ص",
+      "date": "2025-12-17",
+      "role": "owner",
+      "total": 1,
+      "items": "قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759185269,
+      "time": "٤:٠٦:٢٥ ص",
+      "date": "2025-12-17",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759181166,
+      "time": "٤:٠٦:٢١ ص",
+      "date": "2025-12-17",
+      "role": "owner",
+      "total": 3.5,
+      "items": "قص الشعر, قص اللحية, صباغة الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759172210,
+      "time": "٤:٠٦:١٢ ص",
+      "date": "2025-12-17",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759169081,
+      "time": "٤:٠٦:٠٩ ص",
+      "date": "2025-12-17",
+      "role": "owner",
+      "total": 1,
+      "items": "قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759139626,
+      "time": "٤:٠٥:٣٩ ص",
+      "date": "2025-12-16",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759138215,
+      "time": "٤:٠٥:٣٨ ص",
+      "date": "2025-12-16",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759135677,
+      "time": "٤:٠٥:٣٥ ص",
+      "date": "2025-12-16",
+      "role": "owner",
+      "total": 1,
+      "items": "قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759132911,
+      "time": "٤:٠٥:٣٢ ص",
+      "date": "2025-12-16",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759131503,
+      "time": "٤:٠٥:٣١ ص",
+      "date": "2025-12-16",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759126252,
+      "time": "٤:٠٥:٢٦ ص",
+      "date": "2025-12-16",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759123297,
+      "time": "٤:٠٥:٢٣ ص",
+      "date": "2025-12-16",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759118795,
+      "time": "٤:٠٥:١٨ ص",
+      "date": "2025-12-16",
+      "role": "owner",
+      "total": 1,
+      "items": "قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759116042,
+      "time": "٤:٠٥:١٦ ص",
+      "date": "2025-12-16",
+      "role": "owner",
+      "total": 1,
+      "items": "حلاقة الأطفال",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759112282,
+      "time": "٤:٠٥:١٢ ص",
+      "date": "2025-12-16",
+      "role": "owner",
+      "total": 1,
+      "items": "قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759111046,
+      "time": "٤:٠٥:١١ ص",
+      "date": "2025-12-16",
+      "role": "owner",
+      "total": 1,
+      "items": "قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759107844,
+      "time": "٤:٠٥:٠٧ ص",
+      "date": "2025-12-16",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759106207,
+      "time": "٤:٠٥:٠٦ ص",
+      "date": "2025-12-16",
+      "role": "owner",
+      "total": 2,
+      "items": "قص اللحية, قص الشعر",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759103829,
+      "time": "٤:٠٥:٠٣ ص",
+      "date": "2025-12-16",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759101646,
+      "time": "٤:٠٥:٠١ ص",
+      "date": "2025-12-16",
+      "role": "owner",
+      "total": 1,
+      "items": "قص اللحية",
+      "paymentMethod": "cash"
+    },
+    {
+      "id": 1772759099139,
+      "time": "٤:٠٤:٥٩ ص",
+      "date": "2025-12-16",
+      "role": "owner",
+      "total": 2,
+      "items": "قص الشعر, قص اللحية",
+      "paymentMethod": "cash"
+    }
+  ],
+  "expenses": [],
+  "fixedExpenses": [],
+  "services": [
+    {
+      "name": "قص الشعر",
+      "price": 1,
+      "duration": 30
+    },
+    {
+      "name": "قص اللحية",
+      "price": 1,
+      "duration": 20
+    },
+    {
+      "name": "حلاقة الأطفال",
+      "price": 1,
+      "duration": 30
+    },
+    {
+      "name": "شمع الوجه",
+      "price": 1,
+      "duration": 15
+    },
+    {
+      "name": "شمع الاذن",
+      "price": 0.5,
+      "duration": 5
+    },
+    {
+      "name": "الخيط",
+      "price": 0.5,
+      "duration": 10
+    },
+    {
+      "name": "غسل الشعر بالشامبو",
+      "price": 0.5,
+      "duration": 7
+    },
+    {
+      "name": "غسل الشعر بالبلسم",
+      "price": 0.5,
+      "duration": 7
+    },
+    {
+      "name": "حمام زيت",
+      "price": 1,
+      "duration": 10
+    },
+    {
+      "name": "صباغة الشعر",
+      "price": 1.5,
+      "duration": 20
+    },
+    {
+      "name": "صباغة اللحية",
+      "price": 1,
+      "duration": 15
+    },
+    {
+      "name": "لصقة أنف",
+      "price": 0.5,
+      "duration": 0
+    },
+    {
+      "name": "تنظيف الوجه",
+      "price": 2,
+      "duration": 20
+    },
+    {
+      "name": "قناع أسود",
+      "price": 2,
+      "duration": 15
+    },
+    {
+      "name": "مساج كتف وراس",
+      "price": 1,
+      "duration": 10
+    },
+    {
+      "name": "تسريحة",
+      "price": 1,
+      "duration": 15
+    },
+    {
+      "name": "التمليس",
+      "price": 3,
+      "duration": 45
+    },
+    {
+      "name": "البروتين",
+      "price": 15,
+      "duration": 90
+    },
+    {
+      "name": "شامبو القشرة",
+      "price": 3,
+      "duration": 0
+    },
+    {
+      "name": "كريم شعر ( احمر )",
+      "price": 1.5,
+      "duration": 0
+    }
+  ],
+  "packages": [
+    {
+      "name": "بكج  معرس",
+      "price": 15,
+      "duration": 120,
+      "description": "شعر و لحية  و تنظيف وجه و قناع و لصقة انف و غسيل بالشامبو و غسيل بالبلسم و تسريحة و شمع الوجه و شمع الاذان وو صباغة الشعر و اللحية و خيط "
+    }
+  ],
+  "barbers": [
+    {
+      "id": "owner",
+      "name": "الحلاق الشكر",
+      "role": "owner"
+    },
+    {
+      "id": "employee",
+      "name": "أبو حيدر",
+      "role": "employee"
+    }
+  ],
+  "appointments": [
+    {
+      "name": "حسينوو",
+      "phone": "37182112",
+      "service": "بكج  معرس",
+      "price": 15,
+      "startTime": "2026-03-05T14:00:00.000Z",
+      "endTime": "2026-03-05T16:00:00.000Z",
+      "status": "confirmed",
+      "date": "2026-03-05T03:04:37.858Z"
+    }
+  ],
+  "settings": {
+    "openTime": "12:00",
+    "closeTime": "01:30"
+  },
+  "managedDate": "2025-12-27",
+  "currentPosType": "service"
+}

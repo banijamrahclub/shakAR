@@ -6,7 +6,13 @@ const fetch = require('node-fetch');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DB_FILE = path.resolve(__dirname, 'db.json');
+
+// تحديد مسار قاعدة البيانات (التخزين الدائم)
+const DB_DIR = (process.env.RENDER || fs.existsSync('/var/data')) ? '/var/data' : __dirname;
+if (!fs.existsSync(DB_DIR)) {
+    try { fs.mkdirSync(DB_DIR, { recursive: true }); } catch (e) { console.error("Could not create DB dir:", e); }
+}
+const DB_FILE = path.resolve(DB_DIR, 'db.json');
 
 // الرابط الخاص بجسر قوقل الخارق (Sheets + Calendar)
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbyKLr46PjGylPxJJk11Tr1XpwmNYjY2BNc8rdyKkueTZ9a8BXztllOkeMvF7iudkt3g/exec';
@@ -41,51 +47,43 @@ const defaultPackages = [
 async function syncWithCloud() {
     console.log("🔄 Syncing with Google Sheets...");
     try {
-        const res = await fetch(`${GAS_URL}?action=loadState`);
+        const res = await fetch(`${GAS_URL}?action=loadState`, { redirect: 'follow' });
 
-        // فحص إذا كان الرابط يطلب تسجيل دخول (بسبب إعدادات الخصوصية)
+        // فحص إذا كان الرابط يطلب تسجيل دخول
         if (res.url && res.url.includes('accounts.google.com')) {
-            console.log("------------------------------------------------------");
-            console.error("❌ تنبيه: الرابط لا يزال 'خاص' (Private) وليس 'عام' (Anyone).");
-            console.log("يرجى عمل New Deployment في قوقل شيت واختيار 'Anyone'.");
-            console.log("------------------------------------------------------");
-            return;
+            console.error("❌ Cloud Sync Failed: Google requires login. Make sure deployment is set to 'Anyone'.");
+            return; // نخرج فوراً ولا نمسح البيانات المحلية
         }
 
         const cloudData = await res.json();
-        if (cloudData && typeof cloudData === 'object' && Object.keys(cloudData).length > 0) {
-            let currentLocalData = {};
-            try {
-                if (fs.existsSync(DB_FILE)) {
-                    currentLocalData = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-                }
-            } catch (e) { }
 
-            // دمج البيانات السحابية مع البيانات المحلية (لحماية المفاتيح الجديدة مثل البكجات)
-            const mergedData = { ...currentLocalData, ...cloudData };
-
-            // حماية الخدمات والبكجات: إذا كانت موجودة محلياً وغير موجودة أو فارغة في السحاب، نحتفظ بالمحلي
-            if ((!mergedData.services || mergedData.services.length === 0) && currentLocalData.services && currentLocalData.services.length > 0) {
-                mergedData.services = currentLocalData.services;
-            }
-            if ((!mergedData.packages || mergedData.packages.length === 0) && currentLocalData.packages && currentLocalData.packages.length > 0) {
-                mergedData.packages = currentLocalData.packages;
-            }
-
-            // التأكد من وجود المفاتيح الأساسية دائمًا (Defaults) فقط لو الكل فارغ
-            if (!mergedData.packages || mergedData.packages.length === 0) mergedData.packages = defaultPackages;
-            if (!mergedData.services || mergedData.services.length === 0) mergedData.services = defaultServices;
-
-            fs.writeFileSync(DB_FILE, JSON.stringify(mergedData, null, 2));
-            console.log("✅ Data merged and synced from Google Sheets!");
-        } else {
-            console.log("⚠️ Google Sheets is empty, using local or defaults.");
-            initializeLocalDB();
+        // إذا البيانات السحابية فارغة أو غير موجودة، لا نفعل شيئاً لنحمي البيانات المحلية
+        if (!cloudData || typeof cloudData !== 'object' || Object.keys(cloudData).length === 0) {
+            console.log("⚠️ Google Sheets is empty or unreachable. Preserving local data.");
+            return;
         }
+
+        let currentLocalData = {};
+        if (fs.existsSync(DB_FILE)) {
+            try {
+                currentLocalData = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+            } catch (e) { console.error("Error reading local DB:", e); }
+        }
+
+        // دمج ذكي: ندمج التاريخ (history) والمصاريف (expenses) لضمان عدم ضياع أي عملية جديدة
+        const mergedData = { ...currentLocalData, ...cloudData };
+
+        // التأكد من عدم ضياع العمليات الجديدة في التاريخ والمصاريف عبر دمج المصفوفات
+        if (currentLocalData.history && cloudData.history) {
+            const localIds = new Set(currentLocalData.history.map(h => h.id));
+            const newFromCloud = cloudData.history.filter(h => !localIds.has(h.id));
+            mergedData.history = [...currentLocalData.history, ...newFromCloud].sort((a, b) => b.id - a.id);
+        }
+
+        fs.writeFileSync(DB_FILE, JSON.stringify(mergedData, null, 2));
+        console.log("✅ Data successfully merged from Cloud!");
     } catch (e) {
-        console.error("❌ Cloud Sync Failed:", e.message);
-        console.log("💡 نصيحة: تأكد أن إعدادات النشر في قوقل شيت هي (Anyone).");
-        initializeLocalDB();
+        console.error("❌ Cloud Sync Error:", e.message);
     }
 }
 
@@ -118,19 +116,19 @@ async function saveToCloud(data) {
         });
 
         if (response.url && response.url.includes('accounts.google.com')) {
-            console.error("❌ فشل الحفظ: قوقل يرفض الوصول (Unauthorized 401). تأكد أن الوصول (Anyone).");
-            return;
+            console.error("❌ فشل الحفظ: قوقل يرفض الوصول (Unauthorized 401).");
+            return { success: false, error: "401_UNAUTHORIZED" };
         }
 
         if (response.ok) {
             console.log("✅ State backed up to Google Sheets!");
+            return { success: true };
         } else {
-            console.error("❌ Google Sheets Error:", response.status);
-            const text = await response.text();
-            if (text.includes("doctype")) console.log("تنبيه: يبدو أن الرابط يتطلب تسجيل دخول.");
+            return { success: false, error: "HTTP_" + response.status };
         }
     } catch (e) {
         console.error("❌ Cloud Backup Failed:", e.message);
+        return { success: false, error: e.message };
     }
 }
 
@@ -146,7 +144,8 @@ async function startServer() {
 function readDB() { return JSON.parse(fs.readFileSync(DB_FILE, 'utf8')); }
 async function writeDB(data) {
     fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
-    await saveToCloud(data); // ننتظر النسخة الخلفية لضمان عدم ضياع البيانات
+    const cloudResult = await saveToCloud(data);
+    return cloudResult;
 }
 
 async function cleanExpiredPending() {
@@ -269,8 +268,12 @@ app.post('/api/calendar/cancel', async (req, res) => {
 
 app.post('/api/save', async (req, res) => {
     try {
-        await writeDB(req.body);
-        res.json({ success: true });
+        const cloudResult = await writeDB(req.body);
+        res.json({
+            success: true,
+            cloudSuccess: cloudResult.success,
+            cloudError: cloudResult.error || null
+        });
     } catch (e) { res.status(500).json({ success: false }); }
 });
 

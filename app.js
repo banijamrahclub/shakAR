@@ -83,10 +83,18 @@ async function save() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(state)
         });
-        if (!response.ok) throw new Error("Save error");
-        updateSyncStatus('synced');
+        const result = await response.json();
+
+        if (result.success && result.cloudSuccess) {
+            updateSyncStatus('synced');
+        } else if (result.success && !result.cloudSuccess) {
+            updateSyncStatus('error'); // فشل قوقل شيت لكن الحفظ المحلي تم
+            console.error("Cloud Save Failed:", result.cloudError);
+        } else {
+            throw new Error("Save error");
+        }
     } catch (err) {
-        console.error("Cloud Save Error:", err);
+        console.error("Save Connection Error:", err);
         updateSyncStatus('error');
     } finally {
         isSaving = false;
@@ -102,26 +110,31 @@ function updateSyncStatus(status) {
     if (!el) {
         el = document.createElement('div');
         el.id = 'sync-indicator';
-        el.style.cssText = "position:fixed; top:10px; left:10px; padding:5px 12px; border-radius:20px; font-size:12px; font-weight:bold; z-index:10000; transition:0.3s;";
+        el.style.cssText = "position:fixed; top:10px; left:10px; padding:8px 15px; border-radius:20px; font-size:13px; font-weight:bold; z-index:10000; transition:0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display:flex; align-items:center; gap:8px;";
         document.body.appendChild(el);
     }
 
     if (status === 'saving') {
-        el.innerText = '⏳ جاري الحفظ...';
-        el.style.background = 'orange';
+        el.innerHTML = '<span class="spinner"></span> ⏳ جاري الحفظ...';
+        el.style.background = '#f59e0b'; // Amber
         el.style.color = 'black';
+        el.style.opacity = '1';
     } else if (status === 'synced') {
-        el.innerText = '✅ تم الحفظ';
+        el.innerHTML = '✅ تم الحفظ سحابياً';
         el.style.background = 'var(--success)';
-        el.style.color = 'black';
-        setTimeout(() => el.style.opacity = '0', 2000);
+        el.style.color = 'white';
+        setTimeout(() => el.style.opacity = '0', 3000);
     } else if (status === 'error') {
-        el.innerText = '❌ فشل الحفظ';
+        el.innerHTML = '⚠️ خطأ: قوقل شيت غير متصل';
         el.style.background = 'var(--danger)';
         el.style.color = 'white';
         el.style.opacity = '1';
+    } else if (status === 'local') {
+        el.innerHTML = '💾 تم الحفظ محلياً (فقط)';
+        el.style.background = '#3b82f6'; // Blue
+        el.style.color = 'white';
+        el.style.opacity = '1';
     }
-    if (status !== 'synced') el.style.opacity = '1';
 }
 
 async function loadData() {
