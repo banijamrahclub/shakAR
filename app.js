@@ -713,10 +713,13 @@ function initProfitChart() {
     });
 
     const currMonth = `${year}-${String(month + 1).padStart(2, '0')}`;
-    const mTotalSales = state.history.filter(h => h.date.startsWith(currMonth)).reduce((a, b) => a + b.total, 0);
+    const mHistory = state.history.filter(h => h.date.startsWith(currMonth));
+    const mTotalSales = mHistory.reduce((a, b) => a + b.total, 0);
     const mTotalExp = state.expenses.filter(e => e.date.startsWith(currMonth)).reduce((a, b) => a + b.amount, 0);
     document.getElementById('m-income').innerText = mTotalSales.toFixed(3);
     document.getElementById('m-exp').innerText = mTotalExp.toFixed(3);
+    const mCustEl = document.getElementById('m-customers');
+    if (mCustEl) mCustEl.innerText = mHistory.length;
 }
 
 async function addFixedExpense() {
