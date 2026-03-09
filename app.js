@@ -720,6 +720,10 @@ function initProfitChart() {
     document.getElementById('m-exp').innerText = mTotalExp.toFixed(3);
     const mCustEl = document.getElementById('m-customers');
     if (mCustEl) mCustEl.innerText = mHistory.length;
+
+    const yHistory = state.history.filter(h => h.date.startsWith(`${year}`));
+    const yCustEl = document.getElementById('y-customers');
+    if (yCustEl) yCustEl.innerText = yHistory.length;
 }
 
 async function addFixedExpense() {
