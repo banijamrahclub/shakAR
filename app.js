@@ -186,12 +186,25 @@ async function refreshFromCloud() {
         const res = await fetch(`${API_BASE}/api/sync-down`);
         const result = await res.json();
         if (result.success) {
-            state.history = result.data.history || [];
-            state.expenses = result.data.expenses || [];
-            state.fixedExpenses = result.data.fixedExpenses || [];
-            state.services = result.data.services || state.services;
-            state.packages = result.data.packages || state.packages;
-            state.appointments = result.data.appointments || [];
+            // دمج ذكي بدلاً من الاستبدال الكامل
+            if (result.data.history) {
+                const existingIds = new Set(state.history.map(h => h.id));
+                const newItems = result.data.history.filter(h => !existingIds.has(h.id));
+                state.history = [...state.history, ...newItems].sort((a, b) => b.id - a.id);
+            }
+            if (result.data.expenses) {
+                const existingIds = new Set(state.expenses.map(e => e.id));
+                const newItems = result.data.expenses.filter(e => !existingIds.has(e.id));
+                state.expenses = [...state.expenses, ...newItems].sort((a, b) => b.id - a.id);
+            }
+            if (result.data.fixedExpenses) {
+                const existingIds = new Set(state.fixedExpenses.map(f => f.id));
+                const newItems = result.data.fixedExpenses.filter(f => !existingIds.has(f.id));
+                state.fixedExpenses = [...state.fixedExpenses, ...newItems];
+            }
+            if (result.data.services) state.services = result.data.services;
+            if (result.data.packages) state.packages = result.data.packages;
+            if (result.data.appointments) state.appointments = result.data.appointments;
 
             saveLocalBackup();
             updateUI();
@@ -317,6 +330,7 @@ function updateUI() {
     const ownerOnlyElements = document.querySelectorAll('.owner-only');
     ownerOnlyElements.forEach(el => el.style.display = (state.isAuthorized ? 'block' : 'none'));
 
+    if (state.currentPage === 'emergency-exp') renderExpensesTable();
     if (state.currentPage === 'analytics') initProfitChart();
     if (state.currentPage === 'fixed-exp') renderFixedTable();
     if (state.currentPage === 'history') renderHistoryTable();
@@ -758,11 +772,30 @@ async function saveExpense() {
     const note = document.getElementById('exp-note').value;
     if (isNaN(amt) || amt <= 0) return alert("مبلغ غير صحيح");
     state.expenses.unshift({ id: Date.now(), date: state.managedDate, amount: amt, note });
-    save();
+    await save();
     showToast("تم حفظ المصروف بنجاح");
     document.getElementById('exp-amount').value = '';
     document.getElementById('exp-note').value = '';
+    renderExpensesTable();
     updateUI();
+}
+
+function renderExpensesTable() {
+    const tbody = document.getElementById('expenses-table-body');
+    if (!tbody) return;
+
+    // منع التحديث المتعارض مع الكتابة
+    if (tbody.contains(document.activeElement)) return;
+
+    // عرض مصاريف اليوم المدار فقط للسهولة، أو عرض الكل؟ سنعرض الكل مرتباً بالأحدث
+    tbody.innerHTML = state.expenses.map(e => `
+        <tr>
+            <td>${e.note}</td>
+            <td style="color:var(--danger); font-weight:800;">${e.amount.toFixed(3)}</td>
+            <td style="font-size:0.8rem; color:var(--text-muted);">${e.date}</td>
+            <td><button onclick="deleteExpense(${e.id})" style="color:var(--danger); background:none; border:none; cursor:pointer;">حذف</button></td>
+        </tr>
+    `).join('');
 }
 
 async function deleteSale(id) {
@@ -777,6 +810,7 @@ async function deleteExpense(id) {
     if (confirm("هل أنت متأكد من حذف هذا المصروف؟")) {
         state.expenses = state.expenses.filter(e => e.id != id);
         await save();
+        renderExpensesTable();
         updateUI();
     }
 }

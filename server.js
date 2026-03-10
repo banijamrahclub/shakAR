@@ -73,11 +73,33 @@ async function syncWithCloud() {
         // دمج ذكي: ندمج التاريخ (history) والمصاريف (expenses) لضمان عدم ضياع أي عملية جديدة
         const mergedData = { ...currentLocalData, ...cloudData };
 
-        // التأكد من عدم ضياع العمليات الجديدة في التاريخ والمصاريف عبر دمج المصفوفات
+        // التأكد من عدم ضياع العمليات الجديدة في التاريخ (المبيعات)
         if (currentLocalData.history && cloudData.history) {
             const localIds = new Set(currentLocalData.history.map(h => h.id));
             const newFromCloud = cloudData.history.filter(h => !localIds.has(h.id));
             mergedData.history = [...currentLocalData.history, ...newFromCloud].sort((a, b) => b.id - a.id);
+        }
+
+        // دمج المصاريف اليومية (Expenses) لمنع اختفائها
+        if (currentLocalData.expenses && cloudData.expenses) {
+            const localIds = new Set(currentLocalData.expenses.map(e => e.id));
+            const newFromCloud = cloudData.expenses.filter(e => !localIds.has(e.id));
+            mergedData.expenses = [...currentLocalData.expenses, ...newFromCloud].sort((a, b) => b.id - a.id);
+        }
+
+        // دمج المصاريف الثابتة (Fixed Expenses)
+        if (currentLocalData.fixedExpenses && cloudData.fixedExpenses) {
+            const localIds = new Set(currentLocalData.fixedExpenses.map(f => f.id));
+            const newFromCloud = cloudData.fixedExpenses.filter(f => !localIds.has(f.id));
+            mergedData.fixedExpenses = [...currentLocalData.fixedExpenses, ...newFromCloud];
+        }
+
+        // حماية الخدمات والبكجات: إذا كانت موجودة محلياً وغير موجودة أو فارغة في السحاب، نحتفظ بالمحلي
+        if ((!mergedData.services || mergedData.services.length === 0) && currentLocalData.services && currentLocalData.services.length > 0) {
+            mergedData.services = currentLocalData.services;
+        }
+        if ((!mergedData.packages || mergedData.packages.length === 0) && currentLocalData.packages && currentLocalData.packages.length > 0) {
+            mergedData.packages = currentLocalData.packages;
         }
 
         fs.writeFileSync(DB_FILE, JSON.stringify(mergedData, null, 2));

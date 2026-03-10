@@ -323,6 +323,21 @@
                     </div>
                     <button class="btn-action" onclick="saveExpense()">حفظ المصروف فوراً</button>
                 </div>
+
+                <!-- جدول عرض المصاريف الطارئة لليوم المدار -->
+                <div class="table-container" style="margin-top: 30px;">
+                    <table id="expenses-table">
+                        <thead>
+                            <tr>
+                                <th>السبب</th>
+                                <th>المبلغ</th>
+                                <th>التاريخ</th>
+                                <th>الإجراء</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expenses-table-body"></tbody>
+                    </table>
+                </div>
             </div>
 
             <!-- PAGE: HISTORY -->
