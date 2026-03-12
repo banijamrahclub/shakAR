@@ -212,6 +212,9 @@ async function loadTimeSlots() {
     // Generate slots based on settings (Minute-based for precision)
     const settings = bookingData.settings || { openTime: '10:00', closeTime: '22:00' };
 
+    // حساب المدة الإجمالية للخدمات المختارة للتأكد من توفر وقت كافٍ
+    const totalDuration = bookingData.selectedServices.reduce((sum, s) => sum + (s.duration || 30), 0);
+
     // Convert current settings to total minutes
     const [openH, openM] = (settings.openTime || '10:00').split(':').map(Number);
     const [closeH, closeM] = (settings.closeTime || '22:00').split(':').map(Number);
@@ -248,6 +251,7 @@ async function loadTimeSlots() {
 
         const slotDateTime = new Date(`${slotDate}T${timeStr}:00`);
         const slotStart = slotDateTime.getTime();
+        const slotEnd = slotStart + (totalDuration * 60000);
 
         // 1. فحص إذا كان الوقت قد مضى (لليوم الحالي)
         let isPast = false;
@@ -255,25 +259,31 @@ async function loadTimeSlots() {
             if (slotDateTime < now) isPast = true;
         }
 
-        // 2. فحص إذا كان الموعد محجوز في قوقل
-        const isBusy = busyTime.some(b => {
+        // 2. فحص إذا كان الموعد يمتد لبعد وقت الإغلاق
+        const shopEndTime = new Date(new Date(`${date}T00:00:00`).getTime() + endTotalMinutes * 60000).getTime();
+        const exceedsClosing = slotEnd > shopEndTime;
+
+        // 3. فحص إذا كان الموعد يتداخل مع أي موعد موجود
+        const isOverlap = busyTime.some(b => {
             const bStart = new Date(b.start).getTime();
             const bEnd = new Date(b.end).getTime();
-            return (slotStart >= bStart && slotStart < bEnd);
+            // تداخل الفترات [slotStart, slotEnd] مع [bStart, bEnd]
+            return (slotStart < bEnd && slotEnd > bStart);
         });
 
-        const disabled = isPast || isBusy;
+        const disabled = isPast || isOverlap || exceedsClosing;
 
         html += `
             <div class="option-item ${disabled ? 'busy' : ''}" 
                  onclick="${disabled ? '' : `selectTime('${timeStr}')`}">
                 ${displayTime}
                 ${isPast ? '<div style="font-size:0.6rem; color:var(--danger)">مضى</div>' : ''}
+                ${!isPast && exceedsClosing ? '<div style="font-size:0.5rem; color:var(--danger)">يفوق الإغلاق</div>' : ''}
             </div>
         `;
 
         // Safety break
-        if (totalMin > 1440) break;
+        if (totalMin > 2880) break; // بحد أقصى يومين
     }
 
     if (!html) html = '<p style="grid-column: span 2; color: var(--danger);">لا توجد مواعيد متاحة في هذا الوقت.</p>';
@@ -348,7 +358,7 @@ async function confirmBooking() {
             const waMsg = `تحية طيبة من حلاق الشكر\nلقد قمت بتقديم طلب حجز موعد\n\nتفاصيل الحجز\nالاسم: ${name}\nالخدمات: ${servicesNames}\nالتاريخ: ${bookingData.date}\nالوقت: ${bookingData.time}\nالإجمالي: ${totalPrice.toFixed(3)} دب\n\nمرفق لكم ايصال تحويل العربون لشراء وقتك وتأكيد الموعد\nشكرا لكم`;
             waBtn.onclick = () => window.open(`https://wa.me/97337055332?text=${encodeURIComponent(waMsg)}`);
         } else {
-            alert("حدث خطأ أثناء الحجز، يرجى المحاولة مرة أخرى.");
+            alert(data.error || "حدث خطأ أثناء الحجز، يرجى المحاولة مرة أخرى.");
         }
     } catch (e) {
         alert("خطأ في الاتصال بالسيرفر");

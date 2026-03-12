@@ -212,22 +212,47 @@ app.post('/api/calendar/book', async (req, res) => {
     try {
         const data = readDB();
 
-        // منع التكرار: التأكد أن نفس العميل لم يحجز نفس الوقت خلال آخر دقيقة
+        // فحص التكرار السريع (نفس العميل يحجز مرتين في دقيقة)
         const isDuplicate = data.appointments.some(app =>
             app.phone === phone &&
             app.startTime === startTime &&
             (new Date() - new Date(app.date)) < 60000
         );
+        if (isDuplicate) return res.json({ success: true, duplicated: true });
 
-        if (isDuplicate) {
-            console.log("⚠️ Duplicate booking detected, skipping...");
-            return res.json({ success: true, duplicated: true });
+        // فحص التداخل الفعلي (هل الوقت لا يزال متاحاً؟)
+        const requestStart = new Date(startTime).getTime();
+        const requestEnd = new Date(endTime).getTime();
+        const requestDay = startTime.split('T')[0];
+
+        let allBusyForCheck = (data.appointments || [])
+            .filter(app => app.startTime && app.startTime.startsWith(requestDay))
+            .map(app => ({ start: app.startTime, end: app.endTime }));
+
+        try {
+            const gasRes = await fetch(`${GAS_URL}?action=getBusy&date=${requestDay}`);
+            const gasBusy = await gasRes.json();
+            if (Array.isArray(gasBusy)) allBusyForCheck = [...allBusyForCheck, ...gasBusy];
+        } catch (e) { console.error("Overlap Check GAS Error:", e); }
+
+        const hasOverlap = allBusyForCheck.some(b => {
+            const bStart = new Date(b.start).getTime();
+            const bEnd = new Date(b.end).getTime();
+            // تداخل الفترات [requestStart, requestEnd] مع [bStart, bEnd]
+            return (requestStart < bEnd && requestEnd > bStart);
+        });
+
+        if (hasOverlap) {
+            return res.status(400).json({ success: false, error: "عذراً، هذا الوقت تم حجزه للتو. يرجى اختيار وقت آخر." });
         }
 
         data.appointments.push({ name, phone, service, price, startTime, endTime, status: 'pending', date: new Date().toISOString() });
         await writeDB(data);
         res.json({ success: true });
-    } catch (err) { res.status(500).json({ success: false }); }
+    } catch (err) { 
+        console.error("Booking Error:", err);
+        res.status(500).json({ success: false }); 
+    }
 });
 
 app.post('/api/calendar/confirm', async (req, res) => {
