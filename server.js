@@ -7,6 +7,14 @@ const fetch = require('node-fetch');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// اجبار تحويل الروابط إلى HTTPS (مهم جداً لأجهزة الأيفون Safari)
+app.use((req, res, next) => {
+    if (req.headers['x-forwarded-proto'] === 'http') {
+        return res.redirect(301, 'https://' + req.get('host') + req.originalUrl);
+    }
+    next();
+});
+
 // تحديد مسار قاعدة البيانات (التخزين الدائم)
 const DB_DIR = (process.env.RENDER || fs.existsSync('/var/data')) ? '/var/data' : __dirname;
 if (!fs.existsSync(DB_DIR)) {
@@ -17,25 +25,6 @@ const DB_FILE = path.resolve(DB_DIR, 'db.json');
 // الرابط الخاص بجسر قوقل الخارق (Sheets + Calendar)
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbyKLr46PjGylPxJJk11Tr1XpwmNYjY2BNc8rdyKkueTZ9a8BXztllOkeMvF7iudkt3g/exec';
 
-// 1. الميدل وير الخاص بالتحويل (أول شيء لضمان دقة SEO)
-app.use((req, res, next) => {
-    const host = (req.get('host') || req.headers.host || '').toLowerCase();
-    const url = req.originalUrl || req.url;
-
-    // استثناء ملف التحقق من قوقل (يجب أن يعمل على النطاقين)
-    if (url.includes('googleb458ca90bdc9b6c3.html')) {
-        return next();
-    }
-
-    // إذا كان الطلب قادم من النطاق القديم، حوله 301 فوراً
-    if (host.includes('salonalshakar.com')) {
-        return res.redirect(301, 'https://salonshakar.onrender.com' + url);
-    }
-
-    next();
-});
-
-// 2. ملف التحقق من قوقل
 app.get('/googleb458ca90bdc9b6c3.html', (req, res) => {
     res.sendFile(path.resolve(__dirname, 'googleb458ca90bdc9b6c3.html'));
 });
