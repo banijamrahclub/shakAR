@@ -17,22 +17,25 @@ const DB_FILE = path.resolve(DB_DIR, 'db.json');
 // الرابط الخاص بجسر قوقل الخارق (Sheets + Calendar)
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbyKLr46PjGylPxJJk11Tr1XpwmNYjY2BNc8rdyKkueTZ9a8BXztllOkeMvF7iudkt3g/exec';
 
-app.use(cors());
-app.use(express.json({ limit: '50mb' }));
+app.get('/googleb458ca90bdc9b6c3.html', (req, res) => res.sendFile(path.resolve(__dirname, 'googleb458ca90bdc9b6c3.html')));
 
-// Redirect salonalshakar.com to salonshakar.onrender.com (301)
 app.use((req, res, next) => {
-    const host = req.headers.host;
-    // استثناء ملف التحقق من قوقل من عملية التحويل
-    if (req.url.includes('googleb458ca90bdc9b6c3.html')) {
+    const host = req.get('host') || req.headers['x-forwarded-host'];
+    
+    // استثناء ملف قوقل من التحويل (مهم جداً للتحقق)
+    if (req.path.includes('googleb458ca90bdc9b6c3.html')) {
         return next();
     }
     
-    if (host && (host.includes('salonalshakar.com'))) {
-        return res.redirect(301, 'https://salonshakar.onrender.com' + req.url);
+    // إذا كان الطلب قادم من النطاق القديم، حوله فوراً (301)
+    if (host && host.includes('salonalshakar.com')) {
+        return res.redirect(301, 'https://salonshakar.onrender.com' + req.originalUrl);
     }
     next();
 });
+
+app.use(cors());
+app.use(express.json({ limit: '50mb' }));
 
 const defaultServices = [
     { name: "قص الشعر", price: 1.0, duration: 20 },
@@ -338,7 +341,6 @@ app.post('/api/save', async (req, res) => {
     } catch (e) { res.status(500).json({ success: false }); }
 });
 
-app.get('/googleb458ca90bdc9b6c3.html', (req, res) => res.sendFile(path.resolve(__dirname, 'googleb458ca90bdc9b6c3.html')));
 app.get('/', (req, res) => res.sendFile(path.resolve(__dirname, 'booking.html')));
 app.get('/h-shakar', (req, res) => res.sendFile(path.resolve(__dirname, 'index.html')));
 app.use(express.static(__dirname));
