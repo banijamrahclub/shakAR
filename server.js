@@ -17,21 +17,27 @@ const DB_FILE = path.resolve(DB_DIR, 'db.json');
 // الرابط الخاص بجسر قوقل الخارق (Sheets + Calendar)
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbyKLr46PjGylPxJJk11Tr1XpwmNYjY2BNc8rdyKkueTZ9a8BXztllOkeMvF7iudkt3g/exec';
 
-app.get('/googleb458ca90bdc9b6c3.html', (req, res) => res.sendFile(path.resolve(__dirname, 'googleb458ca90bdc9b6c3.html')));
-
+// 1. الميدل وير الخاص بالتحويل (أول شيء لضمان دقة SEO)
 app.use((req, res, next) => {
-    const host = req.get('host') || req.headers['x-forwarded-host'];
-    
-    // استثناء ملف قوقل من التحويل (مهم جداً للتحقق)
-    if (req.path.includes('googleb458ca90bdc9b6c3.html')) {
+    const host = (req.get('host') || req.headers.host || '').toLowerCase();
+    const url = req.originalUrl || req.url;
+
+    // استثناء ملف التحقق من قوقل (يجب أن يعمل على النطاقين)
+    if (url.includes('googleb458ca90bdc9b6c3.html')) {
         return next();
     }
-    
-    // إذا كان الطلب قادم من النطاق القديم، حوله فوراً (301)
-    if (host && host.includes('salonalshakar.com')) {
-        return res.redirect(301, 'https://salonshakar.onrender.com' + req.originalUrl);
+
+    // إذا كان الطلب قادم من النطاق القديم، حوله 301 فوراً
+    if (host.includes('salonalshakar.com')) {
+        return res.redirect(301, 'https://salonshakar.onrender.com' + url);
     }
+
     next();
+});
+
+// 2. ملف التحقق من قوقل
+app.get('/googleb458ca90bdc9b6c3.html', (req, res) => {
+    res.sendFile(path.resolve(__dirname, 'googleb458ca90bdc9b6c3.html'));
 });
 
 app.use(cors());
