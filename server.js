@@ -20,6 +20,15 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbyKLr46PjGylPxJJk11Tr1X
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
+// Redirect salonalshakar.com to salonshakar.onrender.com (301)
+app.use((req, res, next) => {
+    const host = req.headers.host;
+    if (host && (host.includes('salonalshakar.com'))) {
+        return res.redirect(301, 'https://salonshakar.onrender.com' + req.url);
+    }
+    next();
+});
+
 const defaultServices = [
     { name: "قص الشعر", price: 1.0, duration: 20 },
     { name: "قص اللحية", price: 1.0, duration: 15 },
