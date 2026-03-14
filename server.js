@@ -23,6 +23,11 @@ app.use(express.json({ limit: '50mb' }));
 // Redirect salonalshakar.com to salonshakar.onrender.com (301)
 app.use((req, res, next) => {
     const host = req.headers.host;
+    // استثناء ملف التحقق من قوقل من عملية التحويل
+    if (req.url.includes('googleb458ca90bdc9b6c3.html')) {
+        return next();
+    }
+    
     if (host && (host.includes('salonalshakar.com'))) {
         return res.redirect(301, 'https://salonshakar.onrender.com' + req.url);
     }
@@ -333,6 +338,7 @@ app.post('/api/save', async (req, res) => {
     } catch (e) { res.status(500).json({ success: false }); }
 });
 
+app.get('/googleb458ca90bdc9b6c3.html', (req, res) => res.sendFile(path.resolve(__dirname, 'googleb458ca90bdc9b6c3.html')));
 app.get('/', (req, res) => res.sendFile(path.resolve(__dirname, 'booking.html')));
 app.get('/h-shakar', (req, res) => res.sendFile(path.resolve(__dirname, 'index.html')));
 app.use(express.static(__dirname));
