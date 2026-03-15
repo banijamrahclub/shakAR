@@ -570,12 +570,13 @@ async function saveManualAppointment() {
     const totalPrice = state.manualSelectedServices.reduce((sum, s) => sum + s.price, 0);
     const serviceNames = state.manualSelectedServices.map(s => s.name).join(' + ');
     const endTime = new Date(new Date(startTime).getTime() + totalDuration * 60000).toISOString();
+    const syncCalendar = document.getElementById('m-sync-google').checked;
 
     try {
         const res = await fetch(`${API_BASE}/api/calendar/book`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, phone, service: serviceNames, price: totalPrice, startTime, endTime })
+            body: JSON.stringify({ name, phone, service: serviceNames, price: totalPrice, startTime, endTime, syncCalendar, status: 'confirmed' })
         });
         const result = await res.json();
         if (result.success) {
@@ -586,6 +587,7 @@ async function saveManualAppointment() {
             document.getElementById('m-app-name').value = '';
             document.getElementById('m-app-phone').value = '';
             document.getElementById('m-app-start').value = '';
+            document.getElementById('m-sync-google').checked = false;
         } else {
             alert(result.error || "فشل إضافة الحجز");
         }
@@ -594,12 +596,18 @@ async function saveManualAppointment() {
 
 async function verifyBooking(index) {
     const app = state.appointments[index];
-    if (confirm(`هل استلمت العربون من ${app.name}؟ (سيتم تأكيد الحجز وإرساله لقوقل كلندر)`)) {
+    const syncChoice = confirm(`هل استلمت العربون من ${app.name}؟\n\n(موافق = تأكيد + مزامنة مع قوقل)\n(إلغاء = تأكيد محلي فقط في الموقع)`);
+    
+    // ملاحظة: confirm ترجع true أو false. نحن نريد التأكيد دائماً ولكن المزامنة تعتمد على الاختيار.
+    // لكن المستخدم قد يريد إلغاء العملية كاملة. لذا سنستخدم prompt أو confirm مركبة.
+    
+    if (confirm(`تأكيد استلام العربون لـ ${app.name}؟`)) {
+        const syncCalendar = syncChoice; 
         try {
             const res = await fetch(`${API_BASE}/api/calendar/confirm`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: app.name, startTime: app.startTime })
+                body: JSON.stringify({ name: app.name, startTime: app.startTime, syncCalendar })
             });
             const result = await res.json();
             if (result.success) {

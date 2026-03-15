@@ -219,7 +219,7 @@ app.get('/api/calendar/busy', async (req, res) => {
 });
 
 app.post('/api/calendar/book', async (req, res) => {
-    const { name, phone, service, price, startTime, endTime } = req.body;
+    const { name, phone, service, price, startTime, endTime, syncCalendar, status } = req.body;
     await cleanExpiredPending();
     try {
         const data = readDB();
@@ -232,7 +232,7 @@ app.post('/api/calendar/book', async (req, res) => {
         );
         if (isDuplicate) return res.json({ success: true, duplicated: true });
 
-        // فحص التداخل الفعلي (هل الوقت لا يزال متاحاً؟)
+        // فحص التداخل الفعلي
         const requestStart = new Date(startTime).getTime();
         const requestEnd = new Date(endTime).getTime();
         const requestDay = startTime.split('T')[0];
@@ -250,16 +250,31 @@ app.post('/api/calendar/book', async (req, res) => {
         const hasOverlap = allBusyForCheck.some(b => {
             const bStart = new Date(b.start).getTime();
             const bEnd = new Date(b.end).getTime();
-            // تداخل الفترات [requestStart, requestEnd] مع [bStart, bEnd]
             return (requestStart < bEnd && requestEnd > bStart);
         });
 
         if (hasOverlap) {
-            return res.status(400).json({ success: false, error: "عذراً، هذا الوقت تم حجزه للتو. يرجى اختيار وقت آخر." });
+            return res.status(400).json({ success: false, error: "عذراً، هذا الوقت تم حجزه للتو." });
         }
 
-        data.appointments.push({ name, phone, service, price, startTime, endTime, status: 'pending', date: new Date().toISOString() });
+        const appStatus = status || 'pending';
+        const newApp = { name, phone, service, price, startTime, endTime, status: appStatus, date: new Date().toISOString() };
+        
+        data.appointments.push(newApp);
         await writeDB(data);
+
+        // إذا تم طلب المزامنة وكان الحجز مؤكد
+        if (syncCalendar && appStatus === 'confirmed') {
+            try {
+                const params = `action=book&name=${encodeURIComponent(name)}&phone=${encodeURIComponent(phone)}&service=${encodeURIComponent(service)}&startTime=${encodeURIComponent(startTime)}&endTime=${encodeURIComponent(endTime)}`;
+                await fetch(GAS_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: params
+                });
+            } catch (e) { console.error("Manual GAS Sync Error:", e); }
+        }
+
         res.json({ success: true });
     } catch (err) { 
         console.error("Booking Error:", err);
@@ -268,21 +283,24 @@ app.post('/api/calendar/book', async (req, res) => {
 });
 
 app.post('/api/calendar/confirm', async (req, res) => {
-    const { name, startTime } = req.body;
+    const { name, startTime, syncCalendar } = req.body;
     try {
         const data = readDB();
         const appData = data.appointments.find(a => a.name === name && a.startTime === startTime);
         if (appData) {
             appData.status = 'confirmed';
             await writeDB(data);
-            try {
-                const params = `action=book&name=${encodeURIComponent(appData.name)}&phone=${encodeURIComponent(appData.phone)}&service=${encodeURIComponent(appData.service)}&startTime=${encodeURIComponent(appData.startTime)}&endTime=${encodeURIComponent(appData.endTime)}`;
-                await fetch(GAS_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: params
-                });
-            } catch (e) { console.error("GAS Booking Error:", e); }
+            
+            if (syncCalendar) {
+                try {
+                    const params = `action=book&name=${encodeURIComponent(appData.name)}&phone=${encodeURIComponent(appData.phone)}&service=${encodeURIComponent(appData.service)}&startTime=${encodeURIComponent(appData.startTime)}&endTime=${encodeURIComponent(appData.endTime)}`;
+                    await fetch(GAS_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: params
+                    });
+                } catch (e) { console.error("GAS Booking Error:", e); }
+            }
             res.json({ success: true });
         } else { res.json({ success: false, error: "Not found" }); }
     } catch (err) { res.status(500).json({ success: false }); }

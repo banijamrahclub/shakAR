@@ -622,13 +622,18 @@
                         </div>
 
                         <!-- خلاصة الموعد -->
-                        <div id="m-app-summary" class="stat-card" style="margin-top: 20px; background: rgba(148, 163, 184, 0.1); display: none; justify-content: space-between; align-items: center;">
+                        <div id="m-app-summary" class="stat-card" style="margin-top: 20px; background: rgba(148, 163, 184, 0.1); display: none; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
                             <div>
                                 <div id="m-selected-names" style="font-size: 0.9rem; font-weight: 700;"></div>
                                 <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 5px;">
                                     السعر الإجمالي: <span id="m-total-price" style="color: var(--success); font-weight: 800;">0</span> د.ب | 
                                     المدة المتوقعة: <span id="m-total-duration" style="color: var(--primary); font-weight: 800;">0</span> دقيقة
                                 </div>
+                            </div>
+                            <!-- خيار المزامنة -->
+                            <div style="display: flex; align-items: center; gap: 10px; background: var(--bg-card); padding: 10px 15px; border-radius: 12px; border: 1px solid var(--border);">
+                                <input type="checkbox" id="m-sync-google" style="width: 20px; height: 20px; cursor: pointer;">
+                                <label for="m-sync-google" style="font-size: 0.85rem; cursor: pointer; user-select: none;">مزامنة مع قوقل كلندر</label>
                             </div>
                         </div>
 
