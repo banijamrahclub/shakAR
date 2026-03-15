@@ -94,6 +94,18 @@ async function syncWithCloud() {
             mergedData.fixedExpenses = [...currentLocalData.fixedExpenses, ...newFromCloud];
         }
 
+        // --- دمج الحجوزات (Appointments) لضمان عدم ضياعها خاصة غير المؤكدة ---
+        if (currentLocalData.appointments && cloudData.appointments) {
+            const localKeys = new Set(currentLocalData.appointments.map(a => `${a.name}-${a.startTime}`));
+            const newFromCloud = cloudData.appointments.filter(a => !localKeys.has(`${a.name}-${a.startTime}`));
+            
+            // نجمع الحجوزات ونرتبها حسب التاريخ
+            mergedData.appointments = [...currentLocalData.appointments, ...newFromCloud].sort((a,b) => new Date(a.startTime) - new Date(b.startTime));
+        } else if (currentLocalData.appointments && (!cloudData.appointments || cloudData.appointments.length === 0)) {
+            // لو قوقل شيت رجع بيانات فاضية للحجوزات، نتمسك بالبيانات المحلية
+            mergedData.appointments = currentLocalData.appointments;
+        }
+
         // حماية الخدمات والبكجات: إذا كانت موجودة محلياً وغير موجودة أو فارغة في السحاب، نحتفظ بالمحلي
         if ((!mergedData.services || mergedData.services.length === 0) && currentLocalData.services && currentLocalData.services.length > 0) {
             mergedData.services = currentLocalData.services;

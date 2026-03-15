@@ -585,9 +585,45 @@
             <!-- PAGE: APPOINTMENTS -->
             <div id="page-appointments" class="page">
                 <div class="card-glass">
-                    <h2 style="margin-bottom: 20px;">📅 الحجوزات القادمة (من الموقع وقوقل)</h2>
-                    <p style="color: var(--text-muted); margin-bottom: 25px;">هذه القائمة محدثة تلقائياً من نظام الحجز
-                        ومن قوقل كلندر.</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
+                        <div>
+                            <h2 style="margin: 0;">📅 الحجوزات القادمة (من الموقع وقوقل)</h2>
+                            <p style="color: var(--text-muted); margin-top: 5px;">هذه القائمة محدثة تلقائياً من نظام الحجز ومن قوقل كلندر.</p>
+                        </div>
+                        <button class="btn-action" onclick="toggleManualAppForm()" style="width: auto; padding: 0 20px; background: var(--primary); color: #000;">➕ إضافة حجز يدوي</button>
+                    </div>
+
+                    <!-- نموذج إضافة حجز يدوي (مخفي افتراضياً) -->
+                    <div id="manual-app-form" 
+                         style="display: none; margin-bottom: 25px; background: rgba(148, 163, 184, 0.05); padding: 25px; border-radius: 20px; border: 1px solid var(--primary);">
+                        <h3 style="margin-bottom: 15px; color: var(--primary);">تسجيل حجز جديد يدوياً</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                            <div class="stat-card" style="background: var(--bg-input); padding: 10px;">
+                                <label style="font-size: 0.7rem; color: var(--text-muted);">اسم الزبون</label>
+                                <input type="text" id="m-app-name" placeholder="مثال: يوسف الكويتي" style="width: 100%; background: transparent; border: none; color: white;">
+                            </div>
+                            <div class="stat-card" style="background: var(--bg-input); padding: 10px;">
+                                <label style="font-size: 0.7rem; color: var(--text-muted);">رقم الهاتف</label>
+                                <input type="text" id="m-app-phone" placeholder="973XXXX" style="width: 100%; background: transparent; border: none; color: white;">
+                            </div>
+                            <div class="stat-card" style="background: var(--bg-input); padding: 10px;">
+                                <label style="font-size: 0.7rem; color: var(--text-muted);">الخدمة</label>
+                                <input type="text" id="m-app-service" placeholder="مثال: بكج الشكر" style="width: 100%; background: transparent; border: none; color: white;">
+                            </div>
+                            <div class="stat-card" style="background: var(--bg-input); padding: 10px;">
+                                <label style="font-size: 0.7rem; color: var(--text-muted);">تاريخ ووقت الموعد</label>
+                                <input type="datetime-local" id="m-app-start" style="width: 100%; background: transparent; border: none; color: white;">
+                            </div>
+                            <div class="stat-card" style="background: var(--bg-input); padding: 10px;">
+                                <label style="font-size: 0.7rem; color: var(--text-muted);">المدة (دقائق)</label>
+                                <input type="number" id="m-app-duration" value="30" style="width: 100%; background: transparent; border: none; color: white;">
+                            </div>
+                        </div>
+                        <div style="margin-top: 20px; display: flex; gap: 10px;">
+                            <button class="btn-action" onclick="saveManualAppointment()" style="width: auto; padding: 0 40px;">حفظ الحجز الآن</button>
+                            <button class="btn-action" style="width: auto; padding: 0 20px; background: transparent; border: 1px solid var(--danger); color: var(--danger);" onclick="toggleManualAppForm()">إلغاء</button>
+                        </div>
+                    </div>
 
                     <div class="table-container">
                         <table id="appointments-table">

@@ -481,6 +481,45 @@ function sendWhatsAppMessage(phone, encodedMsg) {
     window.open(`https://wa.me/${cleanPhone}?text=${encodedMsg}`);
 }
 
+function toggleManualAppForm() {
+    const form = document.getElementById('manual-app-form');
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+async function saveManualAppointment() {
+    const name = document.getElementById('m-app-name').value;
+    const phone = document.getElementById('m-app-phone').value;
+    const service = document.getElementById('m-app-service').value;
+    const start = document.getElementById('m-app-start').value;
+    const duration = parseInt(document.getElementById('m-app-duration').value) || 30;
+
+    if (!name || !phone || !start) return alert("يرجى ملئ الاسم والهاتف والتوقيت");
+
+    const startTime = new Date(start).toISOString();
+    const endTime = new Date(new Date(startTime).getTime() + duration * 60000).toISOString();
+
+    try {
+        const res = await fetch(`${API_BASE}/api/calendar/book`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, phone, service, price: 0, startTime, endTime })
+        });
+        const result = await res.json();
+        if (result.success) {
+            alert("تمت إضافة الحجز بنجاح!");
+            toggleManualAppForm();
+            renderAppointmentsTable();
+            // مسح الخانات
+            document.getElementById('m-app-name').value = '';
+            document.getElementById('m-app-phone').value = '';
+            document.getElementById('m-app-service').value = '';
+            document.getElementById('m-app-start').value = '';
+        } else {
+            alert(result.error || "فشل إضافة الحجز");
+        }
+    } catch (e) { alert("خطأ في الاتصال"); }
+}
+
 async function verifyBooking(index) {
     const app = state.appointments[index];
     if (confirm(`هل استلمت العربون من ${app.name}؟ (سيتم تأكيد الحجز وإرساله لقوقل كلندر)`)) {
