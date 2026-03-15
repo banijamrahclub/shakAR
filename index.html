@@ -18,6 +18,18 @@
 
 <body>
 
+    <div id="site-auth-overlay" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 20000; align-items: center; justify-content: center; flex-direction: column; text-align: center;">
+        <div class="auth-card" style="background: #111; padding: 40px; border-radius: 20px; border: 1px solid #333;">
+            <img src="https://raw.githubusercontent.com/banijamrahclub/shakar-photo/f4bdba935a23d08c7b13c24ac6e843dd5a1367cd/560520585_17848960644571743_4454414339529875747_n.jpg" 
+                 style="width: 100px; height: 100px; border-radius: 50%; margin-bottom: 20px; border: 2px solid var(--primary);">
+            <h1 style="color: var(--primary); margin-bottom: 10px; font-family: 'Outfit';">نظام إدارة حلاق الشكر</h1>
+            <p style="margin-bottom: 25px; color: var(--text-muted);">يرجى إدخال رمز الدخول للمتابعة</p>
+            <input type="password" id="site-pass" placeholder="رمز الدخول"
+                style="text-align: center; margin-bottom: 20px; font-size: 1.5rem; background: #000; color: white; border: 1px solid #333; padding: 10px; border-radius: 10px; width: 100%;">
+            <button class="btn-action" onclick="verifySiteAccess()" style="width: 100%;">دخول النظام</button>
+        </div>
+    </div>
+
     <div id="auth-overlay">
         <div class="auth-card">
             <h1 style="color: var(--primary); margin-bottom: 20px;">🔒 محمي</h1>
@@ -31,7 +43,7 @@
         </div>
     </div>
 
-    <div class="app-layout">
+    <div class="app-layout" style="display: none;">
         <!-- Aside Menu (Sidebar) -->
         <aside>
             <div class="brand">

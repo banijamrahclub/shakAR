@@ -324,9 +324,10 @@ app.post('/api/save', async (req, res) => {
     } catch (e) { res.status(500).json({ success: false }); }
 });
 
+app.get('/robots.txt', (req, res) => res.status(410).sendFile(path.resolve(__dirname, '404.html')));
 app.get('/', (req, res) => res.sendFile(path.resolve(__dirname, 'booking.html')));
 app.get('/h-shakar', (req, res) => res.sendFile(path.resolve(__dirname, 'index.html')));
 app.use(express.static(__dirname));
-app.get('*', (req, res) => res.sendFile(path.resolve(__dirname, 'booking.html')));
+app.get('*', (req, res) => res.status(404).sendFile(path.resolve(__dirname, '404.html')));
 
 startServer();

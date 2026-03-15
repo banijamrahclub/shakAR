@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حلاق الشكر | عذراً، الصفحة غير موجودة</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #94a3b8;
+            --bg: #0a0c10;
+            --card: #11151c;
+            --text: #f8fafc;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            text-align: center;
+        }
+
+        .container {
+            padding: 20px;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .error-code {
+            font-size: 8rem;
+            font-weight: 800;
+            margin: 0;
+            background: linear-gradient(135deg, var(--primary), #475569);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1;
+        }
+
+        .title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 10px 0 20px;
+            color: var(--primary);
+        }
+
+        .message {
+            color: #64748b;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .back-btn {
+            display: inline-block;
+            background: var(--primary);
+            color: #000;
+            text-decoration: none;
+            padding: 12px 30px;
+            border-radius: 12px;
+            font-weight: 800;
+            transition: 0.3s;
+            box-shadow: 0 10px 20px rgba(148, 163, 184, 0.2);
+        }
+
+        .back-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(148, 163, 184, 0.3);
+            filter: brightness(1.1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Decoration */
+        .sciss-icon {
+            font-size: 4rem;
+            margin-bottom: 10px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sciss-icon">✂️</div>
+        <div class="error-code">410</div>
+        <div class="title">عذراً، المسار غير متاح</div>
+        <p class="message">يبدو أن الصفحة التي تبحث عنها قد تم تغيير مسارها <br> أو أنها لم تعد متوفرة في نظامنا.</p>
+        <a href="/" class="back-btn">العودة إلى صفحة الحجز</a>
+    </div>
+</body>
+</html>

@@ -43,6 +43,12 @@ const API_BASE = window.location.origin;
 
 // 2. INITIALIZATION & DATA SYNC
 document.addEventListener('DOMContentLoaded', async () => {
+    // التحقق من الدخول الكلي للنظام
+    if (sessionStorage.getItem('sh_site_access') === 'granted') {
+        document.getElementById('site-auth-overlay').style.display = 'none';
+        document.querySelector('.app-layout').style.display = 'flex';
+    }
+
     initHistorySelectors();
     await loadData(); // تحميل البيانات من السيرفر
     renderServices();
@@ -55,6 +61,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (state.currentPage === 'appointments') renderAppointmentsTable();
         updateUI(); // هذا يضمن تحديث العدادات وكل شيء تلقائياً
     }, 15000);
+
+    // إضافة مستمع لزر Enter في خانة الباسورد
+    document.getElementById('site-pass').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') verifySiteAccess();
+    });
 });
 
 let isSaving = false;
@@ -284,6 +295,17 @@ function verifyAdmin() {
     } else { alert("الباسورد خطأ"); }
 }
 
+function verifySiteAccess() {
+    const pass = document.getElementById('site-pass').value;
+    if (pass === "12341234") {
+        sessionStorage.setItem('sh_site_access', 'granted');
+        document.getElementById('site-auth-overlay').style.display = 'none';
+        document.querySelector('.app-layout').style.display = 'flex';
+    } else {
+        alert("رمز الدخول غير صحيح");
+    }
+}
+
 function processNav(target) {
     const barber = state.barbers.find(b => b.id === target);
     if (barber) {
@@ -420,6 +442,7 @@ async function renderAppointmentsTable() {
             // روابط الواتساب المجهزة
             const depositMsg = `تحية طيبة من "حلاق الشكر"،\nمرحباً ${app.name}، لقد استلمنا حجزك المبدئي:\n⏰ الموعد: ${startTimeFormatted}\n✂️ الخدمة: ${app.service}\n\nيرجى إرسال صورة إيصال دفع العربون (1.000 دينار) لشراء وقتك وتأكيد حجزك نهائياً عبر بينفت أو آيبان.\nشكراً لك.`;
             const confirmMsg = `تم التأكيد ✅\nعزيزي ${app.name}، تم استلام العربون وتأكيد موعدك بنجاح.\n⏰ ننتظرك في: ${startTimeFormatted}\n\n⚠️ ملاحظة 1: لن يتم ارجاع العربون اذا تم الغاء الحجز قبل اقل من 24 ساعة منه.\n⚠️ ملاحظة 2: سيتم الغاء الموعد اذا تأخر الزبون 15 دقيقة عن الموعد.\n\nشكراً لاختيارك حلاق الشكر.`;
+            const reminderMsg = `تذكير بموعدك لدى حلاق الشكر ⏰\nعزيزي ${app.name}، نود تذكيرك بموعدك المحجوز لدينا:\n📅 الموعد: ${startTimeFormatted}\n✂️ الخدمة: ${app.service}\n\nنحن بانتظارك في الوقت المحدد.\nشكراً لاختيارك حلاق الشكر.`;
 
             return `
             <tr style="${isPending ? 'border-right: 4px solid orange;' : 'border-right: 4px solid var(--success);'}">
@@ -427,9 +450,9 @@ async function renderAppointmentsTable() {
                     ${startTimeFormatted}
                     <div style="font-size:0.7rem; color:${isPending ? 'orange' : 'var(--success)'}">${isPending ? '⏳ بانتظار العربون' : '✅ موعد مؤكد'}</div>
                 </td>
-                <td>${app.name}</td>
+                <td style="font-weight:700;">${app.name}</td>
                 <td>${app.phone}</td>
-                <td>${app.service}</td>
+                <td style="font-size:0.85rem;">${app.service}</td>
                 <td>
                     <div style="display: flex; flex-direction: column; gap: 5px;">
                         ${isPending ? `
@@ -437,7 +460,8 @@ async function renderAppointmentsTable() {
                             <button class="btn-action" style="background:#25d366; color:white;" onclick="sendWhatsAppMessage('${app.phone}', '${encodeURIComponent(depositMsg)}')">💬 اطلب العربون</button>
                         ` : `
                             <button class="btn-action" style="background:var(--success); color:black;" onclick="completeAppointment(${index})">✅ انتهى</button>
-                            <button class="btn-action" style="background:#25d366; color:white;" onclick="sendWhatsAppMessage('${app.phone}', '${encodeURIComponent(confirmMsg)}')">💬 أرسل تأكيد</button>
+                            <button class="btn-action" style="background:#075e54; color:white;" onclick="sendWhatsAppMessage('${app.phone}', '${encodeURIComponent(reminderMsg)}')">🔔 أرسل تذكير</button>
+                            <button class="btn-action" style="background:#25d366; color:white;" onclick="sendWhatsAppMessage('${app.phone}', '${encodeURIComponent(confirmMsg)}')">💬 سند التأكيد</button>
                         `}
                         <button class="btn-action" style="background:var(--danger); color:white;" onclick="deleteAppointment(${index})">🗑️ إلغاء</button>
                     </div>

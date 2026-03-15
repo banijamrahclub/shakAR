@@ -1,3 +1,8 @@
+// Debugging for older devices
+window.onerror = function (msg, url, line) {
+    alert("Error: " + msg + "\nLine: " + line);
+};
+
 const API_BASE = window.location.origin;
 
 let bookingData = {
