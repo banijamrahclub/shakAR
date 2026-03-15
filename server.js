@@ -22,9 +22,11 @@ app.use(express.json({ limit: '50mb' }));
 
 // توجيه النطاقات (SEO & Redirection)
 app.use((req, res, next) => {
-    const host = req.get('host');
-    if (host && host !== 'salonshakar.onrender.com') {
-        return res.redirect(301, `https://salonshakar.onrender.com${req.originalUrl}`);
+    const targetHost = 'salonshakar.onrender.com';
+    // إذا كان النطاق الحالي ليس النطاق المطلوب وليس localhost، قم بالتوجيه
+    if (req.hostname && req.hostname !== targetHost && !req.hostname.includes('localhost')) {
+        console.log(`🔀 Redirecting from ${req.hostname} to ${targetHost}`);
+        return res.redirect(301, `https://${targetHost}${req.originalUrl}`);
     }
     next();
 });
