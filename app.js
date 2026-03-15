@@ -32,7 +32,8 @@ let state = {
     appointments: [],
     settings: { openTime: '10:00', closeTime: '22:00' }, // إعدادات افتراضية
     managedDate: new Date().toISOString().split('T')[0], // التاريخ الذي يتم إدارته حالياً (الافتراضي هو اليوم)
-    currentPosType: 'service' // النوع المختار في صفحة البيع (خدمات أو بكجات)
+    currentPosType: 'service', // النوع المختار في صفحة البيع (خدمات أو بكجات)
+    manualSelectedServices: [] // الخدمات المختارة في الحجز اليدوي
 };
 
 const PASSWORD = "1";
@@ -483,26 +484,98 @@ function sendWhatsAppMessage(phone, encodedMsg) {
 
 function toggleManualAppForm() {
     const form = document.getElementById('manual-app-form');
-    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    const isOpening = form.style.display === 'none';
+    form.style.display = isOpening ? 'block' : 'none';
+    
+    if (isOpening) {
+        state.manualSelectedServices = [];
+        renderManualAppServices();
+        updateManualSummary();
+    }
+}
+
+function renderManualAppServices() {
+    const container = document.getElementById('m-services-list');
+    if (!container) return;
+
+    let html = '';
+    // الخدمات
+    state.services.forEach(s => {
+        const isSelected = state.manualSelectedServices.some(ms => ms.name === s.name);
+        html += `
+            <div onclick="toggleManualService('${s.name}', ${s.price}, ${s.duration || 20})" 
+                 style="display: flex; align-items: center; gap: 10px; padding: 10px; background: ${isSelected ? 'rgba(148, 163, 184, 0.2)' : 'var(--bg-card)'}; border-radius: 8px; cursor: pointer; border: 1px solid ${isSelected ? 'var(--primary)' : 'transparent'}; transition: 0.2s;">
+                <div style="width: 16px; height: 16px; border: 2px solid var(--primary); border-radius: 4px; display: flex; align-items: center; justify-content: center;">
+                    ${isSelected ? '<div style="width: 8px; height: 8px; background: var(--primary); border-radius: 1px;"></div>' : ''}
+                </div>
+                <div style="flex: 1; font-size: 0.85rem;">${s.name}</div>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">${s.price.toFixed(3)}</div>
+            </div>
+        `;
+    });
+    // البكجات
+    state.packages.forEach(p => {
+        const isSelected = state.manualSelectedServices.some(ms => ms.name === p.name);
+        html += `
+            <div onclick="toggleManualService('${p.name}', ${p.price}, ${p.duration || 45})" 
+                 style="display: flex; align-items: center; gap: 10px; padding: 10px; background: ${isSelected ? 'rgba(148, 163, 184, 0.2)' : 'var(--bg-card)'}; border-radius: 8px; cursor: pointer; border: 1px solid ${isSelected ? 'var(--primary)' : 'transparent'}; transition: 0.2s;">
+                <div style="width: 16px; height: 16px; border: 2px solid var(--primary); border-radius: 4px; display: flex; align-items: center; justify-content: center;">
+                    ${isSelected ? '<div style="width: 8px; height: 8px; background: var(--primary); border-radius: 1px;"></div>' : ''}
+                </div>
+                <div style="flex: 1; font-size: 0.85rem;">📦 ${p.name}</div>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">${p.price.toFixed(3)}</div>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+function toggleManualService(name, price, duration) {
+    const index = state.manualSelectedServices.findIndex(s => s.name === name);
+    if (index > -1) {
+        state.manualSelectedServices.splice(index, 1);
+    } else {
+        state.manualSelectedServices.push({ name, price, duration });
+    }
+    renderManualAppServices();
+    updateManualSummary();
+}
+
+function updateManualSummary() {
+    const summary = document.getElementById('m-app-summary');
+    if (state.manualSelectedServices.length === 0) {
+        summary.style.display = 'none';
+        return;
+    }
+    summary.style.display = 'flex';
+    const names = state.manualSelectedServices.map(s => s.name).join(' + ');
+    const totalPrice = state.manualSelectedServices.reduce((sum, s) => sum + s.price, 0);
+    const totalDuration = state.manualSelectedServices.reduce((sum, s) => sum + s.duration, 0);
+    
+    document.getElementById('m-selected-names').innerText = names;
+    document.getElementById('m-total-price').innerText = totalPrice.toFixed(3);
+    document.getElementById('m-total-duration').innerText = totalDuration;
 }
 
 async function saveManualAppointment() {
     const name = document.getElementById('m-app-name').value;
     const phone = document.getElementById('m-app-phone').value;
-    const service = document.getElementById('m-app-service').value;
     const start = document.getElementById('m-app-start').value;
-    const duration = parseInt(document.getElementById('m-app-duration').value) || 30;
 
     if (!name || !phone || !start) return alert("يرجى ملئ الاسم والهاتف والتوقيت");
+    if (state.manualSelectedServices.length === 0) return alert("يرجى اختيار خدمة واحدة على الأقل");
 
     const startTime = new Date(start).toISOString();
-    const endTime = new Date(new Date(startTime).getTime() + duration * 60000).toISOString();
+    const totalDuration = state.manualSelectedServices.reduce((sum, s) => sum + s.duration, 0);
+    const totalPrice = state.manualSelectedServices.reduce((sum, s) => sum + s.price, 0);
+    const serviceNames = state.manualSelectedServices.map(s => s.name).join(' + ');
+    const endTime = new Date(new Date(startTime).getTime() + totalDuration * 60000).toISOString();
 
     try {
         const res = await fetch(`${API_BASE}/api/calendar/book`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, phone, service, price: 0, startTime, endTime })
+            body: JSON.stringify({ name, phone, service: serviceNames, price: totalPrice, startTime, endTime })
         });
         const result = await res.json();
         if (result.success) {
@@ -512,7 +585,6 @@ async function saveManualAppointment() {
             // مسح الخانات
             document.getElementById('m-app-name').value = '';
             document.getElementById('m-app-phone').value = '';
-            document.getElementById('m-app-service').value = '';
             document.getElementById('m-app-start').value = '';
         } else {
             alert(result.error || "فشل إضافة الحجز");
