@@ -267,9 +267,31 @@
             <!-- PAGE: ANALYTICS -->
             <div id="page-analytics" class="page">
                 <div class="card-glass" style="margin-bottom: 2rem;">
-                    <h3>📈 أداء المحل (الشهر الحالي)</h3>
-                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">الرسم البياني يوضح صافي
-                        الربح اليومي بعد خصم المصروفات</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
+                        <div>
+                            <h3 style="margin: 0;">📈 أداء المحل والتحليلات</h3>
+                            <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 5px;">تتبع الأرباح والمصاريف حسب الشهر المختار</p>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <select id="chart-month-select" class="input-field" style="width: auto; padding: 8px 15px; background: var(--bg-input); color: white; border: 1px solid var(--border); border-radius: 10px;" onchange="updateChartFilters()">
+                                <option value="0">يناير (1)</option>
+                                <option value="1">فبراير (2)</option>
+                                <option value="2">مارس (3)</option>
+                                <option value="3">أبريل (4)</option>
+                                <option value="4">مايو (5)</option>
+                                <option value="5">يونيو (6)</option>
+                                <option value="6">يوليو (7)</option>
+                                <option value="7">أغسطس (8)</option>
+                                <option value="8">سبتمبر (9)</option>
+                                <option value="9">أكتوبر (10)</option>
+                                <option value="10">نوفمبر (11)</option>
+                                <option value="11">ديسمبر (12)</option>
+                            </select>
+                            <select id="chart-year-select" class="input-field" style="width: auto; padding: 8px 15px; background: var(--bg-input); color: white; border: 1px solid var(--border); border-radius: 10px;" onchange="updateChartFilters()">
+                                <!-- JS سيولد السنوات -->
+                            </select>
+                        </div>
+                    </div>
                     <div style="height: 400px;">
                         <canvas id="profitChart"></canvas>
                     </div>
@@ -277,11 +299,11 @@
                 <div class="summary-grid"
                     style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
                     <div class="stat-card" style="background: rgba(16, 185, 129, 0.05);">
-                        <div class="stat-label">إجمالي دخل الشهر الحالي</div>
+                        <div class="stat-label">إجمالي دخل الشهر المختار</div>
                         <div class="stat-value" id="m-income">0.000</div>
                     </div>
                     <div class="stat-card" style="background: rgba(239, 68, 68, 0.05);">
-                        <div class="stat-label">إجمالي مصروفات الشهر</div>
+                        <div class="stat-label">إجمالي مصروفات الشهر المختار</div>
                         <div class="stat-value" id="m-exp" style="color: var(--danger)">0.000</div>
                     </div>
                     <div class="stat-card" style="background: rgba(59, 130, 246, 0.05);">

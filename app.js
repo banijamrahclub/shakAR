@@ -35,7 +35,9 @@ let state = {
     currentPosType: 'service', // النوع المختار في صفحة البيع (خدمات أو بكجات)
     manualSelectedServices: [], // الخدمات المختارة في الحجز اليدوي
     appFilter: 'all', // فلتر الحجوزات (الكل، المؤكدة، المعلقة)
-    appSearch: '' // نص البحث في الحجوزات
+    appSearch: '', // نص البحث في الحجوزات
+    selectedChartMonth: new Date().getMonth(), // الشهر المختار في الرسومات
+    selectedChartYear: new Date().getFullYear() // السنة المختارة في الرسومات
 };
 
 const PASSWORD = "1";
@@ -463,7 +465,7 @@ async function renderAppointmentsTable() {
             const startTimeFormatted = new Date(app.startTime).toLocaleString('ar-BH');
 
             const depositMsg = `تحية طيبة من "حلاق الشكر"،\nمرحباً ${app.name}، لقد استلمنا حجزك المبدئي:\n⏰ الموعد: ${startTimeFormatted}\n✂️ الخدمة: ${app.service}\n\nيرجى إرسال صورة إيصال دفع العربون (1.000 دينار) لشراء وقتك وتأكيد حجزك نهائياً عبر بينفت أو آيبان.\nشكراً لك.`;
-            const confirmMsg = `تم التأكيد ✅\nعزيزي ${app.name}، تم استلام العربون وتأكيد موعدك بنجاح.\n⏰ ننتظرك في: ${startTimeFormatted}\n\n⚠️ ملاحظة 1: لن يتم ارجاع العربون اذا تم الغاء الحجز قبل اقل من 24 ساعة منه.\n⚠️ ملاحظة 2: سيتم الغاء الموعد اذا تأخر الزبون 15 دقيقة عن الموعد.\n\nشكراً لاختيارك حلاق الشكر.`;
+            const confirmMsg = `تم التأكيد ✅\nعزيزي ${app.name}، تم استلام العربون وتأكيد موعدك بنجاح.\n⏰ ننتظرك في: ${startTimeFormatted}\n\n⚠️ ملاحظة 1: لن يتم ارجاع العربون اذا تم الغاء الحجز قبل اقل من 24 ساعة منه.\n⚠️ ملاحظة 2: سيتم الغاء الموعد اذا تأخر الزبون 15 دقيقة عن الموعد.\n⚠️ ملاحظة 3: في حال عدم حضور الحلاق سيتم إخبارك ويمكنك التوجه للموظف الأجنبي، أو تأجيل الحجز إلى يوم آخر، أو إلغاء الحجز واسترداد الأموال.\n\nشكراً لاختيارك حلاق الشكر.`;
             const reminderMsg = `تذكير بموعدك لدى حلاق الشكر ⏰\nعزيزي ${app.name}، نود تذكيرك بموعدك المحجوز لدينا:\n📅 الموعد: ${startTimeFormatted}\n✂️ الخدمة: ${app.service}\n\nنحن بانتظارك في الوقت المحدد.\nشكراً لاختيارك حلاق الشكر.`;
 
             return `
@@ -654,7 +656,7 @@ async function verifyBooking(id) {
 
                 // إرسال رسالة التأكيد عبر الواتساب فوراً
                 const formattedTime = new Date(app.startTime).toLocaleString('ar-BH');
-                const confirmMsg = `تم التأكيد ✅\n\nعزيزي ${app.name}، تم استلام العربون وتأكيد موعدك بنجاح.\n⏰ ننتظرك في: ${formattedTime}\n\n⚠️ ملاحظة 1: لن يتم ارجاع العربون اذا تم الغاء الحجز قبل اقل من 24 ساعة منه.\n⚠️ ملاحظة 2: سيتم الغاء الموعد اذا تأخر الزبون 15 دقيقة عن الموعد.\n\nشكراً لاختيارك حلاق الشكر.`;
+                const confirmMsg = `تم التأكيد ✅\n\nعزيزي ${app.name}، تم استلام العربون وتأكيد موعدك بنجاح.\n⏰ ننتظرك في: ${formattedTime}\n\n⚠️ ملاحظة 1: لن يتم ارجاع العربون اذا تم الغاء الحجز قبل اقل من 24 ساعة منه.\n⚠️ ملاحظة 2: سيتم الغاء الموعد اذا تأخر الزبون 15 دقيقة عن الموعد.\n⚠️ ملاحظة 3: في حال عدم حضور الحلاق سيتم إخبارك ويمكنك التوجه للموظف الأجنبي، أو تأجيل الحجز إلى يوم آخر، أو إلغاء الحجز واسترداد الأموال.\n\nشكراً لاختيارك حلاق الشكر.`;
                 sendWhatsAppMessage(app.phone, encodeURIComponent(confirmMsg));
 
                 renderAppointmentsTable();
@@ -875,18 +877,23 @@ function showToast(msg) {
 function initProfitChart() {
     const ctx = document.getElementById('profitChart');
     if (!ctx) return;
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth();
+
+    // تهيئة القوائم المنسدلة للسنوات والشهور في حال لم تكن جاهزة
+    initChartSelectors();
+
+    const year = state.selectedChartYear;
+    const month = state.selectedChartMonth;
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const labels = [];
     const profitData = [];
+    
     for (let i = 1; i <= daysInMonth; i++) {
         const dStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
         labels.push(i);
         const stats = getStatsForDate(dStr);
         profitData.push(stats.net);
     }
+    
     if (myChart) myChart.destroy();
     myChart = new Chart(ctx.getContext('2d'), {
         type: 'line',
@@ -914,10 +921,11 @@ function initProfitChart() {
         }
     });
 
-    const currMonth = `${year}-${String(month + 1).padStart(2, '0')}`;
-    const mHistory = state.history.filter(h => h.date.startsWith(currMonth));
+    const currMonthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+    const mHistory = state.history.filter(h => h.date.startsWith(currMonthPrefix));
     const mTotalSales = mHistory.reduce((a, b) => a + b.total, 0);
-    const mTotalExp = state.expenses.filter(e => e.date.startsWith(currMonth)).reduce((a, b) => a + b.amount, 0);
+    const mTotalExp = state.expenses.filter(e => e.date.startsWith(currMonthPrefix)).reduce((a, b) => a + b.amount, 0);
+    
     document.getElementById('m-income').innerText = mTotalSales.toFixed(3);
     document.getElementById('m-exp').innerText = mTotalExp.toFixed(3);
     const mCustEl = document.getElementById('m-customers');
@@ -926,6 +934,38 @@ function initProfitChart() {
     const yHistory = state.history.filter(h => h.date.startsWith(`${year}`));
     const yCustEl = document.getElementById('y-customers');
     if (yCustEl) yCustEl.innerText = yHistory.length;
+}
+
+function initChartSelectors() {
+    const monthSelect = document.getElementById('chart-month-select');
+    const yearSelect = document.getElementById('chart-year-select');
+    if (!monthSelect || !yearSelect) return;
+
+    // إذا كانت السنة والشهور مضافة مسبقاً لا نفعل شيئاً
+    if (yearSelect.options.length > 0) return;
+
+    // إضافة السنوات (من 2024 إلى السنة الحالية + 1)
+    const currentYear = new Date().getFullYear();
+    for (let y = 2024; y <= currentYear + 1; y++) {
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = y;
+        yearSelect.appendChild(opt);
+    }
+
+    // تحديد القيم الحالية في الـ Selects
+    monthSelect.value = state.selectedChartMonth;
+    yearSelect.value = state.selectedChartYear;
+}
+
+function updateChartFilters() {
+    const mSelect = document.getElementById('chart-month-select');
+    const ySelect = document.getElementById('chart-year-select');
+    if (mSelect && ySelect) {
+        state.selectedChartMonth = parseInt(mSelect.value);
+        state.selectedChartYear = parseInt(ySelect.value);
+        initProfitChart();
+    }
 }
 
 async function addFixedExpense() {
