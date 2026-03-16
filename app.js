@@ -692,7 +692,7 @@ async function completeAppointment(id) {
             id: Date.now(),
             time: new Date().toLocaleTimeString('ar-BH'),
             date: state.managedDate, // استخدام التاريخ المختار
-            role: state.currentRole,
+            role: 'owner', // يتسجل دائماً باسم "الحلاق الشكر" بناءً على طلبك
             total: finalPrice,
             items: app.service,
             paymentMethod: pMethod
@@ -704,6 +704,10 @@ async function completeAppointment(id) {
         await save();
         updateUI();
         alert("تم تسجيل الموعد بنجاح (" + (pMethod === 'cash' ? 'كاش' : 'بينفت') + ")");
+
+        // 4. إرسال رسالة شكر وطلب تقييم عبر الواتساب
+        const thanksMsg = `شكر لزيارتك "حلاق الشكر" ✂️\n\nعزيزي ${app.name}، سعدنا جداً بخدمتكم اليوم.\n✂️ الخدمة: ${app.service}\n💰 المبلغ: ${finalPrice.toFixed(3)} د.ب\n\nرأيكم يهمنا جداً ويساعدنا على التطوير المستمر ✨\nنرجو منكم قضاء ثوانٍ لتقييم تجربتكم عبر الرابط التالي:\nhttps://maps.app.goo.gl/7sZNJkuBXg6YeXRAA\n\nشكراً لاختيارك حلاق الشكر، ننتظر رؤيتكم مجدداً قريباً! 👋`;
+        sendWhatsAppMessage(app.phone, encodeURIComponent(thanksMsg));
     }
 }
 
