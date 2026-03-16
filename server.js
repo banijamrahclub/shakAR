@@ -121,10 +121,16 @@ async function syncWithCloud() {
             mergedData.appointments = currentLocalData.appointments;
         }
 
-        // التأكد من أن جميع الحجوزات الحالية لها IDs
+        // التأكد من أن جميع الحجوزات الحالية لها IDs مستقرة وفريدة
         if (mergedData.appointments) {
-            mergedData.appointments.forEach(a => {
-                if (!a.id) a.id = 'app_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+            const seenIds = new Set();
+            mergedData.appointments.forEach((a, idx) => {
+                // إذا لم يكن هناك ID أو كان مكرراً، نولد واحداً جديداً
+                if (!a.id || seenIds.has(a.id)) {
+                    const stableKey = (a.name || 'anon') + (a.startTime || Date.now()) + idx + Math.random();
+                    a.id = 'app_' + Buffer.from(stableKey).toString('hex').slice(0, 16);
+                }
+                seenIds.add(a.id);
             });
         }
 
@@ -378,24 +384,23 @@ app.get('/api/sync-down', async (req, res) => {
 });
 
 app.post('/api/calendar/cancel', async (req, res) => {
-        const { id, name, startTime } = req.body;
-        try {
-            const data = readDB();
-            let appToCancel = null;
-            
-            if (id) {
-                appToCancel = data.appointments.find(a => a.id === id);
-            } else if (name && startTime) {
-                appToCancel = data.appointments.find(a => a.name === name && a.startTime === startTime);
-            }
+    const { id, name, startTime } = req.body;
+    try {
+        const data = readDB();
+        let index = -1;
+        
+        if (id) {
+            index = data.appointments.findIndex(a => a.id === id);
+        } 
+        
+        if (index === -1 && name && startTime) {
+            index = data.appointments.findIndex(a => a.name === name && a.startTime === startTime);
+        }
 
-            if (appToCancel) {
-                if (appToCancel.id) {
-                    data.appointments = data.appointments.filter(a => a.id !== appToCancel.id);
-                } else {
-                    data.appointments = data.appointments.filter(a => a !== appToCancel);
-                }
-                await writeDB(data);
+        if (index !== -1) {
+            const appToCancel = data.appointments[index];
+            data.appointments.splice(index, 1);
+            await writeDB(data);
             try {
                 const end = appToCancel.endTime || new Date(new Date(appToCancel.startTime).getTime() + 30 * 60000).toISOString();
                 const deleteUrl = `${GAS_URL}?action=delete&name=${encodeURIComponent(appToCancel.name)}&startTime=${encodeURIComponent(appToCancel.startTime)}&endTime=${encodeURIComponent(end)}`;

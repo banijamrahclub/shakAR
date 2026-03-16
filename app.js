@@ -483,7 +483,7 @@ async function renderAppointmentsTable() {
                             <button class="btn-action" style="background:orange; color:black;" onclick="verifyBooking('${app.id}', '${app.name}', '${app.startTime}')">💰 تأكيد العربون</button>
                             <button class="btn-action" style="background:#25d366; color:white;" onclick="sendWhatsAppMessage('${app.phone}', '${encodeURIComponent(depositMsg)}')">💬 اطلب العربون</button>
                         ` : `
-                            <button class="btn-action" style="background:var(--success); color:black;" onclick="completeAppointment('${app.id}')">✅ انتهى</button>
+                            <button class="btn-action" style="background:var(--success); color:black;" onclick="completeAppointment('${app.id}', '${app.name}', '${app.startTime}')">✅ انتهى</button>
                             <button class="btn-action" style="background:#075e54; color:white;" onclick="sendWhatsAppMessage('${app.phone}', '${encodeURIComponent(reminderMsg)}')">🔔 أرسل تذكير</button>
                             <button class="btn-action" style="background:#25d366; color:white;" onclick="sendWhatsAppMessage('${app.phone}', '${encodeURIComponent(confirmMsg)}')">💬 سند التأكيد</button>
                         `}
@@ -652,6 +652,9 @@ async function verifyBooking(id, name, startTime) {
             });
             const result = await res.json();
             if (result.success) {
+                // تحديث الحالة محلياً فوراً لمنع التضارب قبل المزامنة القادمة
+                app.status = 'confirmed';
+                
                 alert("تم تأكيد الحجز بنجاح!");
 
                 // إرسال رسالة التأكيد عبر الواتساب فوراً
@@ -670,9 +673,13 @@ async function verifyBooking(id, name, startTime) {
     }
 }
 
-async function completeAppointment(id) {
-    const app = state.appointments.find(a => a.id === id);
-    if (!app) return;
+async function completeAppointment(id, name, startTime) {
+    let app = state.appointments.find(a => a.id === id);
+    if (!app && name && startTime) {
+        app = state.appointments.find(a => a.name === name && a.startTime === startTime);
+    }
+    
+    if (!app) return alert("لم يتم العثور على الحجز.");
     let finalPrice = app.price || 0;
 
     if (!finalPrice || finalPrice === 0) {
@@ -707,7 +714,12 @@ async function completeAppointment(id) {
         state.history.unshift(sale);
 
         // 3. حذف الحجز محلياً وحفظ السجل
-        state.appointments = state.appointments.filter(a => a.id !== id);
+        state.appointments = state.appointments.filter(a => {
+            // إذا كان هناك ID، نعتمد عليه كلياً لأنه الأدق
+            if (id && id !== 'undefined') return a.id !== id;
+            // إذا لم يتوفر ID، نستخدم الاسم والوقت كخيار بديل (مع التضحية باحتمالية وجود مكررات بنفس الاسم والوقت)
+            return !(a.name === app.name && a.startTime === app.startTime);
+        });
         await save();
         updateUI();
         alert("تم تسجيل الموعد بنجاح (" + (pMethod === 'cash' ? 'كاش' : 'بينفت') + ")");
@@ -730,7 +742,10 @@ async function deleteAppointment(id) {
             });
         } catch (e) { console.error("Sync error:", e); }
 
-        state.appointments = state.appointments.filter(a => a.id !== id);
+        state.appointments = state.appointments.filter(a => {
+            if (id && id !== 'undefined') return a.id !== id;
+            return !(a.name === app.name && a.startTime === app.startTime);
+        });
         await save();
         renderAppointmentsTable();
     }
