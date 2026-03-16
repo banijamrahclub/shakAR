@@ -52,10 +52,12 @@
                 <div style="flex:1;">
                     <h2 style="font-size: 1.2rem; font-weight: 800; color: var(--text-main); line-height:1.2;">حلاق
                         الشكر</h2>
-                    <button onclick="refreshFromCloud()"
-                        style="background: var(--primary); color: black; border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.65rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px; border:1px solid rgba(0,0,0,0.1);">
-                        🔄 تحديث من قوقل
-                    </button>
+                    <div style="display: flex; gap: 5px; margin-top: 5px;">
+                        <button onclick="refreshFromCloud()"
+                            style="background: var(--primary); color: black; border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.65rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px; border:1px solid rgba(0,0,0,0.1);">
+                            🔄 تحديث
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -549,6 +551,7 @@
                 </div>
             </div>
 
+
             <!-- PAGE: SETTINGS -->
             <div id="page-settings" class="page">
                 <div class="card-glass">
@@ -575,6 +578,38 @@
                         style="margin-top: 30px; max-width: 250px; background:var(--primary); color:black;"
                         onclick="saveSettings()">💾 حفظ أوقات الدوام</button>
 
+                    <hr style="margin: 40px 0; border: 0; border-top: 1px solid var(--border);">
+
+                    <h2 style="margin-bottom: 20px;">🗓️ أوقات خاصة (أيام محددة)</h2>
+                    <p style="color: var(--text-muted); margin-bottom: 20px;">يمكنك هنا تحديد ساعات عمل مختلفة ليوم معين (مثل يوم إجازة أو ساعات محدودة في يوم مناسبة).</p>
+                    
+                    <div style="background: rgba(148, 163, 184, 0.05); padding: 20px; border-radius: 20px; border: 1px solid var(--border);">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                            <div class="input-group">
+                                <label style="display: block; margin-bottom: 5px; font-size: 0.8rem;">التاريخ:</label>
+                                <input type="date" id="special-date" class="input-field" style="background:var(--bg-input); color:white;">
+                            </div>
+                            <div class="input-group">
+                                <label style="display: block; margin-bottom: 5px; font-size: 0.8rem;">وقت الفتح:</label>
+                                <input type="time" id="special-open" value="10:00" class="input-field" style="background:var(--bg-input); color:white;">
+                            </div>
+                            <div class="input-group">
+                                <label style="display: block; margin-bottom: 5px; font-size: 0.8rem;">وقت الإغلاق:</label>
+                                <input type="time" id="special-close" value="22:00" class="input-field" style="background:var(--bg-input); color:white;">
+                            </div>
+                            <div class="input-group" style="display: flex; align-items: flex-end;">
+                                <button class="btn-action" onclick="addSpecialDay()" style="background: var(--success); color: black;">➕ إضافة</button>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 25px;">
+                            <h4 style="margin-bottom: 10px; color: var(--primary);">الأيام المضافة حالياً:</h4>
+                            <div id="special-days-list" style="display: grid; gap: 10px;">
+                                <!-- قائمة الأيام عبر JS -->
+                            </div>
+                        </div>
+                    </div>
+
                     <div
                         style="margin-top: 30px; padding: 15px; background: rgba(255,165,0,0.1); border: 1px solid orange; border-radius: 12px; color: orange; font-size: 0.85rem;">
                         ⚠️ ملاحظة: المواعيد السابقة لن تتأثر، التغيير سيطبق على الحجوزات الجديدة فقط.
@@ -591,6 +626,20 @@
                             <p style="color: var(--text-muted); margin-top: 5px;">هذه القائمة محدثة تلقائياً من نظام الحجز ومن قوقل كلندر.</p>
                         </div>
                         <button class="btn-action" onclick="toggleManualAppForm()" style="width: auto; padding: 0 20px; background: var(--primary); color: #000;">➕ إضافة حجز يدوي</button>
+                    </div>
+
+                    <!-- شريط البحث والفلاتر -->
+                    <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; background: rgba(255,255,255,0.02); padding: 15px; border-radius: 15px; border: 1px solid var(--border); align-items: center;">
+                        <div style="flex: 1; min-width: 250px; position: relative;">
+                            <span style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted);">🔍</span>
+                            <input type="text" id="app-search-input" oninput="handleAppSearch()" placeholder="ابحث بالاسم أو رقم الهاتف..." 
+                                   style="width: 100%; padding: 12px 40px 12px 15px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 10px; color: white;">
+                        </div>
+                        <div class="finance-sub-nav" style="margin: 0; background: transparent; border: none;">
+                            <div class="sub-link active" id="app-filter-all" onclick="setAppFilter('all')">الكل</div>
+                            <div class="sub-link" id="app-filter-confirmed" onclick="setAppFilter('confirmed')">المؤكدة</div>
+                            <div class="sub-link" id="app-filter-pending" onclick="setAppFilter('pending')">بانتظار العربون</div>
+                        </div>
                     </div>
 
                     <!-- نموذج إضافة حجز يدوي (مخفي افتراضياً) -->

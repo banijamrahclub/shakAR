@@ -359,6 +359,8 @@ async function confirmBooking() {
             const desc = `حجز: ${name} - ${bookingData.date} - ${bookingData.time}`;
             document.getElementById('copy-desc').value = desc;
 
+            setupCalendarButtons(name, servicesNames, startTime, endTime);
+
             const waBtn = document.getElementById('btn-whatsapp-confirm');
             const waMsg = `تحية طيبة من حلاق الشكر\nلقد قمت بتقديم طلب حجز موعد\n\nتفاصيل الحجز\nالاسم: ${name}\nالخدمات: ${servicesNames}\nالتاريخ: ${bookingData.date}\nالوقت: ${bookingData.time}\nالإجمالي: ${totalPrice.toFixed(3)} دب\n\nمرفق لكم ايصال تحويل العربون لشراء وقتك وتأكيد الموعد\nشكرا لكم`;
             waBtn.onclick = () => window.open(`https://wa.me/97337055332?text=${encodeURIComponent(waMsg)}`);
@@ -431,4 +433,21 @@ function showCancellationOverlay() {
             </div>
         `;
     }
+}
+
+function setupCalendarButtons(name, services, startTime, endTime) {
+    const container = document.getElementById('calendar-buttons-container');
+    if (!container) return;
+    container.style.display = 'grid';
+
+    const title = `موعد حلاقة: ${services}`;
+    const location = "حلاق الشكر - البحرين";
+    const desc = `حجز باسم: ${name}\nالخدمات: ${services}\nننتظركم في الموعد المحدد.`;
+
+    // 1. Google Calendar Link
+    const gStart = new Date(startTime).toISOString().replace(/-|:|\.\d\d\d/g, "");
+    const gEnd = new Date(endTime).toISOString().replace(/-|:|\.\d\d\d/g, "");
+    const gUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${gStart}/${gEnd}&details=${encodeURIComponent(desc)}&location=${encodeURIComponent(location)}`;
+    
+    document.getElementById('btn-add-google').onclick = () => window.open(gUrl, "_blank");
 }

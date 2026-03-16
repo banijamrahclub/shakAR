@@ -147,6 +147,14 @@ function initializeLocalDB() {
             ],
             settings: { openTime: '10:00', closeTime: '22:00' }
         }, null, 2));
+    } else {
+        try {
+            const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+            let changed = false;
+            if (changed) fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+        } catch (e) {
+            console.error("Error patching DB:", e);
+        }
     }
 }
 
@@ -179,6 +187,7 @@ async function saveToCloud(data) {
 
 // Start sequence
 async function startServer() {
+    initializeLocalDB(); // التأكد من وجود ملف البيانات والهيكل الصحيح
     // محاولة أولية للمزامنة 
     await syncWithCloud();
     app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT} (Cloud Sync Enabled) 🚀`));
@@ -215,10 +224,27 @@ app.get('/api/calendar/busy', async (req, res) => {
     let allBusy = [];
     try {
         const data = readDB();
+        
+        // 1. إضافة الحجوزات المحلية
         allBusy = (data.appointments || [])
             .filter(app => app.startTime && app.startTime.startsWith(requestDay))
             .map(app => ({ start: app.startTime, end: app.endTime }));
-    } catch (e) { console.error("Local Busy Error:", e); }
+
+        // 2. التحقق من أوقات العمل الخاصة (Special Days)
+        if (data.settings && data.settings.specialDays && data.settings.specialDays[requestDay]) {
+            const spec = data.settings.specialDays[requestDay];
+            // إضافة بلوك قبل الوقت المفتوح
+            allBusy.push({
+                start: `${requestDay}T00:00:00`,
+                end: `${requestDay}T${spec.open}:00`
+            });
+            // إضافة بلوك بعد وقت الإغلاق
+            allBusy.push({
+                start: `${requestDay}T${spec.close}:00`,
+                end: `${requestDay}T23:59:59`
+            });
+        }
+    } catch (e) { console.error("Local Busy/Settings Error:", e); }
 
     try {
         const response = await fetch(`${GAS_URL}?action=getBusy&date=${requestDay}`);
@@ -269,7 +295,10 @@ app.post('/api/calendar/book', async (req, res) => {
         }
 
         const appStatus = status || 'pending';
-        const newApp = { name, phone, service, price, startTime, endTime, status: appStatus, date: new Date().toISOString() };
+        const newApp = { 
+            id: Date.now().toString() + '-' + Math.random().toString(36).substr(2, 9),
+            name, phone, service, price, startTime, endTime, status: appStatus, date: new Date().toISOString() 
+        };
         
         data.appointments.push(newApp);
         await writeDB(data);
@@ -294,10 +323,17 @@ app.post('/api/calendar/book', async (req, res) => {
 });
 
 app.post('/api/calendar/confirm', async (req, res) => {
-    const { name, startTime, syncCalendar } = req.body;
+    const { id, name, startTime, syncCalendar } = req.body;
     try {
         const data = readDB();
-        const appData = data.appointments.find(a => a.name === name && a.startTime === startTime);
+        let appData = null;
+        
+        if (id) {
+            appData = data.appointments.find(a => a.id === id);
+        } else if (name && startTime) {
+            appData = data.appointments.find(a => a.name === name && a.startTime === startTime);
+        }
+
         if (appData) {
             appData.status = 'confirmed';
             await writeDB(data);
@@ -331,19 +367,24 @@ app.get('/api/sync-down', async (req, res) => {
 });
 
 app.post('/api/calendar/cancel', async (req, res) => {
-    const { phone, index, name, startTime } = req.body;
-    try {
-        const data = readDB();
-        let appToCancel = null;
-        if (phone && index !== undefined) {
-            const customerApps = data.appointments.filter(a => a.phone === phone);
-            appToCancel = customerApps[index];
-        } else if (name && startTime) {
-            appToCancel = data.appointments.find(a => a.name === name && a.startTime === startTime);
-        }
-        if (appToCancel) {
-            data.appointments = data.appointments.filter(a => !(a.name === appToCancel.name && a.startTime === appToCancel.startTime));
-            await writeDB(data);
+        const { id, name, startTime } = req.body;
+        try {
+            const data = readDB();
+            let appToCancel = null;
+            
+            if (id) {
+                appToCancel = data.appointments.find(a => a.id === id);
+            } else if (name && startTime) {
+                appToCancel = data.appointments.find(a => a.name === name && a.startTime === startTime);
+            }
+
+            if (appToCancel) {
+                if (appToCancel.id) {
+                    data.appointments = data.appointments.filter(a => a.id !== appToCancel.id);
+                } else {
+                    data.appointments = data.appointments.filter(a => a !== appToCancel);
+                }
+                await writeDB(data);
             try {
                 const end = appToCancel.endTime || new Date(new Date(appToCancel.startTime).getTime() + 30 * 60000).toISOString();
                 const deleteUrl = `${GAS_URL}?action=delete&name=${encodeURIComponent(appToCancel.name)}&startTime=${encodeURIComponent(appToCancel.startTime)}&endTime=${encodeURIComponent(end)}`;

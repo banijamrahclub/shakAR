@@ -33,7 +33,9 @@ let state = {
     settings: { openTime: '10:00', closeTime: '22:00' }, // إعدادات افتراضية
     managedDate: new Date().toISOString().split('T')[0], // التاريخ الذي يتم إدارته حالياً (الافتراضي هو اليوم)
     currentPosType: 'service', // النوع المختار في صفحة البيع (خدمات أو بكجات)
-    manualSelectedServices: [] // الخدمات المختارة في الحجز اليدوي
+    manualSelectedServices: [], // الخدمات المختارة في الحجز اليدوي
+    appFilter: 'all', // فلتر الحجوزات (الكل، المؤكدة، المعلقة)
+    appSearch: '' // نص البحث في الحجوزات
 };
 
 const PASSWORD = "1";
@@ -433,14 +435,33 @@ async function renderAppointmentsTable() {
         const data = await res.json();
         state.appointments = data.appointments || [];
 
-        // ترتيب الحجوزات من الأقرب موعداً
-        state.appointments.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+        // 1. الفلترة حسب الحالة
+        let filtered = state.appointments;
+        if (state.appFilter !== 'all') {
+            filtered = filtered.filter(a => a.status === state.appFilter);
+        }
 
-        body.innerHTML = state.appointments.map((app, index) => {
+        // 2. البحث بالاسم أو الرقم
+        if (state.appSearch) {
+            const query = state.appSearch.toLowerCase();
+            filtered = filtered.filter(a => 
+                (a.name && a.name.toLowerCase().includes(query)) || 
+                (a.phone && a.phone.includes(query))
+            );
+        }
+
+        // 3. الترتيب
+        filtered.sort((a, b) => {
+            if (a.status === 'pending' && b.status !== 'pending') return -1;
+            if (a.status !== 'pending' && b.status === 'pending') return 1;
+            return new Date(a.startTime) - new Date(b.startTime);
+        });
+
+        // 4. الرندرة
+        body.innerHTML = filtered.map((app) => {
             const isPending = app.status === 'pending';
             const startTimeFormatted = new Date(app.startTime).toLocaleString('ar-BH');
 
-            // روابط الواتساب المجهزة
             const depositMsg = `تحية طيبة من "حلاق الشكر"،\nمرحباً ${app.name}، لقد استلمنا حجزك المبدئي:\n⏰ الموعد: ${startTimeFormatted}\n✂️ الخدمة: ${app.service}\n\nيرجى إرسال صورة إيصال دفع العربون (1.000 دينار) لشراء وقتك وتأكيد حجزك نهائياً عبر بينفت أو آيبان.\nشكراً لك.`;
             const confirmMsg = `تم التأكيد ✅\nعزيزي ${app.name}، تم استلام العربون وتأكيد موعدك بنجاح.\n⏰ ننتظرك في: ${startTimeFormatted}\n\n⚠️ ملاحظة 1: لن يتم ارجاع العربون اذا تم الغاء الحجز قبل اقل من 24 ساعة منه.\n⚠️ ملاحظة 2: سيتم الغاء الموعد اذا تأخر الزبون 15 دقيقة عن الموعد.\n\nشكراً لاختيارك حلاق الشكر.`;
             const reminderMsg = `تذكير بموعدك لدى حلاق الشكر ⏰\nعزيزي ${app.name}، نود تذكيرك بموعدك المحجوز لدينا:\n📅 الموعد: ${startTimeFormatted}\n✂️ الخدمة: ${app.service}\n\nنحن بانتظارك في الوقت المحدد.\nشكراً لاختيارك حلاق الشكر.`;
@@ -457,22 +478,39 @@ async function renderAppointmentsTable() {
                 <td>
                     <div style="display: flex; flex-direction: column; gap: 5px;">
                         ${isPending ? `
-                            <button class="btn-action" style="background:orange; color:black;" onclick="verifyBooking(${index})">💰 تأكيد العربون</button>
+                            <button class="btn-action" style="background:orange; color:black;" onclick="verifyBooking('${app.id}')">💰 تأكيد العربون</button>
                             <button class="btn-action" style="background:#25d366; color:white;" onclick="sendWhatsAppMessage('${app.phone}', '${encodeURIComponent(depositMsg)}')">💬 اطلب العربون</button>
                         ` : `
-                            <button class="btn-action" style="background:var(--success); color:black;" onclick="completeAppointment(${index})">✅ انتهى</button>
+                            <button class="btn-action" style="background:var(--success); color:black;" onclick="completeAppointment('${app.id}')">✅ انتهى</button>
                             <button class="btn-action" style="background:#075e54; color:white;" onclick="sendWhatsAppMessage('${app.phone}', '${encodeURIComponent(reminderMsg)}')">🔔 أرسل تذكير</button>
                             <button class="btn-action" style="background:#25d366; color:white;" onclick="sendWhatsAppMessage('${app.phone}', '${encodeURIComponent(confirmMsg)}')">💬 سند التأكيد</button>
                         `}
-                        <button class="btn-action" style="background:var(--danger); color:white;" onclick="deleteAppointment(${index})">🗑️ إلغاء</button>
+                        <button class="btn-action" style="background:var(--danger); color:white;" onclick="deleteAppointment('${app.id}')">🗑️ إلغاء</button>
                     </div>
                 </td>
             </tr>
             `;
-        }).join('') || '<tr><td colspan="5">لا توجد حجوزات حالياً</td></tr>';
+        }).join('') || '<tr><td colspan="5">لا توجد حجوزات تطابق البحث حالياً</td></tr>';
+
+        // تحديث حالة الأزرار (Active)
+        document.querySelectorAll('.finance-sub-nav .sub-link').forEach(link => {
+            link.classList.remove('active');
+            if (link.id === `app-filter-${state.appFilter}`) link.classList.add('active');
+        });
+
     } catch (e) {
         body.innerHTML = '<tr><td colspan="5">فشل جلب الحجوزات</td></tr>';
     }
+}
+
+function setAppFilter(filter) {
+    state.appFilter = filter;
+    renderAppointmentsTable();
+}
+
+function handleAppSearch() {
+    state.appSearch = document.getElementById('app-search-input').value;
+    renderAppointmentsTable();
 }
 
 function sendWhatsAppMessage(phone, encodedMsg) {
@@ -594,8 +632,9 @@ async function saveManualAppointment() {
     } catch (e) { alert("خطأ في الاتصال"); }
 }
 
-async function verifyBooking(index) {
-    const app = state.appointments[index];
+async function verifyBooking(id) {
+    const app = state.appointments.find(a => a.id === id);
+    if (!app) return;
     const syncChoice = confirm(`هل استلمت العربون من ${app.name}؟\n\n(موافق = تأكيد + مزامنة مع قوقل)\n(إلغاء = تأكيد محلي فقط في الموقع)`);
     
     // ملاحظة: confirm ترجع true أو false. نحن نريد التأكيد دائماً ولكن المزامنة تعتمد على الاختيار.
@@ -607,7 +646,7 @@ async function verifyBooking(index) {
             const res = await fetch(`${API_BASE}/api/calendar/confirm`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: app.name, startTime: app.startTime, syncCalendar })
+                body: JSON.stringify({ id: app.id, name: app.name, startTime: app.startTime, syncCalendar })
             });
             const result = await res.json();
             if (result.success) {
@@ -624,8 +663,9 @@ async function verifyBooking(index) {
     }
 }
 
-async function completeAppointment(index) {
-    const app = state.appointments[index];
+async function completeAppointment(id) {
+    const app = state.appointments.find(a => a.id === id);
+    if (!app) return;
     let finalPrice = app.price || 0;
 
     if (!finalPrice || finalPrice === 0) {
@@ -643,7 +683,7 @@ async function completeAppointment(index) {
             await fetch(`${API_BASE}/api/calendar/cancel`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: app.name, startTime: app.startTime })
+                body: JSON.stringify({ id: app.id, name: app.name, startTime: app.startTime })
             });
         } catch (e) { console.error("Sync error:", e); }
 
@@ -660,25 +700,26 @@ async function completeAppointment(index) {
         state.history.unshift(sale);
 
         // 3. حذف الحجز محلياً وحفظ السجل
-        state.appointments.splice(index, 1);
+        state.appointments = state.appointments.filter(a => a.id !== id);
         await save();
         updateUI();
         alert("تم تسجيل الموعد بنجاح (" + (pMethod === 'cash' ? 'كاش' : 'بينفت') + ")");
     }
 }
 
-async function deleteAppointment(index) {
-    const app = state.appointments[index];
+async function deleteAppointment(id) {
+    const app = state.appointments.find(a => a.id === id);
+    if (!app) return;
     if (confirm("هل تريد إلغاء هذا الحجز نهائياً من السيستم وقوقل؟")) {
         try {
             await fetch(`${API_BASE}/api/calendar/cancel`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: app.name, startTime: app.startTime })
+                body: JSON.stringify({ id: app.id, name: app.name, startTime: app.startTime })
             });
         } catch (e) { console.error("Sync error:", e); }
 
-        state.appointments.splice(index, 1);
+        state.appointments = state.appointments.filter(a => a.id !== id);
         await save();
         renderAppointmentsTable();
     }
@@ -1188,6 +1229,47 @@ function renderSettings() {
     if (state.settings) {
         document.getElementById('setting-open-time').value = state.settings.openTime || '10:00';
         document.getElementById('setting-close-time').value = state.settings.closeTime || '22:00';
+        renderSpecialDays();
+    }
+}
+
+function renderSpecialDays() {
+    const list = document.getElementById('special-days-list');
+    if (!list) return;
+    const specialDays = state.settings.specialDays || {};
+    let html = '';
+    
+    Object.entries(specialDays).forEach(([date, hours]) => {
+        html += `
+            <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 10px 15px; border-radius: 12px; border: 1px solid var(--border);">
+                <div style="font-weight: 700;">📅 ${date} <span style="color: var(--primary); margin-right: 15px;">⏰ ${hours.open} - ${hours.close}</span></div>
+                <button onclick="deleteSpecialDay('${date}')" style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.2rem;">🗑️</button>
+            </div>
+        `;
+    });
+    list.innerHTML = html || '<div style="color: var(--text-muted); font-size: 0.8rem;">لا توجد أيام خاصة مضافة</div>';
+}
+
+async function addSpecialDay() {
+    const date = document.getElementById('special-date').value;
+    const open = document.getElementById('special-open').value;
+    const close = document.getElementById('special-close').value;
+
+    if (!date || !open || !close) return alert("يرجى ملئ جميع الحقول");
+
+    if (!state.settings.specialDays) state.settings.specialDays = {};
+    state.settings.specialDays[date] = { open, close };
+    
+    await save();
+    renderSpecialDays();
+    alert("تمت إضافة التوقيت الخاص بنجاح");
+}
+
+async function deleteSpecialDay(date) {
+    if (confirm(`هل تريد حذف التوقيت الخاص ليوم ${date}؟`)) {
+        delete state.settings.specialDays[date];
+        await save();
+        renderSpecialDays();
     }
 }
 
@@ -1408,3 +1490,4 @@ async function resetData() {
         location.reload();
     }
 }
+
