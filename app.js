@@ -480,7 +480,7 @@ async function renderAppointmentsTable() {
                 <td>
                     <div style="display: flex; flex-direction: column; gap: 5px;">
                         ${isPending ? `
-                            <button class="btn-action" style="background:orange; color:black;" onclick="verifyBooking('${app.id}')">💰 تأكيد العربون</button>
+                            <button class="btn-action" style="background:orange; color:black;" onclick="verifyBooking('${app.id}', '${app.name}', '${app.startTime}')">💰 تأكيد العربون</button>
                             <button class="btn-action" style="background:#25d366; color:white;" onclick="sendWhatsAppMessage('${app.phone}', '${encodeURIComponent(depositMsg)}')">💬 اطلب العربون</button>
                         ` : `
                             <button class="btn-action" style="background:var(--success); color:black;" onclick="completeAppointment('${app.id}')">✅ انتهى</button>
@@ -634,16 +634,16 @@ async function saveManualAppointment() {
     } catch (e) { alert("خطأ في الاتصال"); }
 }
 
-async function verifyBooking(id) {
-    const app = state.appointments.find(a => a.id === id);
-    if (!app) return;
-    const syncChoice = confirm(`هل استلمت العربون من ${app.name}؟\n\n(موافق = تأكيد + مزامنة مع قوقل)\n(إلغاء = تأكيد محلي فقط في الموقع)`);
+async function verifyBooking(id, name, startTime) {
+    let app = state.appointments.find(a => a.id === id);
+    if (!app && name && startTime) {
+        app = state.appointments.find(a => a.name === name && a.startTime === startTime);
+    }
     
-    // ملاحظة: confirm ترجع true أو false. نحن نريد التأكيد دائماً ولكن المزامنة تعتمد على الاختيار.
-    // لكن المستخدم قد يريد إلغاء العملية كاملة. لذا سنستخدم prompt أو confirm مركبة.
-    
-    if (confirm(`تأكيد استلام العربون لـ ${app.name}؟`)) {
-        const syncCalendar = syncChoice; 
+    if (!app) return alert("لم يتم العثور على بيانات الحجز. يرجى تحديث الصفحة.");
+
+    if (confirm(`هل أنت متأكد من استلام العربون (1.000 د.ب) من الزبون ${app.name}؟`)) {
+        const syncCalendar = confirm("هل تريد مزامنة هذا الموعد مع تقويم قوقل أيضاً؟");
         try {
             const res = await fetch(`${API_BASE}/api/calendar/confirm`, {
                 method: 'POST',
@@ -652,7 +652,7 @@ async function verifyBooking(id) {
             });
             const result = await res.json();
             if (result.success) {
-                alert("تم تأكيد الحجز وإضافته للتقويم!");
+                alert("تم تأكيد الحجز بنجاح!");
 
                 // إرسال رسالة التأكيد عبر الواتساب فوراً
                 const formattedTime = new Date(app.startTime).toLocaleString('ar-BH');
@@ -660,8 +660,13 @@ async function verifyBooking(id) {
                 sendWhatsAppMessage(app.phone, encodeURIComponent(confirmMsg));
 
                 renderAppointmentsTable();
+            } else {
+                alert("فشل التأكيد: " + (result.error || "خطأ غير معروف"));
             }
-        } catch (e) { alert("خطأ في التأكيد"); }
+        } catch (e) { 
+            console.error(e);
+            alert("حدث خطأ أثناء الاتصال بالسيرفر."); 
+        }
     }
 }
 

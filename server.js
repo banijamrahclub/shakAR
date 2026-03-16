@@ -107,14 +107,25 @@ async function syncWithCloud() {
 
         // --- دمج الحجوزات (Appointments) لضمان عدم ضياعها خاصة غير المؤكدة ---
         if (currentLocalData.appointments && cloudData.appointments) {
+            // دمج العناصر الجديدة من السحاب
             const localKeys = new Set(currentLocalData.appointments.map(a => `${a.name}-${a.startTime}`));
             const newFromCloud = cloudData.appointments.filter(a => !localKeys.has(`${a.name}-${a.startTime}`));
             
-            // نجمع الحجوزات ونرتبها حسب التاريخ
+            // إضافة IDs للعناصر التي تفتقر إليها
+            newFromCloud.forEach(a => {
+                if (!a.id) a.id = 'app_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+            });
+
             mergedData.appointments = [...currentLocalData.appointments, ...newFromCloud].sort((a,b) => new Date(a.startTime) - new Date(b.startTime));
         } else if (currentLocalData.appointments && (!cloudData.appointments || cloudData.appointments.length === 0)) {
-            // لو قوقل شيت رجع بيانات فاضية للحجوزات، نتمسك بالبيانات المحلية
             mergedData.appointments = currentLocalData.appointments;
+        }
+
+        // التأكد من أن جميع الحجوزات الحالية لها IDs
+        if (mergedData.appointments) {
+            mergedData.appointments.forEach(a => {
+                if (!a.id) a.id = 'app_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+            });
         }
 
         // حماية الخدمات والبكجات: إذا كانت موجودة محلياً وغير موجودة أو فارغة في السحاب، نحتفظ بالمحلي
@@ -296,7 +307,7 @@ app.post('/api/calendar/book', async (req, res) => {
 
         const appStatus = status || 'pending';
         const newApp = { 
-            id: Date.now().toString() + '-' + Math.random().toString(36).substr(2, 9),
+            id: 'app_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
             name, phone, service, price, startTime, endTime, status: appStatus, date: new Date().toISOString() 
         };
         
