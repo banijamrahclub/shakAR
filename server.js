@@ -82,7 +82,18 @@ async function syncWithCloud() {
         }
 
         // دمج ذكي: ندمج التاريخ (history) والمصاريف (expenses) لضمان عدم ضياع أي عملية جديدة
+        // الحفاظ على الإعدادات المحلية الحساسة (مثل أيام الإغلاق ووضع الصيانة) لتجنب التراجع التلقائي
         const mergedData = { ...currentLocalData, ...cloudData };
+        
+        if (currentLocalData.settings && cloudData.settings) {
+            mergedData.settings = {
+                ...cloudData.settings, // أخذ الإعدادات من السحاب أولاً
+                // ثم إضافة/تغطية بالقيم المحلية الجديدة التي قد لا تكون في السحاب بعد
+                closedDates: currentLocalData.settings.closedDates || cloudData.settings.closedDates || [],
+                maintenanceMode: currentLocalData.settings.maintenanceMode !== undefined ? currentLocalData.settings.maintenanceMode : cloudData.settings.maintenanceMode,
+                workIntervals: currentLocalData.settings.workIntervals || cloudData.settings.workIntervals || []
+            };
+        }
 
         // التأكد من عدم ضياع العمليات الجديدة في التاريخ (المبيعات)
         if (currentLocalData.history && cloudData.history) {
@@ -278,6 +289,18 @@ app.post('/api/calendar/book', async (req, res) => {
     try {
         const data = readDB();
 
+        // 0. فحص إذا كان اليوم مغلقاً (إجازة)
+        const requestDay = startTime.split('T')[0];
+        const closedDates = (data.settings && data.settings.closedDates) || [];
+        if (closedDates.includes(requestDay)) {
+            return res.json({ success: false, error: "CLOSED_DATE" });
+        }
+
+        // 0.1 فحص وضع الصيانة
+        if (data.settings && data.settings.maintenanceMode) {
+            return res.json({ success: false, error: "MAINTENANCE_MODE" });
+        }
+
         // فحص التكرار السريع (نفس العميل يحجز مرتين في دقيقة)
         const isDuplicate = data.appointments.some(app =>
             app.phone === phone &&
@@ -289,7 +312,7 @@ app.post('/api/calendar/book', async (req, res) => {
         // فحص التداخل الفعلي
         const requestStart = new Date(startTime).getTime();
         const requestEnd = new Date(endTime).getTime();
-        const requestDay = startTime.split('T')[0];
+        // requestDay is already declared above
 
         let allBusyForCheck = (data.appointments || [])
             .filter(app => app.startTime && app.startTime.startsWith(requestDay))

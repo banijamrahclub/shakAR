@@ -577,28 +577,44 @@
             <!-- PAGE: SETTINGS -->
             <div id="page-settings" class="page">
                 <div class="card-glass">
-                    <h2 style="margin-bottom: 20px;">⚙️ إعدادات أوقات العمل</h2>
-                    <p style="color: var(--text-muted); margin-bottom: 25px;">حدد أوقات بدء ونهاية الدوام ليتمكن الزبائن
-                        من الحجز خلالها فقط.</p>
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 500px;">
-                        <div class="input-group">
-                            <label style="display: block; margin-bottom: 10px; color: var(--primary);">وقت فتح
-                                الصالون:</label>
-                            <input type="time" id="setting-open-time" class="input-field"
-                                style="background:var(--bg-input); color:white; border-radius:12px; border:1px solid var(--border); padding:12px; font-weight:700;">
+                    <h2 style="margin-bottom: 20px;">⚙️ إعدادات الموقع</h2>
+                    
+                    <!-- وضع الصيانة -->
+                    <div style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: 20px; border: 1px solid var(--border); margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h3 style="margin-bottom: 5px; font-size: 1.1rem;">🛠️ وضع الصيانة (إيقاف الموقع)</h3>
+                            <p style="color: var(--text-muted); font-size: 0.85rem;">عند التفعيل، ستظهر صفحة صيانة للزبائن ولن يتمكنوا من الحجز.</p>
                         </div>
-                        <div class="input-group">
-                            <label style="display: block; margin-bottom: 10px; color: var(--primary);">وقت إغلاق
-                                الصالون:</label>
-                            <input type="time" id="setting-close-time" class="input-field"
-                                style="background:var(--bg-input); color:white; border-radius:12px; border:1px solid var(--border); padding:12px; font-weight:700;">
+                        <div id="maintenance-status-container">
+                            <button id="btn-toggle-maintenance" onclick="toggleMaintenanceMode()" class="btn-action" style="width: auto; padding: 10px 25px; background: var(--border); color: white;">جاري التحميل...</button>
                         </div>
                     </div>
 
-                    <button class="btn-action"
-                        style="margin-top: 30px; max-width: 250px; background:var(--primary); color:black;"
-                        onclick="saveSettings()">💾 حفظ أوقات الدوام</button>
+                    <h3 style="margin-bottom: 20px; color: var(--primary);">🕒 أوقات العمل الرسمية</h3>
+                    <p style="color: var(--text-muted); margin-bottom: 25px;">حدد أوقات بدء ونهاية الدوام ليتمكن الزبائن من الحجز خلالها فقط.</p>
+
+                    <div style="background: rgba(255,255,255,0.02); padding: 20px; border-radius: 20px; border: 1px solid var(--border); margin-bottom: 25px;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 15px;">
+                            <div class="input-group">
+                                <label style="display: block; margin-bottom: 5px; font-size: 0.8rem;">بداية الفترة:</label>
+                                <input type="time" id="new-interval-open" value="10:00" class="input-field" style="background:var(--bg-input); color:white;">
+                            </div>
+                            <div class="input-group">
+                                <label style="display: block; margin-bottom: 5px; font-size: 0.8rem;">نهاية الفترة:</label>
+                                <input type="time" id="new-interval-close" value="22:00" class="input-field" style="background:var(--bg-input); color:white;">
+                            </div>
+                            <div class="input-group" style="display: flex; align-items: flex-end;">
+                                <button class="btn-action" onclick="addWorkInterval()" style="background: var(--primary); color: black;">➕ إضافة فترة</button>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 25px;">
+                            <h4 style="margin-bottom: 10px; color: var(--primary);">فترات العمل الحالية (يومياً):</h4>
+                            <div id="work-intervals-list" style="display: grid; gap: 10px;">
+                                <!-- قائمة الفترات عبر JS -->
+                            </div>
+                        </div>
+                    </div>
 
                     <hr style="margin: 40px 0; border: 0; border-top: 1px solid var(--border);">
 
@@ -628,6 +644,30 @@
                             <h4 style="margin-bottom: 10px; color: var(--primary);">الأيام المضافة حالياً:</h4>
                             <div id="special-days-list" style="display: grid; gap: 10px;">
                                 <!-- قائمة الأيام عبر JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr style="margin: 40px 0; border: 0; border-top: 1px solid var(--border);">
+
+                    <h2 style="margin-bottom: 20px;">🔒 إغلاق الحجوزات (أيام عطلة)</h2>
+                    <p style="color: var(--text-muted); margin-bottom: 20px;">اختر تواريخ محددة لإغلاق الصالون فيها تماماً ومنع أي حجوزات.</p>
+                    
+                    <div style="background: rgba(239, 68, 68, 0.05); padding: 20px; border-radius: 20px; border: 1px solid rgba(239, 68, 68, 0.2);">
+                        <div style="display: grid; grid-template-columns: 1fr auto; gap: 15px;">
+                            <div class="input-group">
+                                <label style="display: block; margin-bottom: 5px; font-size: 0.8rem;">تاريخ الإغلاق:</label>
+                                <input type="date" id="closed-date-input" class="input-field" style="background:var(--bg-input); color:white;">
+                            </div>
+                            <div class="input-group" style="display: flex; align-items: flex-end;">
+                                <button class="btn-action" onclick="addClosedDate()" style="background: var(--danger); color: white;">🔒 إغلاق هذا اليوم</button>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 25px;">
+                            <h4 style="margin-bottom: 10px; color: #ef4444;">أيام العطلة المضافة:</h4>
+                            <div id="closed-dates-list" style="display: grid; gap: 10px;">
+                                <!-- قائمة أيام الإغلاق عبر JS -->
                             </div>
                         </div>
                     </div>

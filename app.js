@@ -1290,10 +1290,29 @@ async function deleteService(index) {
 }
 
 function renderSettings() {
-    if (state.settings) {
-        document.getElementById('setting-open-time').value = state.settings.openTime || '10:00';
-        document.getElementById('setting-close-time').value = state.settings.closeTime || '22:00';
-        renderSpecialDays();
+    renderSpecialDays();
+    renderWorkIntervals();
+    renderClosedDates();
+
+    // تحديث زر وضع الصيانة
+    const btn = document.getElementById('btn-toggle-maintenance');
+    if (btn) {
+        const isMaintenance = state.settings.maintenanceMode || false;
+        btn.innerText = isMaintenance ? 'تفعيل الموقع (أونلاين)' : 'إيقاف الموقع (صيانة)';
+        btn.style.background = isMaintenance ? 'var(--success)' : 'var(--danger)';
+        btn.style.color = isMaintenance ? 'black' : 'white';
+    }
+}
+
+async function toggleMaintenanceMode() {
+    const currentStatus = state.settings.maintenanceMode || false;
+    const newStatus = !currentStatus;
+    
+    if (confirm(newStatus ? "هل أنت متأكد من إيقاف الموقع وتفعيل وضع الصيانة؟" : "هل تريد تفعيل الموقع مرة أخرى ليكون متاحاً للزبائن؟")) {
+        state.settings.maintenanceMode = newStatus;
+        await save();
+        renderSettings();
+        showToast(newStatus ? "⚠️ تم تفعيل وضع الصيانة" : "✅ الموقع الآن متاح للجميع");
     }
 }
 
@@ -1337,15 +1356,88 @@ async function deleteSpecialDay(date) {
     }
 }
 
-async function saveSettings() {
-    const openTime = document.getElementById('setting-open-time').value;
-    const closeTime = document.getElementById('setting-close-time').value;
+function renderWorkIntervals() {
+    const list = document.getElementById('work-intervals-list');
+    if (!list) return;
+    const intervals = state.settings.workIntervals || [];
+    
+    // إذا لم توجد فترات وكان هناك وقت فتح وإغلاق قديم، نقوم بالتحويل التلقائي
+    if (intervals.length === 0 && state.settings.openTime && state.settings.closeTime) {
+        intervals.push({ open: state.settings.openTime, close: state.settings.closeTime });
+        state.settings.workIntervals = intervals;
+    }
 
-    if (!openTime || !closeTime) return alert("يرجى تحديد أوقات الفتح والإغلاق");
+    let html = '';
+    intervals.forEach((interval, index) => {
+        html += `
+            <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 10px 15px; border-radius: 12px; border: 1px solid var(--border);">
+                <div style="font-weight: 700;">⏰ فترة ${index + 1}: <span style="color: var(--primary); margin-right: 15px;">${interval.open} - ${interval.close}</span></div>
+                <button onclick="deleteWorkInterval(${index})" style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.2rem;">🗑️</button>
+            </div>
+        `;
+    });
+    list.innerHTML = html || '<div style="color: var(--text-muted); font-size: 0.8rem;">لا توجد فترات عمل مضافة (الصالون مغلق دائماً)</div>';
+}
 
-    state.settings = { openTime, closeTime };
+async function addWorkInterval() {
+    const open = document.getElementById('new-interval-open').value;
+    const close = document.getElementById('new-interval-close').value;
+
+    if (!open || !close) return alert("يرجى تحديد أوقات الفتح والإغلاق للفترة");
+
+    if (!state.settings.workIntervals) state.settings.workIntervals = [];
+    state.settings.workIntervals.push({ open, close });
+    
     await save();
-    alert("تم حفظ أوقات العمل بنجاح! سيتم تطبيقها على الحجوزات الجديدة.");
+    renderWorkIntervals();
+    showToast("✅ تمت إضافة فترة العمل");
+}
+
+async function deleteWorkInterval(index) {
+    if (confirm(`هل تريد حذف هذه الفترة من أوقات العمل؟`)) {
+        state.settings.workIntervals.splice(index, 1);
+        await save();
+        renderWorkIntervals();
+    }
+}
+
+// --- CLOSED DATES MANAGEMENT ---
+function renderClosedDates() {
+    const list = document.getElementById('closed-dates-list');
+    if (!list) return;
+    const closedDates = state.settings.closedDates || [];
+    let html = '';
+    
+    closedDates.sort().forEach((date, index) => {
+        html += `
+            <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(239, 68, 68, 0.02); padding: 10px 15px; border-radius: 12px; border: 1px solid rgba(239, 68, 68, 0.2);">
+                <div style="font-weight: 700; color: #ef4444;">🔒 يوم حظر: <span style="margin-right: 15px;">${date}</span></div>
+                <button onclick="deleteClosedDate(${index})" style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.2rem;">🗑️</button>
+            </div>
+        `;
+    });
+    list.innerHTML = html || '<div style="color: var(--text-muted); font-size: 0.8rem;">لا توجد أيام إغلاق مضافة</div>';
+}
+
+async function addClosedDate() {
+    const date = document.getElementById('closed-date-input').value;
+    if (!date) return alert("يرجى اختيار التاريخ");
+
+    if (!state.settings.closedDates) state.settings.closedDates = [];
+    if (state.settings.closedDates.includes(date)) return alert("هذا التاريخ مضاف مسبقاً");
+
+    state.settings.closedDates.push(date);
+    await save();
+    renderClosedDates();
+    showToast("✅ تم إغلاق الحجوزات لهذا اليوم");
+}
+
+async function deleteClosedDate(index) {
+    if (confirm("هل تريد إعادة فتح الحجوزات لهذا اليوم؟")) {
+        state.settings.closedDates.splice(index, 1);
+        await save();
+        renderClosedDates();
+    }
 }
 
 // --- PACKAGE MANAGEMENT ---

@@ -112,6 +112,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         localStorage.setItem('sh_packages', JSON.stringify(bookingData.packages));
         localStorage.setItem('sh_settings', JSON.stringify(bookingData.settings));
 
+        // Check Maintenance Mode
+        if (bookingData.settings && bookingData.settings.maintenanceMode) {
+            const overlay = document.getElementById('maintenance-overlay');
+            if (overlay) {
+                overlay.style.display = 'flex';
+                document.body.style.overflow = 'hidden'; // Prevent scrolling
+            }
+        }
+
         renderServices();
     } catch (e) { console.error("Load error:", e); }
 
@@ -127,6 +136,34 @@ document.addEventListener('DOMContentLoaded', async () => {
             loadTimeSlots();
         });
     }
+
+    // تحديث تلقائي كل 10 ثواني للتحقق من وضع الصيانة والمواعيد المتاحة
+    setInterval(async () => {
+        try {
+            const res = await fetch(`${API_BASE}/api/data`);
+            const data = await res.json();
+            bookingData.settings = data.settings || bookingData.settings;
+            
+            const overlay = document.getElementById('maintenance-overlay');
+            if (overlay) {
+                const isMaintenance = bookingData.settings.maintenanceMode || false;
+                if (isMaintenance && overlay.style.display !== 'flex') {
+                    overlay.style.display = 'flex';
+                    document.body.style.overflow = 'hidden';
+                } else if (!isMaintenance && overlay.style.display === 'flex') {
+                    overlay.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                }
+            }
+
+            // إذا كان المستخدم في خطوة اختيار الوقت، نحدث الخيارات مباشرة
+            const step2 = document.getElementById('step-2');
+            if (step2 && step2.classList.contains('active') && !bookingData.settings.maintenanceMode) {
+                // نمرر true ليدل على أنه تحديث صامت في الخلفية
+                loadTimeSlots(true);
+            }
+        } catch (e) { console.error("Periodic check error:", e); }
+    }, 10000);
 });
 
 function updateDayLabel(dateStr) {
@@ -198,14 +235,25 @@ function updateSummary() {
     document.getElementById('summary-service').innerText = `${names} (${totalPrice.toFixed(3)} د.ب)`;
 }
 
-async function loadTimeSlots() {
+async function loadTimeSlots(isSilent = false) {
     const date = document.getElementById('booking-date').value;
     bookingData.date = date;
     const grid = document.getElementById('time-slots');
-    grid.innerHTML = '<p style="grid-column: span 2;">جاري تحميل المواعيد...</p>';
+    
+    // إيقاف الكتابة لو كان التحديث صامت والاسم مكتوب مسبقاً (لمنع الوميض)
+    if (!isSilent) {
+        grid.innerHTML = '<p style="grid-column: span 2;">جاري تحميل المواعيد...</p>';
+    }
 
     const now = new Date();
     const currentDay = now.toISOString().split('T')[0];
+
+    // فحص إذا كان اليوم مغلقاً تماماً (إجازة)
+    const closedDates = (bookingData.settings && bookingData.settings.closedDates) || [];
+    if (closedDates.includes(date)) {
+        grid.innerHTML = '<p style="grid-column: span 2; color: var(--danger); font-weight: bold; text-align: center; padding: 20px;">🔒 عذراً، الصالون مغلق في هذا التاريخ.</p>';
+        return;
+    }
 
     let busyTime = [];
     try {
@@ -214,82 +262,91 @@ async function loadTimeSlots() {
         busyTime = await res.json();
     } catch (e) { console.error("Calendar fetch error:", e); }
 
+    // فحص إضافي بعد التحميل للتأكد أن التاريخ لم يتم إغلاقه خلال وقت الطلب
+    if (closedDates.includes(date)) return;
+
     // Generate slots based on settings (Minute-based for precision)
     const settings = bookingData.settings || { openTime: '10:00', closeTime: '22:00' };
+    
+    // فترات العمل: نستخدم العمل الموزع لو موجود، وإلا نستخدم وقت الفتح والإغلاق التقليدي
+    let intervals = settings.workIntervals || [];
+    if (intervals.length === 0) {
+        intervals = [{ open: settings.openTime || '10:00', close: settings.closeTime || '22:00' }];
+    }
 
     // حساب المدة الإجمالية للخدمات المختارة للتأكد من توفر وقت كافٍ
     const totalDuration = bookingData.selectedServices.reduce((sum, s) => sum + (s.duration || 30), 0);
 
-    // Convert current settings to total minutes
-    const [openH, openM] = (settings.openTime || '10:00').split(':').map(Number);
-    const [closeH, closeM] = (settings.closeTime || '22:00').split(':').map(Number);
-
-    const startTotalMinutes = (openH * 60) + (openM || 0);
-    let endTotalMinutes = (closeH * 60) + (closeM || 0);
-
-    // إذا كان وقت الإغلاق أقل من وقت الفتح، فهذا يعني أن الإغلاق في اليوم التالي (فجر)
-    if (endTotalMinutes <= startTotalMinutes) {
-        endTotalMinutes += 1440; // إضافة 24 ساعة
-    }
-
     let html = "";
 
-    // Loop every 30 minutes from start to end
-    for (let totalMin = startTotalMinutes; totalMin < endTotalMinutes; totalMin += 30) {
-        let currentLoopTotal = totalMin;
-        const h = Math.floor((currentLoopTotal % 1440) / 60);
-        const m = currentLoopTotal % 60;
+    intervals.forEach(interval => {
+        // Convert current settings to total minutes
+        const [openH, openM] = (interval.open || '10:00').split(':').map(Number);
+        const [closeH, closeM] = (interval.close || '22:00').split(':').map(Number);
 
-        const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+        const startTotalMinutes = (openH * 60) + (openM || 0);
+        let endTotalMinutes = (closeH * 60) + (closeM || 0);
 
-        // تحويل العرض إلى نظام 12 ساعة (AM/PM)
-        const displayH = h % 12 || 12;
-        const ampm = h < 12 || h >= 24 ? 'AM' : 'PM';
-        const displayTime = `${displayH}:${String(m).padStart(2, '0')} ${ampm}`;
-
-        // تحديد تاريخ الموعد (ممكن يكون اليوم التالي لو طاف الساعة 12 بالليل)
-        let slotDate = date;
-        if (currentLoopTotal >= 1440) {
-            const nextDay = new Date(new Date(date).getTime() + 86400000);
-            slotDate = nextDay.toISOString().split('T')[0];
+        // إذا كان وقت الإغلاق أقل من وقت الفتح، فهذا يعني أن الإغلاق في اليوم التالي (فجر)
+        if (endTotalMinutes <= startTotalMinutes) {
+            endTotalMinutes += 1440; // إضافة 24 ساعة
         }
 
-        const slotDateTime = new Date(`${slotDate}T${timeStr}:00`);
-        const slotStart = slotDateTime.getTime();
-        const slotEnd = slotStart + (totalDuration * 60000);
+        const intervalEndTime = new Date(new Date(`${date}T00:00:00`).getTime() + endTotalMinutes * 60000).getTime();
 
-        // 1. فحص إذا كان الوقت قد مضى (لليوم الحالي)
-        let isPast = false;
-        if (date === currentDay) {
-            if (slotDateTime < now) isPast = true;
+        // Loop every 30 minutes from start to end for THIS interval
+        for (let totalMin = startTotalMinutes; totalMin < endTotalMinutes; totalMin += 30) {
+            let currentLoopTotal = totalMin;
+            const h = Math.floor((currentLoopTotal % 1440) / 60);
+            const m = currentLoopTotal % 60;
+
+            const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+
+            // تحويل العرض إلى نظام 12 ساعة (AM/PM)
+            const displayH = h % 12 || 12;
+            const ampm = h < 12 || h >= 24 ? 'AM' : 'PM';
+            const displayTime = `${displayH}:${String(m).padStart(2, '0')} ${ampm}`;
+
+            // تحديد تاريخ الموعد
+            let slotDate = date;
+            if (currentLoopTotal >= 1440) {
+                const nextDay = new Date(new Date(date).getTime() + 86400000);
+                slotDate = nextDay.toISOString().split('T')[0];
+            }
+
+            const slotDateTime = new Date(`${slotDate}T${timeStr}:00`);
+            const slotStart = slotDateTime.getTime();
+            const slotEnd = slotStart + (totalDuration * 60000);
+
+            // 1. فحص إذا كان الوقت قد مضى
+            let isPast = false;
+            if (date === currentDay) {
+                if (slotDateTime < now) isPast = true;
+            }
+
+            // 2. فحص إذا كان الموعد يمتد لبعد وقت إغلاق الفترة الحالية
+            const exceedsClosing = slotEnd > intervalEndTime;
+
+            // 3. فحص التداخل مع مواعيد أخرى
+            const isOverlap = busyTime.some(b => {
+                const bStart = new Date(b.start).getTime();
+                const bEnd = new Date(b.end).getTime();
+                return (slotStart < bEnd && slotEnd > bStart);
+            });
+
+            const disabled = isPast || isOverlap || exceedsClosing;
+
+            html += `
+                <div class="option-item ${disabled ? 'busy' : ''}" 
+                     onclick="${disabled ? '' : `selectTime('${timeStr}')`}">
+                    ${displayTime}
+                    ${isPast ? '<div style="font-size:0.6rem; color:var(--danger)">مضى</div>' : ''}
+                    ${!isPast && exceedsClosing ? '<div style="font-size:0.5rem; color:var(--danger)">يفوق الإغلاق</div>' : ''}
+                </div>
+            `;
+            if (totalMin > 2880) break; 
         }
-
-        // 2. فحص إذا كان الموعد يمتد لبعد وقت الإغلاق
-        const shopEndTime = new Date(new Date(`${date}T00:00:00`).getTime() + endTotalMinutes * 60000).getTime();
-        const exceedsClosing = slotEnd > shopEndTime;
-
-        // 3. فحص إذا كان الموعد يتداخل مع أي موعد موجود
-        const isOverlap = busyTime.some(b => {
-            const bStart = new Date(b.start).getTime();
-            const bEnd = new Date(b.end).getTime();
-            // تداخل الفترات [slotStart, slotEnd] مع [bStart, bEnd]
-            return (slotStart < bEnd && slotEnd > bStart);
-        });
-
-        const disabled = isPast || isOverlap || exceedsClosing;
-
-        html += `
-            <div class="option-item ${disabled ? 'busy' : ''}" 
-                 onclick="${disabled ? '' : `selectTime('${timeStr}')`}">
-                ${displayTime}
-                ${isPast ? '<div style="font-size:0.6rem; color:var(--danger)">مضى</div>' : ''}
-                ${!isPast && exceedsClosing ? '<div style="font-size:0.5rem; color:var(--danger)">يفوق الإغلاق</div>' : ''}
-            </div>
-        `;
-
-        // Safety break
-        if (totalMin > 2880) break; // بحد أقصى يومين
-    }
+    });
 
     if (!html) html = '<p style="grid-column: span 2; color: var(--danger);">لا توجد مواعيد متاحة في هذا الوقت.</p>';
     grid.innerHTML = html;
