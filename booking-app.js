@@ -5,6 +5,7 @@ window.onerror = function (msg, url, line) {
 
 const API_BASE = window.location.origin;
 
+let currentLoadId = 0;
 let bookingData = {
     selectedServices: [],
     date: null,
@@ -236,6 +237,7 @@ function updateSummary() {
 }
 
 async function loadTimeSlots(isSilent = false) {
+    const loadId = ++currentLoadId;
     const date = document.getElementById('booking-date').value;
     bookingData.date = date;
     const grid = document.getElementById('time-slots');
@@ -246,24 +248,37 @@ async function loadTimeSlots(isSilent = false) {
     }
 
     const now = new Date();
-    const currentDay = now.toISOString().split('T')[0];
+    // الحصول على تاريخ اليوم بالتوقيت المحلي (YYYY-MM-DD) لتجنب مشاكل المناطق الزمنية
+    const currentDay = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+
 
     // فحص إذا كان اليوم مغلقاً تماماً (إجازة)
     const closedDates = (bookingData.settings && bookingData.settings.closedDates) || [];
-    if (closedDates.includes(date)) {
-        grid.innerHTML = '<p style="grid-column: span 2; color: var(--danger); font-weight: bold; text-align: center; padding: 20px;">🔒 عذراً، الصالون مغلق في هذا التاريخ.</p>';
+    const closedEntry = Array.isArray(closedDates) 
+        ? closedDates.find(d => (typeof d === 'string' ? d === date : d.date === date))
+        : null;
+
+    if (closedEntry) {
+        if (loadId !== currentLoadId) return;
+        const reason = typeof closedEntry === 'object' ? closedEntry.reason : '';
+        grid.innerHTML = `
+            <div style="grid-column: span 2; padding: 30px; text-align: center; background: rgba(239, 68, 68, 0.1); border-radius: 20px; border: 1px solid rgba(239, 68, 68, 0.2);">
+                <div style="font-size: 3rem; margin-bottom: 15px;">🔒</div>
+                <h3 style="color: #ef4444; margin-bottom: 10px;">عذراً، الصالون مغلق في هذا التاريخ</h3>
+                ${reason ? `<p style="color: var(--text-muted); font-size: 1.1rem; line-height: 1.6;">السبب: ${reason}</p>` : '<p style="color: var(--text-muted);">يرجى اختيار تاريخ آخر.</p>'}
+            </div>
+        `;
         return;
     }
 
-    let busyTime = [];
     try {
         const start = `${date}T00:00:00Z`;
         const res = await fetch(`${API_BASE}/api/calendar/busy?start=${start}`);
         busyTime = await res.json();
     } catch (e) { console.error("Calendar fetch error:", e); }
 
-    // فحص إضافي بعد التحميل للتأكد أن التاريخ لم يتم إغلاقه خلال وقت الطلب
-    if (closedDates.includes(date)) return;
+    if (loadId !== currentLoadId) return;
+    if (closedEntry) return;
 
     // Generate slots based on settings (Minute-based for precision)
     const settings = bookingData.settings || { openTime: '10:00', closeTime: '22:00' };
@@ -348,6 +363,7 @@ async function loadTimeSlots(isSilent = false) {
         }
     });
 
+    if (loadId !== currentLoadId) return;
     if (!html) html = '<p style="grid-column: span 2; color: var(--danger);">لا توجد مواعيد متاحة في هذا الوقت.</p>';
     grid.innerHTML = html;
 }

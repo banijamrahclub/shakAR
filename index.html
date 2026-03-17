@@ -6,6 +6,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>حلاق الشكر | نظام الإدارة المتكامل</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        .card-glass {
+            background: rgba(15, 23, 42, 0.8) !important;
+            backdrop-filter: blur(20px) !important;
+            -webkit-backdrop-filter: blur(20px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+        }
+        
+        .input-field {
+            background: rgba(255, 255, 255, 0.05) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            color: white !important;
+            border-radius: 12px !important;
+            padding: 12px 15px !important;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+        
+        .input-field:focus {
+            border-color: var(--primary) !important;
+            outline: none;
+            background: rgba(255, 255, 255, 0.08) !important;
+        }
+    </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="icon" type="image/jpeg"
@@ -654,10 +679,14 @@
                     <p style="color: var(--text-muted); margin-bottom: 20px;">اختر تواريخ محددة لإغلاق الصالون فيها تماماً ومنع أي حجوزات.</p>
                     
                     <div style="background: rgba(239, 68, 68, 0.05); padding: 20px; border-radius: 20px; border: 1px solid rgba(239, 68, 68, 0.2);">
-                        <div style="display: grid; grid-template-columns: 1fr auto; gap: 15px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 15px;">
                             <div class="input-group">
                                 <label style="display: block; margin-bottom: 5px; font-size: 0.8rem;">تاريخ الإغلاق:</label>
                                 <input type="date" id="closed-date-input" class="input-field" style="background:var(--bg-input); color:white;">
+                            </div>
+                            <div class="input-group">
+                                <label style="display: block; margin-bottom: 5px; font-size: 0.8rem;">السبب (اختياري):</label>
+                                <input type="text" id="closed-reason-input" placeholder="مثال: إجازة رسمية، صيانة" class="input-field" style="background:var(--bg-input); color:white;">
                             </div>
                             <div class="input-group" style="display: flex; align-items: flex-end;">
                                 <button class="btn-action" onclick="addClosedDate()" style="background: var(--danger); color: white;">🔒 إغلاق هذا اليوم</button>
@@ -743,7 +772,7 @@
                             </div>
                             <!-- خيار المزامنة -->
                             <div style="display: flex; align-items: center; gap: 10px; background: var(--bg-card); padding: 10px 15px; border-radius: 12px; border: 1px solid var(--border);">
-                                <input type="checkbox" id="m-sync-google" style="width: 20px; height: 20px; cursor: pointer;">
+                                <input type="checkbox" id="m-sync-google" checked style="width: 20px; height: 20px; cursor: pointer;">
                                 <label for="m-sync-google" style="font-size: 0.85rem; cursor: pointer; user-select: none;">مزامنة مع قوقل كلندر</label>
                             </div>
                         </div>
@@ -774,6 +803,75 @@
             </div>
 
         </main>
+    </div>
+
+    <!-- MODAL: Edit Appointment -->
+    <div id="edit-app-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100000; align-items: center; justify-content: center; padding: 20px;">
+        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);" onclick="closeEditModal()"></div>
+        <div class="card-glass" style="position: relative; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; padding: 30px; border-radius: 30px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); margin: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <h2 style="margin: 0; font-size: 1.5rem; color: var(--primary);">✏️ تعديل الحجز</h2>
+                <button onclick="closeEditModal()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.5rem;">✕</button>
+            </div>
+            
+            <input type="hidden" id="edit-app-id">
+            
+            <div class="input-group" style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-size: 0.85rem; color: var(--primary);">👤 اسم الزبون:</label>
+                <input type="text" id="edit-app-name" class="input-field">
+            </div>
+            
+            <div class="input-group" style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-size: 0.85rem; color: var(--primary);">📞 رقم الهاتف:</label>
+                <input type="tel" id="edit-app-phone" class="input-field">
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="input-group" style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-size: 0.85rem; color: var(--primary);">📅 التاريخ:</label>
+                    <input type="date" id="edit-app-date" class="input-field">
+                </div>
+                <div class="input-group" style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-size: 0.85rem; color: var(--primary);">⏰ الوقت:</label>
+                    <input type="time" id="edit-app-time" class="input-field">
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 10px; font-size: 0.85rem; color: var(--primary);">✂️ اختر الخدمات/البكجات:</label>
+                <div id="edit-services-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <!-- JS Generated Grid -->
+                </div>
+            </div>
+
+            <!-- ملخص الحجز الجديد -->
+            <div id="edit-app-summary" style="background: rgba(var(--primary-rgb), 0.1); border: 1px dashed var(--primary); padding: 15px; border-radius: 15px; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px;">
+                    <span>الخدمات:</span>
+                    <span id="e-selected-names" style="font-weight: 700; color: var(--primary);">--</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px;">
+                    <span>السعر الإجمالي:</span>
+                    <span style="font-weight: 700; color: var(--success);"><span id="e-total-price">0.000</span> د.ب</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+                    <span>المدة المتوقعة:</span>
+                    <span style="font-weight: 700;"><span id="e-total-duration">0</span> دقيقة</span>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                <input type="checkbox" id="edit-app-sync" checked style="width: 20px; height: 20px; cursor: pointer;">
+                <label for="edit-app-sync" style="font-size: 0.85rem; cursor: pointer; user-select: none; color: white;">تحديث الموعد في قوقل كلندر أيضاً</label>
+            </div>
+            
+            <div id="edit-app-error" style="display: none; background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 10px; border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.2); font-size: 0.85rem; margin-bottom: 15px;"></div>
+            
+            <div style="display: flex; gap: 12px; margin-top: 20px;">
+                <button class="btn-action" onclick="saveAppointmentEdit()" style="flex: 2; font-weight: 700;">💾 حفظ التعديلات</button>
+                <button class="btn-action" onclick="closeEditModal()" style="flex: 1; background: transparent; border: 1px solid var(--border); color: var(--text-muted);">إلغاء</button>
+            </div>
+        </div>
     </div>
 
     <script src="app.js"></script>

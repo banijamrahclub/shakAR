@@ -37,7 +37,8 @@ let state = {
     appFilter: 'all', // فلتر الحجوزات (الكل، المؤكدة، المعلقة)
     appSearch: '', // نص البحث في الحجوزات
     selectedChartMonth: new Date().getMonth(), // الشهر المختار في الرسومات
-    selectedChartYear: new Date().getFullYear() // السنة المختارة في الرسومات
+    selectedChartYear: new Date().getFullYear(), // السنة المختارة في الرسومات
+    editSelectedServices: [] // الخدمات المختارة في نافذة التعديل
 };
 
 const PASSWORD = "1";
@@ -436,6 +437,11 @@ async function renderAppointmentsTable() {
         const res = await fetch(`${API_BASE}/api/data`);
         const data = await res.json();
         state.appointments = data.appointments || [];
+        
+        // التأكد أن كل الحجوزات لها ID لتجنب مشاكل التعديل
+        state.appointments.forEach((a, idx) => {
+            if (!a.id) a.id = 'app_' + Date.now() + '_' + idx;
+        });
 
         // 1. الفلترة حسب الحالة
         let filtered = state.appointments;
@@ -487,7 +493,10 @@ async function renderAppointmentsTable() {
                             <button class="btn-action" style="background:#075e54; color:white;" onclick="sendWhatsAppMessage('${app.phone}', '${encodeURIComponent(reminderMsg)}')">🔔 أرسل تذكير</button>
                             <button class="btn-action" style="background:#25d366; color:white;" onclick="sendWhatsAppMessage('${app.phone}', '${encodeURIComponent(confirmMsg)}')">💬 سند التأكيد</button>
                         `}
-                        <button class="btn-action" style="background:var(--danger); color:white;" onclick="deleteAppointment('${app.id}')">🗑️ إلغاء</button>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                            <button class="btn-action" style="background:var(--primary); color:black;" onclick="openEditModal('${app.id}')">✏️ تعديل</button>
+                            <button class="btn-action" style="background:var(--danger); color:white;" onclick="deleteAppointment('${app.id}')">🗑️ إلغاء</button>
+                        </div>
                     </div>
                 </td>
             </tr>
@@ -627,7 +636,7 @@ async function saveManualAppointment() {
             document.getElementById('m-app-name').value = '';
             document.getElementById('m-app-phone').value = '';
             document.getElementById('m-app-start').value = '';
-            document.getElementById('m-sync-google').checked = false;
+            document.getElementById('m-sync-google').checked = true;
         } else {
             alert(result.error || "فشل إضافة الحجز");
         }
@@ -1405,13 +1414,22 @@ async function deleteWorkInterval(index) {
 function renderClosedDates() {
     const list = document.getElementById('closed-dates-list');
     if (!list) return;
-    const closedDates = state.settings.closedDates || [];
-    let html = '';
+    let closedDates = state.settings.closedDates || [];
     
-    closedDates.sort().forEach((date, index) => {
+    // تصحيح البيانات القديمة لو كانت مصفوفة نصوص بسيطة
+    if (closedDates.length > 0 && typeof closedDates[0] === 'string') {
+        state.settings.closedDates = closedDates.map(d => ({ date: d, reason: '' }));
+        closedDates = state.settings.closedDates;
+    }
+
+    let html = '';
+    closedDates.sort((a,b) => a.date.localeCompare(b.date)).forEach((item, index) => {
         html += `
             <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(239, 68, 68, 0.02); padding: 10px 15px; border-radius: 12px; border: 1px solid rgba(239, 68, 68, 0.2);">
-                <div style="font-weight: 700; color: #ef4444;">🔒 يوم حظر: <span style="margin-right: 15px;">${date}</span></div>
+                <div style="flex:1;">
+                    <div style="font-weight: 700; color: #ef4444;">🔒 تاريخ الإغلاق: <span style="margin-right: 15px;">${item.date}</span></div>
+                    ${item.reason ? `<div style="font-size:0.75rem; color:var(--text-muted); margin-top:3px;">📝 السبب: ${item.reason}</div>` : ''}
+                </div>
                 <button onclick="deleteClosedDate(${index})" style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.2rem;">🗑️</button>
             </div>
         `;
@@ -1421,14 +1439,16 @@ function renderClosedDates() {
 
 async function addClosedDate() {
     const date = document.getElementById('closed-date-input').value;
+    const reason = document.getElementById('closed-reason-input').value;
     if (!date) return alert("يرجى اختيار التاريخ");
 
     if (!state.settings.closedDates) state.settings.closedDates = [];
-    if (state.settings.closedDates.includes(date)) return alert("هذا التاريخ مضاف مسبقاً");
+    if (state.settings.closedDates.some(d => d.date === date || d === date)) return alert("هذا التاريخ مضاف مسبقاً");
 
-    state.settings.closedDates.push(date);
+    state.settings.closedDates.push({ date, reason });
     await save();
     renderClosedDates();
+    document.getElementById('closed-reason-input').value = '';
     showToast("✅ تم إغلاق الحجوزات لهذا اليوم");
 }
 
@@ -1437,6 +1457,162 @@ async function deleteClosedDate(index) {
         state.settings.closedDates.splice(index, 1);
         await save();
         renderClosedDates();
+    }
+}
+
+// --- APPOINTMENT EDIT MODAL LOGIC ---
+function openEditModal(id) {
+    const app = state.appointments.find(a => String(a.id) === String(id));
+    if (!app) return alert("الحجز غير موجود أو لا يمتلك ID صحيح");
+
+    document.getElementById('edit-app-id').value = id;
+    document.getElementById('edit-app-name').value = app.name;
+    document.getElementById('edit-app-phone').value = app.phone;
+    
+    const startObj = new Date(app.startTime);
+    document.getElementById('edit-app-date').value = startObj.toISOString().split('T')[0];
+    document.getElementById('edit-app-time').value = startObj.toTimeString().substring(0, 5);
+    
+    // محاكاة الخدمات المختارة من النص
+    state.editSelectedServices = [];
+    const appServices = (app.service || "").split(' + ');
+    
+    const all = [...state.services, ...state.packages];
+    all.forEach(s => {
+        if (appServices.includes(s.name)) {
+            state.editSelectedServices.push(s);
+        }
+    });
+
+    renderEditServicesGrid();
+    updateEditSummary();
+    
+    document.getElementById('edit-app-error').style.display = 'none';
+    document.getElementById('edit-app-modal').style.display = 'flex';
+}
+
+function renderEditServicesGrid() {
+    const grid = document.getElementById('edit-services-grid');
+    if (!grid) return;
+    
+    const all = [...state.services, ...state.packages];
+    grid.innerHTML = all.map(s => {
+        const isSelected = state.editSelectedServices.some(sel => sel.name === s.name);
+        return `
+            <div class="service-item ${isSelected ? 'active' : ''}" 
+                 onclick="toggleEditService('${s.name}')" 
+                 style="padding: 10px; border-radius: 12px; border: 1px solid ${isSelected ? 'var(--primary)' : 'var(--border)'}; background: ${isSelected ? 'rgba(var(--primary-rgb), 0.1)' : 'transparent'}; cursor: pointer; text-align: center; transition: all 0.2s; border-width: 2px;">
+                <div style="font-size: 0.8rem; font-weight: 700; color: ${isSelected ? 'var(--primary)' : 'inherit'};">${s.name}</div>
+                <div style="font-size: 0.7rem; color: var(--text-muted);">${s.price.toFixed(3)} د.ب</div>
+            </div>
+        `;
+    }).join('');
+}
+
+function toggleEditService(name) {
+    const all = [...state.services, ...state.packages];
+    const service = all.find(s => s.name === name);
+    const index = state.editSelectedServices.findIndex(s => s.name === name);
+
+    if (index > -1) {
+        state.editSelectedServices.splice(index, 1);
+    } else {
+        state.editSelectedServices.push(service);
+    }
+    
+    renderEditServicesGrid();
+    updateEditSummary();
+}
+
+function updateEditSummary() {
+    const names = state.editSelectedServices.map(s => s.name).join(' + ');
+    const totalPrice = state.editSelectedServices.reduce((sum, s) => sum + s.price, 0);
+    const totalDuration = state.editSelectedServices.reduce((sum, s) => sum + (s.duration || 30), 0);
+
+    document.getElementById('e-selected-names').innerText = names || '--';
+    document.getElementById('e-total-price').innerText = totalPrice.toFixed(3);
+    document.getElementById('e-total-duration').innerText = totalDuration;
+}
+
+function closeEditModal() {
+    document.getElementById('edit-app-modal').style.display = 'none';
+}
+
+async function saveAppointmentEdit() {
+    const id = document.getElementById('edit-app-id').value;
+    const name = document.getElementById('edit-app-name').value;
+    const phone = document.getElementById('edit-app-phone').value;
+    const dateStr = document.getElementById('edit-app-date').value;
+    const timeStr = document.getElementById('edit-app-time').value;
+    const syncCalendar = document.getElementById('edit-app-sync').checked;
+
+    if (!name || !phone || !dateStr || !timeStr) {
+        return alert("يرجى ملئ جميع البيانات الأساسية");
+    }
+
+    if (state.editSelectedServices.length === 0) {
+        return alert("يرجى اختيار خدمة واحدة على الأقل");
+    }
+
+    const appIndex = state.appointments.findIndex(a => String(a.id) === String(id));
+    if (appIndex === -1) return alert("الحجز غير موجود");
+    const oldApp = state.appointments[appIndex];
+
+    const startTime = new Date(`${dateStr}T${timeStr}`).toISOString();
+    const totalDuration = state.editSelectedServices.reduce((sum, s) => sum + (s.duration || 30), 0);
+    const totalPrice = state.editSelectedServices.reduce((sum, s) => sum + s.price, 0);
+    const serviceNames = state.editSelectedServices.map(s => s.name).join(' + ');
+    const endTime = new Date(new Date(startTime).getTime() + totalDuration * 60000).toISOString();
+
+    // فحص التعارض مع المواعيد الأخرى (فقط إذا كانت المزامنة مفعلة)
+    if (syncCalendar) {
+        const errorEl = document.getElementById('edit-app-error');
+        const startT = new Date(startTime).getTime();
+        const endT = new Date(endTime).getTime();
+
+        const conflict = state.appointments.find(o => {
+            if (String(o.id) === String(id)) return false;
+            const oStart = new Date(o.startTime).getTime();
+            const oEnd = new Date(o.endTime || (oStart + 30 * 60000)).getTime();
+            return (startT < oEnd && endT > oStart);
+        });
+
+        if (conflict) {
+            errorEl.innerText = `⚠️ تعارض في الوقت! هناك حجز آخر (${conflict.name}) في هذا التوقيت. يرجى إلغاء المزامنة مع قوقل للسماح بالتجاوز وإضافة الحجز كنظام داخلي فقط.`;
+            errorEl.style.display = 'block';
+            return;
+        }
+    }
+
+    // تحديث البيانات
+    state.appointments[appIndex] = {
+        ...oldApp,
+        name,
+        phone,
+        startTime,
+        endTime,
+        service: serviceNames,
+        price: totalPrice
+    };
+
+    // مزامنة مع قوقل إذا تم طلب ذلك
+    if (syncCalendar) {
+        try {
+            await fetch(`${API_BASE}/api/calendar/book`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, phone, service: serviceNames, price: totalPrice, startTime, endTime, syncCalendar: true, status: 'confirmed' })
+            });
+        } catch (e) { console.error("Sync Edit Error:", e); }
+    }
+
+    try {
+        await save();
+        closeEditModal();
+        renderAppointmentsTable();
+        showToast("✅ تم تحديث وتخصيص الحجز بنجاح");
+    } catch (e) {
+        alert("فشل الحفظ");
     }
 }
 

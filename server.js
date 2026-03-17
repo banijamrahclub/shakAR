@@ -310,28 +310,32 @@ app.post('/api/calendar/book', async (req, res) => {
         if (isDuplicate) return res.json({ success: true, duplicated: true });
 
         // فحص التداخل الفعلي
-        const requestStart = new Date(startTime).getTime();
-        const requestEnd = new Date(endTime).getTime();
-        // requestDay is already declared above
+        // يتم تجاوز الفحص فقط إذا أرسل الأدمن "مزامنة = لا" بشكل صريح
+        const shouldCheckOverlap = !(syncCalendar === false || syncCalendar === 'false' || syncCalendar === '0');
 
-        let allBusyForCheck = (data.appointments || [])
-            .filter(app => app.startTime && app.startTime.startsWith(requestDay))
-            .map(app => ({ start: app.startTime, end: app.endTime }));
+        if (shouldCheckOverlap) {
+            const requestStart = new Date(startTime).getTime();
+            const requestEnd = new Date(endTime).getTime();
 
-        try {
-            const gasRes = await fetch(`${GAS_URL}?action=getBusy&date=${requestDay}`);
-            const gasBusy = await gasRes.json();
-            if (Array.isArray(gasBusy)) allBusyForCheck = [...allBusyForCheck, ...gasBusy];
-        } catch (e) { console.error("Overlap Check GAS Error:", e); }
+            let allBusyForCheck = (data.appointments || [])
+                .filter(app => app.startTime && app.startTime.startsWith(requestDay))
+                .map(app => ({ start: app.startTime, end: app.endTime }));
 
-        const hasOverlap = allBusyForCheck.some(b => {
-            const bStart = new Date(b.start).getTime();
-            const bEnd = new Date(b.end).getTime();
-            return (requestStart < bEnd && requestEnd > bStart);
-        });
+            try {
+                const gasRes = await fetch(`${GAS_URL}?action=getBusy&date=${requestDay}`);
+                const gasBusy = await gasRes.json();
+                if (Array.isArray(gasBusy)) allBusyForCheck = [...allBusyForCheck, ...gasBusy];
+            } catch (e) { console.error("Overlap Check GAS Error:", e); }
 
-        if (hasOverlap) {
-            return res.status(400).json({ success: false, error: "عذراً، هذا الوقت تم حجزه للتو." });
+            const hasOverlap = allBusyForCheck.some(b => {
+                const bStart = new Date(b.start).getTime();
+                const bEnd = new Date(b.end).getTime();
+                return (requestStart < bEnd && requestEnd > bStart);
+            });
+
+            if (hasOverlap) {
+                return res.status(400).json({ success: false, error: "عذراً، هذا الوقت تم حجزه للتو." });
+            }
         }
 
         const appStatus = status || 'pending';
