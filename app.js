@@ -36,6 +36,7 @@ let state = {
     manualSelectedServices: [], // الخدمات المختارة في الحجز اليدوي
     appFilter: 'all', // فلتر الحجوزات (الكل، المؤكدة، المعلقة)
     appSearch: '', // نص البحث في الحجوزات
+    appDateFilter: '', // فلتر التاريخ في الحجوزات
     selectedChartMonth: new Date().getMonth(), // الشهر المختار في الرسومات
     selectedChartYear: new Date().getFullYear(), // السنة المختارة في الرسومات
     editSelectedServices: [] // الخدمات المختارة في نافذة التعديل
@@ -467,6 +468,11 @@ async function renderAppointmentsTable() {
             );
         }
 
+        // 2.1 التصفية حسب التاريخ
+        if (state.appDateFilter) {
+            filtered = filtered.filter(a => a.startTime.split('T')[0] === state.appDateFilter);
+        }
+
         // 3. الترتيب
         filtered.sort((a, b) => {
             if (a.status === 'pending' && b.status !== 'pending') return -1;
@@ -530,6 +536,8 @@ function setAppFilter(filter) {
 
 function handleAppSearch() {
     state.appSearch = document.getElementById('app-search-input').value;
+    const dateInput = document.getElementById('app-date-filter');
+    state.appDateFilter = dateInput ? dateInput.value : '';
     renderAppointmentsTable();
 }
 
