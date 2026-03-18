@@ -1316,7 +1316,7 @@ function renderSettings() {
     const btn = document.getElementById('btn-toggle-maintenance');
     if (btn) {
         const isMaintenance = state.settings.maintenanceMode || false;
-        btn.innerText = isMaintenance ? 'تفعيل الموقع (أونلاين)' : 'إيقاف الموقع (صيانة)';
+        btn.innerText = isMaintenance ? 'استقبال حجوزات (أونلاين)' : 'إغلاق الحجوزات (وضع صيانة)';
         btn.style.background = isMaintenance ? 'var(--success)' : 'var(--danger)';
         btn.style.color = isMaintenance ? 'black' : 'white';
     }

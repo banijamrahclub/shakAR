@@ -312,8 +312,8 @@ app.post('/api/calendar/book', async (req, res) => {
             return res.json({ success: false, error: "CLOSED_DATE" });
         }
 
-        // 0.1 فحص وضع الصيانة
-        if (data.settings && data.settings.maintenanceMode) {
+        // 0.1 فحص وضع الصيانة (يُسمح بالتجاوز إذا كان الحجز من الإدارة "confirmed")
+        if (data.settings && data.settings.maintenanceMode && status !== 'confirmed') {
             return res.json({ success: false, error: "MAINTENANCE_MODE" });
         }
 
