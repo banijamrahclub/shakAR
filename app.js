@@ -569,7 +569,7 @@ function renderManualAppServices() {
     state.services.forEach(s => {
         const isSelected = state.manualSelectedServices.some(ms => ms.name === s.name);
         html += `
-            <div onclick="toggleManualService('${s.name}', ${s.price}, ${s.duration || 20})" 
+            <div onclick="toggleManualService('${s.name}', ${s.price}, ${s.duration !== undefined ? s.duration : 20})" 
                  style="display: flex; align-items: center; gap: 10px; padding: 10px; background: ${isSelected ? 'rgba(148, 163, 184, 0.2)' : 'var(--bg-card)'}; border-radius: 8px; cursor: pointer; border: 1px solid ${isSelected ? 'var(--primary)' : 'transparent'}; transition: 0.2s;">
                 <div style="width: 16px; height: 16px; border: 2px solid var(--primary); border-radius: 4px; display: flex; align-items: center; justify-content: center;">
                     ${isSelected ? '<div style="width: 8px; height: 8px; background: var(--primary); border-radius: 1px;"></div>' : ''}
@@ -583,7 +583,7 @@ function renderManualAppServices() {
     state.packages.forEach(p => {
         const isSelected = state.manualSelectedServices.some(ms => ms.name === p.name);
         html += `
-            <div onclick="toggleManualService('${p.name}', ${p.price}, ${p.duration || 45})" 
+            <div onclick="toggleManualService('${p.name}', ${p.price}, ${p.duration !== undefined ? p.duration : 45})" 
                  style="display: flex; align-items: center; gap: 10px; padding: 10px; background: ${isSelected ? 'rgba(148, 163, 184, 0.2)' : 'var(--bg-card)'}; border-radius: 8px; cursor: pointer; border: 1px solid ${isSelected ? 'var(--primary)' : 'transparent'}; transition: 0.2s;">
                 <div style="width: 16px; height: 16px; border: 2px solid var(--primary); border-radius: 4px; display: flex; align-items: center; justify-content: center;">
                     ${isSelected ? '<div style="width: 8px; height: 8px; background: var(--primary); border-radius: 1px;"></div>' : ''}
@@ -1544,7 +1544,7 @@ function toggleEditService(name) {
 function updateEditSummary() {
     const names = state.editSelectedServices.map(s => s.name).join(' + ');
     const totalPrice = state.editSelectedServices.reduce((sum, s) => sum + s.price, 0);
-    const totalDuration = state.editSelectedServices.reduce((sum, s) => sum + (s.duration || 30), 0);
+    const totalDuration = state.editSelectedServices.reduce((sum, s) => sum + (s.duration !== undefined ? s.duration : 30), 0);
 
     document.getElementById('e-selected-names').innerText = names || '--';
     document.getElementById('e-total-price').innerText = totalPrice.toFixed(3);
@@ -1576,7 +1576,7 @@ async function saveAppointmentEdit() {
     const oldApp = state.appointments[appIndex];
 
     const startTime = new Date(`${dateStr}T${timeStr}`).toISOString();
-    const totalDuration = state.editSelectedServices.reduce((sum, s) => sum + (s.duration || 30), 0);
+    const totalDuration = state.editSelectedServices.reduce((sum, s) => sum + (s.duration !== undefined ? s.duration : 30), 0);
     const totalPrice = state.editSelectedServices.reduce((sum, s) => sum + s.price, 0);
     const serviceNames = state.editSelectedServices.map(s => s.name).join(' + ');
     const endTime = new Date(new Date(startTime).getTime() + totalDuration * 60000).toISOString();
@@ -1590,7 +1590,7 @@ async function saveAppointmentEdit() {
         const conflict = state.appointments.find(o => {
             if (String(o.id) === String(id)) return false;
             const oStart = new Date(o.startTime).getTime();
-            const oEnd = new Date(o.endTime || (oStart + 30 * 60000)).getTime();
+            const oEnd = new Date(o.endTime || (oStart + (o.duration !== undefined ? o.duration : 30) * 60000)).getTime();
             return (startT < oEnd && endT > oStart);
         });
 

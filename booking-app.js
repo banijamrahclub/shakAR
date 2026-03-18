@@ -290,7 +290,8 @@ async function loadTimeSlots(isSilent = false) {
     }
 
     // حساب المدة الإجمالية للخدمات المختارة للتأكد من توفر وقت كافٍ
-    const totalDuration = bookingData.selectedServices.reduce((sum, s) => sum + (s.duration || 30), 0);
+    const totalDuration = bookingData.selectedServices.reduce((sum, s) => sum + (s.duration !== undefined ? s.duration : bookingData.settings.defaultServiceDuration || 30), 0);
+
 
     let html = "";
 
@@ -401,7 +402,7 @@ async function confirmBooking() {
     const startTime = new Date(`${bookingData.date}T${bookingData.time}:00`).toISOString();
 
     // حساب المدة الإجمالية بناءً على الخدمات المختارة
-    const totalDuration = bookingData.selectedServices.reduce((sum, s) => sum + (s.duration || 30), 0);
+    const totalDuration = bookingData.selectedServices.reduce((sum, s) => sum + (s.duration !== undefined ? s.duration : 30), 0);
     const endTime = new Date(new Date(startTime).getTime() + totalDuration * 60000).toISOString();
 
     const servicesNames = bookingData.selectedServices.map(s => s.name).join(' + ');
