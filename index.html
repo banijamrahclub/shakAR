@@ -86,6 +86,15 @@
                 </div>
             </div>
 
+            <!-- مؤشر تزامن السحابة -->
+            <div id="cloud-sync-status" style="margin: 0 15px 10px; padding: 10px; border-radius: 12px; font-size: 0.7rem; border: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.2);">
+                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                    <span id="sync-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444; display: inline-block;"></span>
+                    <span id="sync-text" style="color: var(--text-muted); font-weight: 600;">بانتظار المزامنة...</span>
+                </div>
+                <div id="sync-time" style="color: rgba(255,255,255,0.3); font-size: 0.65rem;">آخر حفظ: --:--</div>
+            </div>
+
             <!-- مؤشر تاريخ النظام الحالي -->
             <div id="active-date-display"
                 style="margin: 10px 15px; padding: 10px; background: rgba(148, 163, 184, 0.05); border-radius: 12px; font-size: 0.8rem; text-align: center; border: 1px solid var(--border);">

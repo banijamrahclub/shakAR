@@ -8,9 +8,14 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // تحديد مسار قاعدة البيانات (التخزين الدائم)
-const DB_DIR = (process.env.RENDER || fs.existsSync('/var/data')) ? '/var/data' : __dirname;
-if (!fs.existsSync(DB_DIR)) {
-    try { fs.mkdirSync(DB_DIR, { recursive: true }); } catch (e) { console.error("Could not create DB dir:", e); }
+const IS_RENDER = process.env.RENDER || fs.existsSync('/var/data');
+const DB_DIR = IS_RENDER ? '/var/data' : __dirname;
+
+if (IS_RENDER) {
+    console.log(`📡 Render environment detected. Data storage path: ${DB_DIR}`);
+    if (!fs.existsSync(DB_DIR)) {
+        try { fs.mkdirSync(DB_DIR, { recursive: true }); } catch (e) { console.error("Could not create /var/data directory:", e); }
+    }
 }
 const DB_FILE = path.resolve(DB_DIR, 'db.json');
 
@@ -116,19 +121,14 @@ async function syncWithCloud() {
             mergedData.fixedExpenses = [...currentLocalData.fixedExpenses, ...newFromCloud];
         }
 
-        // --- دمج الحجوزات (Appointments) لضمان عدم ضياعها خاصة غير المؤكدة ---
+        // دمج الحجوزات: الإضافة فقط. المرجع هو الديسك المحلي (Local Disk is King)
         if (currentLocalData.appointments && cloudData.appointments) {
-            // دمج العناصر الجديدة من السحاب
-            const localKeys = new Set(currentLocalData.appointments.map(a => `${a.name}-${a.startTime}`));
-            const newFromCloud = cloudData.appointments.filter(a => !localKeys.has(`${a.name}-${a.startTime}`));
+            const localAppIds = new Set((currentLocalData.appointments || []).map(a => a.id));
+            const newAppsFromCloud = cloudData.appointments.filter(a => a.id && !localAppIds.has(a.id));
             
-            // إضافة IDs للعناصر التي تفتقر إليها
-            newFromCloud.forEach(a => {
-                if (!a.id) a.id = 'app_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
-            });
-
-            mergedData.appointments = [...currentLocalData.appointments, ...newFromCloud].sort((a,b) => new Date(a.startTime) - new Date(b.startTime));
-        } else if (currentLocalData.appointments && (!cloudData.appointments || cloudData.appointments.length === 0)) {
+            mergedData.appointments = [...(currentLocalData.appointments || []), ...newAppsFromCloud]
+                .sort((a,b) => new Date(a.startTime) - new Date(b.startTime));
+        } else if (currentLocalData.appointments) {
             mergedData.appointments = currentLocalData.appointments;
         }
 
@@ -153,6 +153,7 @@ async function syncWithCloud() {
             mergedData.packages = currentLocalData.packages;
         }
 
+        mergedData.lastCloudSync = new Date().toISOString();
         fs.writeFileSync(DB_FILE, JSON.stringify(mergedData, null, 2));
         console.log("✅ Data successfully merged from Cloud!");
     } catch (e) {
@@ -225,22 +226,37 @@ async function startServer() {
 
 function readDB() { return JSON.parse(fs.readFileSync(DB_FILE, 'utf8')); }
 async function writeDB(data) {
-    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+    // 1. الحفظ في الديسك المحلي فوراً (لأن الديسك في ريندر "Persistent" ولا يضيع)
+    try {
+        fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+    } catch (e) { console.error("🛑 CRITICAL: Local Write Failed:", e); }
+
+    // 2. الرفع للسحاب في الخلفية
     const cloudResult = await saveToCloud(data);
+    if (cloudResult.success) {
+        data.lastCloudSync = new Date().toISOString();
+        // تحديث ملف الديسك بالطابع الزمني الجديد (اختياري)
+        try { fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2)); } catch(e){}
+    }
     return cloudResult;
 }
-
 async function cleanExpiredPending() {
     try {
         const now = new Date().getTime();
         const data = readDB();
         const initialCount = data.appointments.length;
+        // تنظيف المواعيد الـ pending فقط إذا مر عليها أكثر من 24 ساعة (عربون غير مدفوع)
+        const buffer = 24 * 60 * 60 * 1000; 
+
         data.appointments = data.appointments.filter(app => {
             if (app.status === 'confirmed') return true;
             const startTime = new Date(app.startTime).getTime();
-            return startTime >= now;
+            return (startTime + buffer) >= now;
         });
-        if (data.appointments.length !== initialCount) await writeDB(data);
+        if (data.appointments.length !== initialCount) {
+            console.log(`🧹 Deleted ${initialCount - data.appointments.length} expired pending appointments.`);
+            await writeDB(data);
+        }
     } catch (e) { console.error("Cleanup error:", e); }
 }
 
@@ -397,8 +413,9 @@ app.post('/api/calendar/confirm', async (req, res) => {
     } catch (err) { res.status(500).json({ success: false }); }
 });
 
-app.get('/api/data', (req, res) => {
+app.get('/api/data', async (req, res) => {
     try {
+        await cleanExpiredPending();
         res.json(readDB());
     } catch (e) { res.json({ history: [], expenses: [], fixedExpenses: [], services: [], barbers: [], appointments: [], settings: { openTime: '10:00', closeTime: '22:00' } }); }
 });
@@ -406,6 +423,7 @@ app.get('/api/data', (req, res) => {
 app.get('/api/sync-down', async (req, res) => {
     try {
         await syncWithCloud();
+        await cleanExpiredPending();
         res.json({ success: true, data: readDB() });
     } catch (e) { res.status(500).json({ success: false }); }
 });
@@ -441,10 +459,12 @@ app.post('/api/calendar/cancel', async (req, res) => {
 app.post('/api/save', async (req, res) => {
     try {
         const cloudResult = await writeDB(req.body);
+        const data = readDB(); // Read again to get the updated lastCloudSync
         res.json({
             success: true,
             cloudSuccess: cloudResult.success,
-            cloudError: cloudResult.error || null
+            cloudError: cloudResult.error || null,
+            lastCloudSync: data.lastCloudSync || null
         });
     } catch (e) { res.status(500).json({ success: false }); }
 });

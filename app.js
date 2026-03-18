@@ -103,7 +103,7 @@ async function save() {
         const result = await response.json();
 
         if (result.success && result.cloudSuccess) {
-            updateSyncStatus('synced');
+            updateSyncStatus('synced', result.lastCloudSync);
         } else if (result.success && !result.cloudSuccess) {
             updateSyncStatus('error'); // فشل قوقل شيت لكن الحفظ المحلي تم
             console.error("Cloud Save Failed:", result.cloudError);
@@ -122,7 +122,12 @@ async function save() {
     }
 }
 
-function updateSyncStatus(status) {
+function updateSyncStatus(status, timestamp = null) {
+    const dot = document.getElementById('sync-dot');
+    const text = document.getElementById('sync-text');
+    const timeEl = document.getElementById('sync-time');
+    
+    // التحديث في الـ Popup العائم (Indicator) ليبقى متوافقاً مع الكود القديم
     let el = document.getElementById('sync-indicator');
     if (!el) {
         el = document.createElement('div');
@@ -133,24 +138,24 @@ function updateSyncStatus(status) {
 
     if (status === 'saving') {
         el.innerHTML = '<span class="spinner"></span> ⏳ جاري الحفظ...';
-        el.style.background = '#f59e0b'; // Amber
-        el.style.color = 'black';
-        el.style.opacity = '1';
+        el.style.background = '#f59e0b'; el.style.color = 'black'; el.style.opacity = '1';
+        if(dot) { dot.style.background = '#f59e0b'; text.innerText = 'جاري الحفظ...'; }
     } else if (status === 'synced') {
         el.innerHTML = '✅ تم الحفظ سحابياً';
-        el.style.background = 'var(--success)';
-        el.style.color = 'white';
+        el.style.background = 'var(--success)'; el.style.color = 'white';
         setTimeout(() => el.style.opacity = '0', 3000);
+        if(dot) { 
+            dot.style.background = '#22c55e'; // green
+            text.innerText = 'متصل وسحابي';
+            if (timestamp) {
+                const time = new Date(timestamp).toLocaleTimeString('ar-BH', { hour: '2-digit', minute: '2-digit' });
+                timeEl.innerText = 'آخر حفظ: ' + time;
+            }
+        }
     } else if (status === 'error') {
         el.innerHTML = '⚠️ خطأ: قوقل شيت غير متصل';
-        el.style.background = 'var(--danger)';
-        el.style.color = 'white';
-        el.style.opacity = '1';
-    } else if (status === 'local') {
-        el.innerHTML = '💾 تم الحفظ محلياً (فقط)';
-        el.style.background = '#3b82f6'; // Blue
-        el.style.color = 'white';
-        el.style.opacity = '1';
+        el.style.background = 'var(--danger)'; el.style.color = 'white'; el.style.opacity = '1';
+        if(dot) { dot.style.background = '#ef4444'; text.innerText = 'خطأ في التزامن'; }
     }
 }
 
@@ -176,6 +181,10 @@ async function loadData() {
         state.barbers = cloudData.barbers || [{ id: 'owner', name: 'الحلاق الشكر', role: 'owner' }, { id: 'employee', name: 'الموظف 1', role: 'employee' }];
         state.appointments = cloudData.appointments || [];
         state.settings = cloudData.settings || { openTime: '10:00', closeTime: '22:00' };
+
+        if (cloudData.lastCloudSync) {
+            updateSyncStatus('synced', cloudData.lastCloudSync);
+        }
 
         saveLocalBackup();
         console.log("Sync down complete.");
