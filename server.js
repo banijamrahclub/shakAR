@@ -121,12 +121,44 @@ async function syncWithCloud() {
             mergedData.fixedExpenses = [...currentLocalData.fixedExpenses, ...newFromCloud];
         }
 
-        // دمج الحجوزات: الإضافة فقط. المرجع هو الديسك المحلي (Local Disk is King)
+        // دمج الحجوزات: المرجع هو الديسك المحلي (Local Disk is King) مع مراعاة التحديثات والحذف من السحاب
         if (currentLocalData.appointments && cloudData.appointments) {
-            const localAppIds = new Set((currentLocalData.appointments || []).map(a => a.id));
-            const newAppsFromCloud = cloudData.appointments.filter(a => a.id && !localAppIds.has(a.id));
+            const localAppsMap = new Map((currentLocalData.appointments || []).map(a => [String(a.id), a]));
             
-            mergedData.appointments = [...(currentLocalData.appointments || []), ...newAppsFromCloud]
+            // 1. تحديث الموجود وإضافة الجديد من السحاب
+            const cloudIds = new Set();
+            cloudData.appointments.forEach(cloudApp => {
+                if (!cloudApp.id) return;
+                const cloudId = String(cloudApp.id);
+                cloudIds.add(cloudId);
+                
+                if (localAppsMap.has(cloudId)) {
+                    // تحديث البيانات (السحاب هو المرجع للمواعيد المؤكدة)
+                    localAppsMap.set(cloudId, { ...localAppsMap.get(cloudId), ...cloudApp });
+                } else {
+                    // إضافة جديد
+                    localAppsMap.set(cloudId, cloudApp);
+                }
+            });
+
+            // 2. تنظيف "الأشباح" (Ghost Bookings)
+            // إذا كان الموعد مؤكداً وله ID (يعني قد تمت مزامنته) ولكنه الآن غير موجود في السحاب، نمسحه
+            // فقط للمواعيد القادمة (من بداية الشهر الحالي) لأن المبيعات القديمة تمت أرشفتها
+            const currentMonthStart = new Date();
+            currentMonthStart.setDate(1);
+            currentMonthStart.setHours(0,0,0,0);
+
+            for (let [id, app] of localAppsMap) {
+                const isSynced = !id.startsWith('app_'); // الـ IDs السحابية رقمية أو مختلفة عن البادئة المحلية
+                const isFuture = new Date(app.startTime) >= currentMonthStart;
+                const isConfirmed = app.status === 'confirmed';
+
+                if (isSynced && isConfirmed && isFuture && !cloudIds.has(id)) {
+                    localAppsMap.delete(id);
+                }
+            }
+            
+            mergedData.appointments = Array.from(localAppsMap.values())
                 .sort((a,b) => new Date(a.startTime) - new Date(b.startTime));
         } else if (currentLocalData.appointments) {
             mergedData.appointments = currentLocalData.appointments;

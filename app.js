@@ -647,6 +647,7 @@ async function saveManualAppointment() {
         const result = await res.json();
         if (result.success) {
             alert("تمت إضافة الحجز بنجاح!");
+            await loadData(); // جلب البيانات الجديدة فوراً من السيرفر للتأكد من المزامنة
             toggleManualAppForm();
             renderAppointmentsTable();
             // مسح الخانات
@@ -746,13 +747,13 @@ async function completeAppointment(id, name, startTime) {
             // إذا لم يتوفر ID، نستخدم الاسم والوقت كخيار بديل (مع التضحية باحتمالية وجود مكررات بنفس الاسم والوقت)
             return !(a.name === app.name && a.startTime === app.startTime);
         });
+        // 4. إرسال رسالة شكر وطلب تقييم (مباشرة لضمان عدم حظر البوب-أب)
+        const thanksMsg = `شكر لزيارتك "حلاق الشكر" ✂️\n\nعزيزي ${app.name}، سعدنا جداً بخدمتكم اليوم.\n✂️ الخدمة: ${app.service}\n💰 المبلغ: ${finalPrice.toFixed(3)} د.ب\n\nرأيكم يهمنا جداً ويساعدنا على التطوير المستمر ✨\nنرجو منكم قضاء ثوانٍ لتقييم تجربتكم عبر الرابط التالي:\nhttps://maps.app.goo.gl/7sZNJkuBXg6YeXRAA\n\nشكراً لاختيارك حلاق الشكر، ننتظر رؤيتكم مجدداً قريباً! 👋`;
+        sendWhatsAppMessage(app.phone, encodeURIComponent(thanksMsg));
+
         await save();
         updateUI();
         alert("تم تسجيل الموعد بنجاح (" + (pMethod === 'cash' ? 'كاش' : 'بينفت') + ")");
-
-        // 4. إرسال رسالة شكر وطلب تقييم عبر الواتساب
-        const thanksMsg = `شكر لزيارتك "حلاق الشكر" ✂️\n\nعزيزي ${app.name}، سعدنا جداً بخدمتكم اليوم.\n✂️ الخدمة: ${app.service}\n💰 المبلغ: ${finalPrice.toFixed(3)} د.ب\n\nرأيكم يهمنا جداً ويساعدنا على التطوير المستمر ✨\nنرجو منكم قضاء ثوانٍ لتقييم تجربتكم عبر الرابط التالي:\nhttps://maps.app.goo.gl/7sZNJkuBXg6YeXRAA\n\nشكراً لاختيارك حلاق الشكر، ننتظر رؤيتكم مجدداً قريباً! 👋`;
-        sendWhatsAppMessage(app.phone, encodeURIComponent(thanksMsg));
     }
 }
 
