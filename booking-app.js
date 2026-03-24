@@ -182,28 +182,11 @@ function switchServiceType(type) {
         const text = btn.innerText;
         btn.classList.toggle('active',
             (type === 'service' && (text.includes('خدمات') || text.includes('منفردة'))) ||
-            (type === 'package' && text.includes('بكجات'))
+            (type === 'package' && text.includes('بكجات')) ||
+            (type === 'product' && text.includes('منتجات'))
         );
     });
     renderServices();
-}
-
-/**
- * دالة السكرول للمنتجات
- */
-function scrollToProducts() {
-    // التأكد من أننا في تبويب الخدمات
-    if (bookingData.currentType !== 'service') {
-        switchServiceType('service');
-    }
-
-    // الانتظار قليلاً حتى يتم الريندر
-    setTimeout(() => {
-        const header = document.getElementById('products-header');
-        if (header) {
-            header.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-    }, 100);
 }
 
 function renderServices() {
@@ -212,8 +195,6 @@ function renderServices() {
 
     if (bookingData.currentType === 'service') {
         const services = bookingData.services.filter(s => !s.type || s.type === 'service');
-        const products = bookingData.services.filter(s => s.type === 'product');
-
         html = services.map(s => {
             const isSelected = bookingData.selectedServices.some(item => item.name === s.name);
             return `
@@ -225,23 +206,7 @@ function renderServices() {
                 </div>
             `;
         }).join('');
-
-        if (products.length > 0) {
-            html += `<h4 id="products-header" style="grid-column: 1/-1; margin: 30px 0 10px; padding-bottom: 10px; border-bottom: 1px solid var(--border); color: var(--primary); display: flex; align-items: center; gap: 10px;">
-                        <span>🧴</span> منتجات العناية بالبشرة والشعر
-                    </h4>`;
-            html += products.map(s => {
-                const isSelected = bookingData.selectedServices.some(item => item.name === s.name);
-                return `
-                    <div class="option-item ${isSelected ? 'selected' : ''}" onclick="toggleService('${s.name}')" style="border: 1px dashed var(--border);">
-                        <div style="font-weight:700;">${s.name}</div>
-                        <div style="color:var(--primary); font-size:0.8rem;">${s.price.toFixed(3)} د.ب</div>
-                        ${isSelected ? '<div class="check-mark">✓</div>' : ''}
-                    </div>
-                `;
-            }).join('');
-        }
-    } else {
+    } else if (bookingData.currentType === 'package') {
         html = bookingData.packages.map(p => {
             const isSelected = bookingData.selectedServices.some(item => item.name === p.name);
             return `
@@ -253,9 +218,21 @@ function renderServices() {
                 </div>
             `;
         }).join('');
+    } else if (bookingData.currentType === 'product') {
+        const products = bookingData.services.filter(s => s.type === 'product');
+        html = products.map(s => {
+            const isSelected = bookingData.selectedServices.some(item => item.name === s.name);
+            return `
+                <div class="option-item ${isSelected ? 'selected' : ''}" onclick="toggleService('${s.name}')" style="border: 1px dashed var(--border);">
+                    <div style="font-weight:700;">${s.name}</div>
+                    <div style="color:var(--primary); font-size:0.8rem;">${s.price.toFixed(3)} د.ب</div>
+                    ${isSelected ? '<div class="check-mark">✓</div>' : ''}
+                </div>
+            `;
+        }).join('');
     }
 
-    list.innerHTML = html;
+    list.innerHTML = html || `<p style="grid-column: 1/-1; text-align:center; padding:20px; color:var(--text-muted);">لا توجد عناصر مضافة حالياً</p>`;
 
     if (bookingData.selectedServices.length > 0) {
         if (!document.getElementById('btn-step-1-next')) {

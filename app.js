@@ -735,39 +735,40 @@ async function completeAppointment(id, name, startTime) {
         : `هل انتهيت من حلاقة ${app.name}؟ (سيتم تسجيل ${finalPrice.toFixed(3)} د.ب في الأرباح وحذفه من قوقل)`;
 
     if (confirm(confirmText)) {
-        // 1. إرسال طلب حذف من قوقل كلندر (فقط للخدمات)
+        // 1. إرسال الشكر والتقييم فوراً لضمان عدم حظر البوب-أب (فقط للحلاقة)
+        if (!isProd) {
+            const thanksMsg = `شكر لزيارتك "حلاق الشكر" ✂️\n\nعزيزي ${app.name}، سعدنا جداً بخدمتكم اليوم.\n✂️ الخدمة: ${app.service}\n💰 المبلغ: ${finalPrice.toFixed(3)} د.ب\n\nرأيكم يهمنا جداً ويساعدنا على التطوير المستمر ✨\nنرجو منكم قضاء ثوانٍ لتقييم تجربتكم عبر الرابط التالي:\nhttps://maps.app.goo.gl/7sZNJkuBXg6YeXRAA\n\nشكراً لاختيارك حلاق الشكر، ننتظر رؤيتكم مجدداً قريباً! 👋`;
+            sendWhatsAppMessage(app.phone, encodeURIComponent(thanksMsg));
+        }
+
+        // 2. إرسال طلب حذف من قوقل كلندر (فقط للخدمات)
         if (!isProd) {
             try {
-                await fetch(`${API_BASE}/api/calendar/cancel`, {
+                fetch(`${API_BASE}/api/calendar/cancel`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id: app.id, name: app.name, startTime: app.startTime })
-                });
+                }); // بدون await لضمان السرعة وعدم التعطيل
             } catch (e) { console.error("Sync error:", e); }
         }
 
-        // 2. تسجيل العملية في السجل التاريخي
+        // 3. تسجيل العملية في السجل التاريخي
         const sale = {
             id: Date.now(),
             time: new Date().toLocaleTimeString('ar-BH'),
-            date: state.managedDate, // استخدام التاريخ المختار
-            role: 'owner', // يتسجل دائماً باسم "الحلاق الشكر" بناءً على طلبك
+            date: state.managedDate, 
+            role: 'owner',
             total: finalPrice,
             items: app.service,
             paymentMethod: pMethod
         };
         state.history.unshift(sale);
 
-        // 3. حذف الحجز محلياً وحفظ السجل
+        // 4. حذف الحجز محلياً وحفظ السجل
         state.appointments = state.appointments.filter(a => {
-            // إذا كان هناك ID، نعتمد عليه كلياً لأنه الأدق
             if (id && id !== 'undefined') return a.id !== id;
-            // إذا لم يتوفر ID، نستخدم الاسم والوقت كخيار بديل (مع التضحية باحتمالية وجود مكررات بنفس الاسم والوقت)
             return !(a.name === app.name && a.startTime === app.startTime);
         });
-        // 4. إرسال رسالة شكر وطلب تقييم (مباشرة لضمان عدم حظر البوب-أب)
-        const thanksMsg = `شكر لزيارتك "حلاق الشكر" ✂️\n\nعزيزي ${app.name}، سعدنا جداً بخدمتكم اليوم.\n✂️ الخدمة: ${app.service}\n💰 المبلغ: ${finalPrice.toFixed(3)} د.ب\n\nرأيكم يهمنا جداً ويساعدنا على التطوير المستمر ✨\nنرجو منكم قضاء ثوانٍ لتقييم تجربتكم عبر الرابط التالي:\nhttps://maps.app.goo.gl/7sZNJkuBXg6YeXRAA\n\nشكراً لاختيارك حلاق الشكر، ننتظر رؤيتكم مجدداً قريباً! 👋`;
-        sendWhatsAppMessage(app.phone, encodeURIComponent(thanksMsg));
 
         await save();
         updateUI();
