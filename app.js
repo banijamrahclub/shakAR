@@ -483,31 +483,43 @@ async function renderAppointmentsTable() {
         // 4. الرندرة
         body.innerHTML = filtered.map((app) => {
             const isPending = app.status === 'pending';
+            const isProduct = app.isProductOnly === true;
             const startTimeFormatted = new Date(app.startTime).toLocaleString('ar-BH');
 
-            const depositMsg = `تحية طيبة من "حلاق الشكر"،\nمرحباً ${app.name}، لقد استلمنا حجزك المبدئي:\n⏰ الموعد: ${startTimeFormatted}\n✂️ الخدمة: ${app.service}\n\nيرجى إرسال صورة إيصال دفع العربون (1.000 دينار) لشراء وقتك وتأكيد حجزك نهائياً عبر بينفت أو آيبان.\nشكراً لك.`;
-            const confirmMsg = `تم التأكيد ✅\nعزيزي ${app.name}، تم استلام العربون وتأكيد موعدك بنجاح.\n⏰ ننتظرك في: ${startTimeFormatted}\n\n⚠️ ملاحظة 1: لن يتم ارجاع العربون اذا تم الغاء الحجز قبل اقل من 24 ساعة منه.\n⚠️ ملاحظة 2: سيتم الغاء الموعد اذا تأخر الزبون 15 دقيقة عن الموعد.\n⚠️ ملاحظة 3: في حال عدم حضور الحلاق سيتم إخبارك ويمكنك التوجه للموظف الأجنبي، أو تأجيل الحجز إلى يوم آخر، أو إلغاء الحجز واسترداد الأموال.\n\nشكراً لاختيارك حلاق الشكر.`;
-            const reminderMsg = `تذكير بموعدك لدى حلاق الشكر ⏰\nعزيزي ${app.name}، نود تذكيرك بموعدك المحجوز لدينا:\n📅 الموعد: ${startTimeFormatted}\n✂️ الخدمة: ${app.service}\n\nنحن بانتظارك في الوقت المحدد.\nشكراً لاختيارك حلاق الشكر.`;
+            // رسائل الخدمات (حلاقة)
+            const depositMsg = `تحية طيبة من "حلاق الشكر"،\nمرحباً ${app.name}، لقد استلمنا حجزك المبدئي لجلسة حلاقة:\n⏰ الموعد: ${startTimeFormatted}\n✂️ الخدمة: ${app.service}\n\nيرجى إرسال صورة إيصال دفع العربون (1.000 دينار) لشراء وقتك وتأكيد حجزك نهائياً عبر بينفت أو آيبان.\nشكراً لك.`;
+            const confirmMsg = `تم التأكيد ✅\nعزيزي ${app.name}، تم استلام العربون وتأكيد موعد حلاقتك بنجاح.\n⏰ ننتظرك في: ${startTimeFormatted}\n\n⚠️ ملاحظة 1: لن يتم ارجاع العربون اذا تم الغاء الحجز قبل اقل من 24 ساعة منه.\n⚠️ ملاحظة 2: سيتم الغاء الموعد اذا تأخر الزبون 15 دقيقة عن الموعد.\n\nشكراً لاختيارك حلاق الشكر.`;
+            const reminderMsg = `تذكير بموعد حلاقتك ⏰\nعزيزي ${app.name}، نذكرك بموعدك لدينا:\n📅 الموعد: ${startTimeFormatted}\n✂️ الخدمة: ${app.service}\n\nنحن بانتظارك.\nشكراً لك.`;
+
+            // رسائل المنتجات
+            const prodConfirmMsg = `استلام مبلغ ✅\nعزيزي ${app.name}، تم استلام مبلغ المنتجات (${app.service}) بنجاح.\n⏰ موعد استلام الطلب من المحل هو: ${startTimeFormatted}\nنشكرك لثقتك بنا.`;
+            const prodReminderMsg = `تذكير باستلام المنتجات 🛍️\nعزيزي ${app.name}، نذكرك بموعد استلام طلبك من حلاق الشكر:\n📅 الموعد: ${startTimeFormatted}\n📦 الطلب: ${app.service}\n\nنحن بانتظار تشريفك للمحل.\nشكراً لك.`;
 
             return `
-            <tr style="${isPending ? 'border-right: 4px solid orange;' : 'border-right: 4px solid var(--success);'}">
+            <tr style="${isProduct ? 'background: rgba(96, 165, 250, 0.08);' : ''} ${isPending ? 'border-right: 4px solid orange;' : (isProduct ? 'border-right: 4px solid #60a5fa;' : 'border-right: 4px solid var(--success);')}">
                 <td style="color:var(--primary); font-weight:700;">
                     ${startTimeFormatted}
-                    <div style="font-size:0.7rem; color:${isPending ? 'orange' : 'var(--success)'}">${isPending ? '⏳ بانتظار العربون' : '✅ موعد مؤكد'}</div>
+                    <div style="font-size:0.7rem; color:${isPending ? 'orange' : (isProduct ? '#60a5fa' : 'var(--success)')}">
+                        ${isPending ? '⏳ بانتظار العربون' : (isProduct ? '🛍️ طلب منتجات' : '✅ موعد حلاقة')}
+                    </div>
                 </td>
                 <td style="font-weight:700;">${app.name}</td>
                 <td>${app.phone}</td>
-                <td style="font-size:0.85rem;">${app.service}</td>
+                <td style="font-size:0.85rem;">${isProduct ? '<b>[منتجات]</b><br>' + app.service : app.service}</td>
                 <td>
                     <div style="display: flex; flex-direction: column; gap: 5px;">
                         ${isPending ? `
                             <button class="btn-action" style="background:orange; color:black;" onclick="verifyBooking('${app.id}', '${app.name}', '${app.startTime}')">💰 تأكيد العربون</button>
                             <button class="btn-action" style="background:#25d366; color:white;" onclick="sendWhatsAppMessage('${app.phone}', '${encodeURIComponent(depositMsg)}')">💬 اطلب العربون</button>
+                        ` : (isProduct ? `
+                            <button class="btn-action" style="background:var(--success); color:black;" onclick="completeAppointment('${app.id}', '${app.name}', '${app.startTime}')">📦 تم التسليم</button>
+                            <button class="btn-action" style="background:#075e54; color:white;" onclick="sendWhatsAppMessage('${app.phone}', '${encodeURIComponent(prodReminderMsg)}')">🔔 تذكير استلام</button>
+                            <button class="btn-action" style="background:#25d366; color:white;" onclick="sendWhatsAppMessage('${app.phone}', '${encodeURIComponent(prodConfirmMsg)}')">💬 استلام مبلغ</button>
                         ` : `
                             <button class="btn-action" style="background:var(--success); color:black;" onclick="completeAppointment('${app.id}', '${app.name}', '${app.startTime}')">✅ انتهى</button>
                             <button class="btn-action" style="background:#075e54; color:white;" onclick="sendWhatsAppMessage('${app.phone}', '${encodeURIComponent(reminderMsg)}')">🔔 أرسل تذكير</button>
                             <button class="btn-action" style="background:#25d366; color:white;" onclick="sendWhatsAppMessage('${app.phone}', '${encodeURIComponent(confirmMsg)}')">💬 سند التأكيد</button>
-                        `}
+                        `)}
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
                             <button class="btn-action" style="background:var(--primary); color:black;" onclick="openEditModal('${app.id}')">✏️ تعديل</button>
                             <button class="btn-action" style="background:var(--danger); color:white;" onclick="deleteAppointment('${app.id}')">🗑️ إلغاء</button>
@@ -715,18 +727,24 @@ async function completeAppointment(id, name, startTime) {
         finalPrice = parseFloat(inputPrice) || 0;
     }
 
-    // سؤال عن طريقة الدفع
     const pMethod = confirm(`هل دفع ${app.name} بقية المبلغ عن طريق "بينفت"؟\n(موافق = بينفت ، إلغاء = كاش)`) ? 'benefit' : 'cash';
 
-    if (confirm(`هل انتهيت من حلاقة ${app.name}؟ (سيتم تسجيل ${finalPrice.toFixed(3)} د.ب في الأرباح وحذفه من قوقل)`)) {
-        // 1. إرسال طلب حذف من قوقل كلندر
-        try {
-            await fetch(`${API_BASE}/api/calendar/cancel`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: app.id, name: app.name, startTime: app.startTime })
-            });
-        } catch (e) { console.error("Sync error:", e); }
+    const isProd = app.isProductOnly === true;
+    const confirmText = isProd 
+        ? `هل تم تسليم المنتجات لـ ${app.name}؟ (سيتم تسجيل ${finalPrice.toFixed(3)} د.ب في الأرباح)`
+        : `هل انتهيت من حلاقة ${app.name}؟ (سيتم تسجيل ${finalPrice.toFixed(3)} د.ب في الأرباح وحذفه من قوقل)`;
+
+    if (confirm(confirmText)) {
+        // 1. إرسال طلب حذف من قوقل كلندر (فقط للخدمات)
+        if (!isProd) {
+            try {
+                await fetch(`${API_BASE}/api/calendar/cancel`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: app.id, name: app.name, startTime: app.startTime })
+                });
+            } catch (e) { console.error("Sync error:", e); }
+        }
 
         // 2. تسجيل العملية في السجل التاريخي
         const sale = {
@@ -782,6 +800,8 @@ function switchPosType(type) {
     state.currentPosType = type;
     document.getElementById('pos-tab-services').classList.toggle('active', type === 'service');
     document.getElementById('pos-tab-packages').classList.toggle('active', type === 'package');
+    const prodTab = document.getElementById('pos-tab-products');
+    if (prodTab) prodTab.classList.toggle('active', type === 'product');
     renderServices();
 }
 
@@ -791,17 +811,23 @@ function renderServices() {
 
     let html = '';
 
-    if (state.currentPosType === 'service') {
-        // الخدمات العادية
-        if (state.services.length > 0) {
-            html += state.services.map((s, i) => `
-                <div class="service-item" onclick="addToCart('service', ${i})">
+    if (state.currentPosType === 'service' || state.currentPosType === 'product') {
+        const typeFilter = state.currentPosType;
+        const items = state.services.filter(s => (s.type || 'service') === typeFilter);
+        
+        if (items.length > 0) {
+            html = items.map((s) => {
+                const originalIndex = state.services.findIndex(orig => orig.name === s.name);
+                return `
+                <div class="service-item" onclick="addToCart('service', ${originalIndex})">
                     <div style="font-weight:700; font-size:1rem; margin-bottom:5px;">${s.name}</div>
                     <div style="color:var(--primary); font-weight:800;">${s.price.toFixed(3)}</div>
                 </div>
-            `).join('');
+                `;
+            }).join('');
         } else {
-            html = '<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--text-muted);">لا توجد خدمات مضافة</div>';
+            const label = typeFilter === 'service' ? 'خدمات' : 'منتجات';
+            html = `<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--text-muted);">لا توجد ${label} مضافة حالياً</div>`;
         }
     } else {
         // البكجات
@@ -1243,6 +1269,12 @@ function renderManageServices() {
     body.innerHTML = state.services.map((s, i) => `
         <tr>
             <td><input type="text" value="${s.name}" style="background:transparent; border:1px solid var(--border); color:white; padding:5px; width:100%; border-radius:5px;" onchange="updateService(${i}, 'name', this.value)"></td>
+            <td>
+                <select onchange="updateService(${i}, 'type', this.value)" style="background:transparent; border:1px solid var(--border); color:white; padding:5px; width:100%; border-radius:5px;">
+                    <option value="service" ${(!s.type || s.type === 'service') ? 'selected' : ''}>✂️ خدمة</option>
+                    <option value="product" ${s.type === 'product' ? 'selected' : ''}>🧴 منتج</option>
+                </select>
+            </td>
             <td><input type="number" step="0.5" value="${s.price.toFixed(3)}" style="background:transparent; border:1px solid var(--border); color:white; padding:5px; width:100%; border-radius:5px;" onchange="updateService(${i}, 'price', this.value)"></td>
             <td><input type="number" value="${s.duration !== undefined ? s.duration : 30}" style="background:transparent; border:1px solid var(--border); color:white; padding:5px; width:100%; border-radius:5px;" onchange="updateService(${i}, 'duration', this.value)"></td>
             <td style="display:flex; gap:5px;">
@@ -1275,11 +1307,15 @@ async function moveService(index, direction) {
 
 async function addService() {
     const name = document.getElementById('new-service-name').value;
+    const type = document.getElementById('new-service-type').value || 'service';
     const price = parseFloat(document.getElementById('new-service-price').value);
     const durationInput = document.getElementById('new-service-duration').value;
-    const duration = durationInput === "" ? 30 : parseInt(durationInput);
+    // إذا كان منتج، المدة الافتراضية 0
+    let defaultDuration = type === 'product' ? 0 : 30;
+    const duration = durationInput === "" ? defaultDuration : parseInt(durationInput);
+    
     if (!name || isNaN(price)) return alert("يرجى إدخال اسم وسعر صحيح");
-    state.services.push({ name, price, duration });
+    state.services.push({ name, type, price, duration });
     await save();
     renderManageServices();
     renderServices();

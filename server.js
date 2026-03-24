@@ -332,7 +332,7 @@ app.get('/api/calendar/busy', async (req, res) => {
 });
 
 app.post('/api/calendar/book', async (req, res) => {
-    const { name, phone, service, price, startTime, endTime, syncCalendar, status } = req.body;
+    const { name, phone, service, price, startTime, endTime, syncCalendar, status, isProductOnly } = req.body;
     await cleanExpiredPending();
     try {
         const data = readDB();
@@ -389,7 +389,10 @@ app.post('/api/calendar/book', async (req, res) => {
         const appStatus = status || 'pending';
         const newApp = { 
             id: 'app_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
-            name, phone, service, price, startTime, endTime, status: appStatus, date: new Date().toISOString() 
+            name, phone, service, price, startTime, endTime, 
+            status: appStatus, 
+            date: new Date().toISOString(),
+            isProductOnly: isProductOnly || false // حفظ العلم
         };
         
         data.appointments.push(newApp);

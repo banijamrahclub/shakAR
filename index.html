@@ -188,12 +188,11 @@
                             </div>
                         </div>
 
-                        <!-- تبديل بين الخدمات والبكجات -->
+                        <!-- تبديل بين الخدمات والبكجات والمنتجات -->
                         <div class="finance-sub-nav" style="margin-bottom: 20px;">
-                            <div class="sub-link active" id="pos-tab-services" onclick="switchPosType('service')">✂️
-                                جميع الخدمات</div>
-                            <div class="sub-link" id="pos-tab-packages" onclick="switchPosType('package')">🎁 البكجات
-                                والعروض</div>
+                            <div class="sub-link active" id="pos-tab-services" onclick="switchPosType('service')">✂️ الخدمات</div>
+                            <div class="sub-link" id="pos-tab-packages" onclick="switchPosType('package')">🎁 البكجات</div>
+                            <div class="sub-link" id="pos-tab-products" onclick="switchPosType('product')">🧴 المنتجات</div>
                         </div>
 
                         <div class="services-list" id="services-grid"></div>
@@ -506,12 +505,15 @@
                         والأسماء الحالية.</p>
 
                     <div
-                        style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 15px; margin-bottom: 30px; background: rgba(255,255,255,0.02); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
-                        <input type="text" id="new-service-name" placeholder="اسم الخدمة الجديدة">
+                        style="display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr auto; gap: 15px; margin-bottom: 30px; background: rgba(255,255,255,0.02); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
+                        <input type="text" id="new-service-name" placeholder="الاسم (خدمة أو منتج)">
+                        <select id="new-service-type" style="background: var(--bg-input); color: white; border: 1px solid var(--border); border-radius: 10px; padding: 0 10px;">
+                            <option value="service">✂️ خدمة حلاقة</option>
+                            <option value="product">🧴 منتج (شامبو، كريم، إلخ)</option>
+                        </select>
                         <input type="number" id="new-service-price" placeholder="السعر (د.ب)">
                         <input type="number" id="new-service-duration" placeholder="المدة (دقيقة)">
-                        <button class="btn-action" style="width: auto; padding: 0 30px;" onclick="addService()">إضافة
-                            خدمة</button>
+                        <button class="btn-action" style="width: auto; padding: 0 30px;" onclick="addService()">إضافة</button>
                     </div>
 
                     <div class="table-container">

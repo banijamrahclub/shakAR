@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const res = await fetch(`${API_BASE}/api/data`);
             const data = await res.json();
             bookingData.settings = data.settings || bookingData.settings;
-            
+
             const overlay = document.getElementById('maintenance-overlay');
             if (overlay) {
                 const isMaintenance = bookingData.settings.maintenanceMode || false;
@@ -179,26 +179,83 @@ function updateDayLabel(dateStr) {
 function switchServiceType(type) {
     bookingData.currentType = type;
     document.querySelectorAll('.type-tab-btn').forEach(btn => {
-        btn.classList.toggle('active', (type === 'service' && btn.innerText.includes('منفردة')) || (type === 'package' && btn.innerText.includes('بكجات')));
+        const text = btn.innerText;
+        btn.classList.toggle('active',
+            (type === 'service' && (text.includes('خدمات') || text.includes('منفردة'))) ||
+            (type === 'package' && text.includes('بكجات'))
+        );
     });
     renderServices();
 }
 
+/**
+ * دالة السكرول للمنتجات
+ */
+function scrollToProducts() {
+    // التأكد من أننا في تبويب الخدمات
+    if (bookingData.currentType !== 'service') {
+        switchServiceType('service');
+    }
+
+    // الانتظار قليلاً حتى يتم الريندر
+    setTimeout(() => {
+        const header = document.getElementById('products-header');
+        if (header) {
+            header.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, 100);
+}
+
 function renderServices() {
     const list = document.getElementById('services-list');
-    const items = bookingData.currentType === 'service' ? bookingData.services : bookingData.packages;
+    let html = "";
 
-    list.innerHTML = items.map(s => {
-        const isSelected = bookingData.selectedServices.some(item => item.name === s.name);
-        return `
-            <div class="option-item ${isSelected ? 'selected' : ''}" onclick="toggleService('${s.name}')" style="${bookingData.currentType === 'package' ? 'border:1px solid gold; background:rgba(255,215,0,0.02);' : ''}">
-                <div style="font-weight:700;">${s.name}</div>
-                ${s.description ? `<div style="font-size:0.7rem; color:var(--text-muted); margin-bottom:5px;">${s.description}</div>` : ''}
-                <div style="color:${bookingData.currentType === 'package' ? 'gold' : 'var(--primary)'}; font-size:0.8rem;">${s.price.toFixed(3)} د.ب</div>
-                ${isSelected ? '<div class="check-mark">✓</div>' : ''}
-            </div>
-        `;
-    }).join('');
+    if (bookingData.currentType === 'service') {
+        const services = bookingData.services.filter(s => !s.type || s.type === 'service');
+        const products = bookingData.services.filter(s => s.type === 'product');
+
+        html = services.map(s => {
+            const isSelected = bookingData.selectedServices.some(item => item.name === s.name);
+            return `
+                <div class="option-item ${isSelected ? 'selected' : ''}" onclick="toggleService('${s.name}')">
+                    <div style="font-weight:700;">${s.name}</div>
+                    ${s.duration ? `<div style="font-size:0.7rem; color:var(--text-muted);">${s.duration} دقيقة</div>` : ''}
+                    <div style="color:var(--primary); font-size:0.8rem;">${s.price.toFixed(3)} د.ب</div>
+                    ${isSelected ? '<div class="check-mark">✓</div>' : ''}
+                </div>
+            `;
+        }).join('');
+
+        if (products.length > 0) {
+            html += `<h4 id="products-header" style="grid-column: 1/-1; margin: 30px 0 10px; padding-bottom: 10px; border-bottom: 1px solid var(--border); color: var(--primary); display: flex; align-items: center; gap: 10px;">
+                        <span>🧴</span> منتجات العناية بالبشرة والشعر
+                    </h4>`;
+            html += products.map(s => {
+                const isSelected = bookingData.selectedServices.some(item => item.name === s.name);
+                return `
+                    <div class="option-item ${isSelected ? 'selected' : ''}" onclick="toggleService('${s.name}')" style="border: 1px dashed var(--border);">
+                        <div style="font-weight:700;">${s.name}</div>
+                        <div style="color:var(--primary); font-size:0.8rem;">${s.price.toFixed(3)} د.ب</div>
+                        ${isSelected ? '<div class="check-mark">✓</div>' : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+    } else {
+        html = bookingData.packages.map(p => {
+            const isSelected = bookingData.selectedServices.some(item => item.name === p.name);
+            return `
+                <div class="option-item ${isSelected ? 'selected' : ''}" onclick="toggleService('${p.name}')" style="border: 1px solid gold; background: rgba(255, 215, 0, 0.02);">
+                    <div style="font-weight:700;">${p.name}</div>
+                    ${p.description ? `<div style="font-size:0.7rem; color:var(--text-muted); margin-bottom:5px;">${p.description}</div>` : ''}
+                    <div style="color:gold; font-size:0.8rem;">${p.price.toFixed(3)} د.ب</div>
+                    ${isSelected ? '<div class="check-mark">✓</div>' : ''}
+                </div>
+            `;
+        }).join('');
+    }
+
+    list.innerHTML = html;
 
     if (bookingData.selectedServices.length > 0) {
         if (!document.getElementById('btn-step-1-next')) {
@@ -241,7 +298,7 @@ async function loadTimeSlots(isSilent = false) {
     const date = document.getElementById('booking-date').value;
     bookingData.date = date;
     const grid = document.getElementById('time-slots');
-    
+
     // إيقاف الكتابة لو كان التحديث صامت والاسم مكتوب مسبقاً (لمنع الوميض)
     if (!isSilent) {
         grid.innerHTML = '<p style="grid-column: span 2;">جاري تحميل المواعيد...</p>';
@@ -254,7 +311,7 @@ async function loadTimeSlots(isSilent = false) {
 
     // فحص إذا كان اليوم مغلقاً تماماً (إجازة)
     const closedDates = (bookingData.settings && bookingData.settings.closedDates) || [];
-    const closedEntry = Array.isArray(closedDates) 
+    const closedEntry = Array.isArray(closedDates)
         ? closedDates.find(d => (typeof d === 'string' ? d === date : d.date === date))
         : null;
 
@@ -282,7 +339,7 @@ async function loadTimeSlots(isSilent = false) {
 
     // Generate slots based on settings (Minute-based for precision)
     const settings = bookingData.settings || { openTime: '10:00', closeTime: '22:00' };
-    
+
     // فترات العمل: نستخدم العمل الموزع لو موجود، وإلا نستخدم وقت الفتح والإغلاق التقليدي
     let intervals = settings.workIntervals || [];
     if (intervals.length === 0) {
@@ -360,7 +417,7 @@ async function loadTimeSlots(isSilent = false) {
                     ${!isPast && exceedsClosing ? '<div style="font-size:0.5rem; color:var(--danger)">يفوق الإغلاق</div>' : ''}
                 </div>
             `;
-            if (totalMin > 2880) break; 
+            if (totalMin > 2880) break;
         }
     });
 
@@ -372,6 +429,15 @@ async function loadTimeSlots(isSilent = false) {
 function selectTime(time) {
     bookingData.time = time;
     document.getElementById('summary-time').innerText = `${bookingData.date} | ${time}`;
+
+    // فحص إذا كان الطلب منتجات فقط لتغيير العنوان
+    const isProductOnly = bookingData.selectedServices.length > 0 &&
+        bookingData.selectedServices.every(s => s.type === 'product');
+    const step3Title = document.querySelector('#step-3 h2');
+    if (step3Title) {
+        step3Title.innerText = isProductOnly ? 'تأكيد موعد الاستلام' : 'تأكيد الحجز';
+    }
+
     goToStep(3);
 }
 
@@ -408,6 +474,10 @@ async function confirmBooking() {
     const servicesNames = bookingData.selectedServices.map(s => s.name).join(' + ');
     const totalPrice = bookingData.selectedServices.reduce((sum, s) => sum + s.price, 0);
 
+    // فحص إذا كان الطلب منتجات فقط
+    const isProductOnly = bookingData.selectedServices.length > 0 &&
+        bookingData.selectedServices.every(s => s.type === 'product');
+
     try {
         const res = await fetch(`${API_BASE}/api/calendar/book`, {
             method: 'POST',
@@ -416,7 +486,8 @@ async function confirmBooking() {
                 name, phone,
                 service: servicesNames,
                 price: totalPrice,
-                startTime, endTime
+                startTime, endTime,
+                isProductOnly: isProductOnly // إرسال العلم للسيرفر
             })
         });
 
@@ -430,14 +501,57 @@ async function confirmBooking() {
             startCancellationCheck(); // بدء فحص الإلغاء التلقائي
 
             // تجهيز نص الوصف للنسخ (بدون ايموجي)
-            const desc = `حجز: ${name} - ${bookingData.date} - ${bookingData.time}`;
+            const desc = isProductOnly ? `طلب منتجات: ${name} - ${bookingData.date} - ${bookingData.time}` : `حجز: ${name} - ${bookingData.date} - ${bookingData.time}`;
             document.getElementById('copy-desc').value = desc;
 
             setupCalendarButtons(name, servicesNames, startTime, endTime);
 
+            // تعديل واجهة النجاح للمنتجات فقط
+            if (isProductOnly) {
+                const stepSuccess = document.getElementById('step-success');
+                if (stepSuccess) {
+                    stepSuccess.innerHTML = `
+                        <div style="text-align: center; padding: 20px;">
+                            <div style="font-size: 5rem; margin-bottom: 20px;">🛍️</div>
+                            <h2 style="color: var(--primary); margin-bottom: 15px;">تم استلام طلبك للمنتجات بنجاح</h2>
+                            <p style="color: var(--text-muted); line-height: 1.6; margin-bottom: 25px;">
+                                يمكنك زيارة المحل في الوقت المحدد (${bookingData.time}) واستلام المنتجات. <br>
+                                <span style="font-weight:700; color:var(--text);">يمكنك دفع المبلغ الآن لتأكيد الطلب:</span>
+                            </p>
+                            
+                            <div style="background: var(--card-bg); border: 1px solid var(--border); padding: 20px; border-radius: 20px; margin-bottom: 25px; text-align: left;">
+                                <div style="margin-bottom: 10px;"><b>المبلغ المطلوب:</b> <span style="color:var(--primary);">${totalPrice.toFixed(3)} د.ب</span></div>
+                                <div style="margin-bottom: 5px;"><b>رقم الأيبان (IBAN):</b> <span style="color:var(--primary); font-size:0.85rem;">BH10BIBB00100002917431</span></div>
+                                <div style="margin-bottom: 5px;"><b>رقم البينفت (Benefit):</b> <span style="color:var(--primary);">37055332</span></div>
+                                <hr style="border:0; border-top:1px solid var(--border); margin:10px 0;">
+                                <div style="font-size:0.8rem; color:var(--text-muted);">يرجى نسخ "وصف المعاملة" أدناه ووضعه في ملاحظات الدفع</div>
+                            </div>
+
+                            <input type="text" id="copy-desc" value="${desc}" readonly 
+                                style="width:100%; padding:12px; border:1px solid var(--border); border-radius:12px; text-align:center; margin-bottom:10px; background:var(--bg-secondary); color:var(--text);">
+                            
+                            <button class="btn-confirm" onclick="copyDesc()" style="margin-bottom: 20px; background:var(--bg-secondary); color:var(--text); border:1px solid var(--border);">نسخ وصف المعاملة</button>
+                            
+                            <button class="btn-confirm" id="btn-whatsapp-confirm">✅ إرسال إيصال الدفع عبر واتساب</button>
+                            
+                            <div id="calendar-buttons-container" style="display: none; grid-template-columns: 1fr; gap: 10px; margin-top: 20px;">
+                                <button class="btn-back" id="btn-add-google" style="margin-top:0;">📅 إضافة لتذكريات قوقل</button>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
             const waBtn = document.getElementById('btn-whatsapp-confirm');
-            const waMsg = `تحية طيبة من حلاق الشكر\nلقد قمت بتقديم طلب حجز موعد\n\nتفاصيل الحجز\nالاسم: ${name}\nالخدمات: ${servicesNames}\nالتاريخ: ${bookingData.date}\nالوقت: ${bookingData.time}\nالإجمالي: ${totalPrice.toFixed(3)} دب\n\nمرفق لكم ايصال تحويل العربون لشراء وقتك وتأكيد الموعد\nشكرا لكم`;
+            const waMsg = isProductOnly
+                ? `تحية طيبة من حلاق الشكر\nلقد قمت بتقديم طلب شراء منتجات\n\nتفاصيل الطلب\nالاسم: ${name}\nالمنتجات: ${servicesNames}\nموعد الاستلام: ${bookingData.date} الساعة ${bookingData.time}\nالإجمالي: ${totalPrice.toFixed(3)} دب\n\nمرفق لكم ايصال الدفع لتأكيد الطلب\nشكرا لكم`
+                : `تحية طيبة من حلاق الشكر\nلقد قمت بتقديم طلب حجز موعد\n\nتفاصيل الحجز\nالاسم: ${name}\nالخدمات: ${servicesNames}\nالتاريخ: ${bookingData.date}\nالوقت: ${bookingData.time}\nالإجمالي: ${totalPrice.toFixed(3)} دب\n\nمرفق لكم ايصال تحويل العربون لشراء وقتك وتأكيد الموعد\nشكرا لكم`;
+
             waBtn.onclick = () => window.open(`https://wa.me/97337055332?text=${encodeURIComponent(waMsg)}`);
+
+            // Re-setup calendar if we replaced innerHTML
+            if (isProductOnly) setupCalendarButtons(name, servicesNames, startTime, endTime);
+
         } else {
             alert(data.error || "حدث خطأ أثناء الحجز، يرجى المحاولة مرة أخرى.");
         }
@@ -522,6 +636,6 @@ function setupCalendarButtons(name, services, startTime, endTime) {
     const gStart = new Date(startTime).toISOString().replace(/-|:|\.\d\d\d/g, "");
     const gEnd = new Date(endTime).toISOString().replace(/-|:|\.\d\d\d/g, "");
     const gUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${gStart}/${gEnd}&details=${encodeURIComponent(desc)}&location=${encodeURIComponent(location)}`;
-    
+
     document.getElementById('btn-add-google').onclick = () => window.open(gUrl, "_blank");
 }
