@@ -916,7 +916,7 @@ async function addQuickProfit() {
         id: Date.now(),
         time: new Date().toLocaleTimeString('ar-BH'),
         date: state.managedDate,
-        role: state.currentRole,
+        role: 'owner',
         total: amount,
         items: note,
         paymentMethod: paymentMethod
