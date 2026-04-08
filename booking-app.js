@@ -12,13 +12,53 @@ let bookingData = {
     time: null,
     services: [],
     packages: [],
-    currentType: 'service'
+    currentType: 'service',
+    personCount: 1,
+    personNames: []
 };
+
+let tempServiceSelection = null;
 
 // دالة تحويل الأرقام العربية إلى إنجليزية تلقائياً
 function arToEn(str) {
     if (!str) return "";
     return str.replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d));
+}
+
+function setPersonCount(n) {
+    bookingData.personCount = n;
+    document.querySelectorAll('.person-count-btn').forEach((btn, idx) => {
+        btn.classList.toggle('active', (idx + 1) === n);
+    });
+
+    const namesContainer = document.getElementById('names-container');
+    const namesInputs = document.getElementById('names-inputs');
+    
+    if (n > 1) {
+        namesContainer.style.display = 'block';
+        namesInputs.innerHTML = '';
+        for (let i = 1; i <= n; i++) {
+            namesInputs.innerHTML += `
+                <input type="text" class="input-field person-name-input" 
+                    placeholder="اسم الشخص ${i}" 
+                    style="margin-bottom:0; padding:10px; font-size:0.85rem;"
+                    onchange="updatePersonNames()">
+            `;
+        }
+    } else {
+        namesContainer.style.display = 'none';
+    }
+
+    // تصفير الخدمات المختارة عند تغيير عدد الأشخاص الكلي لتجنب التعارض
+    bookingData.selectedServices = [];
+    updatePersonNames();
+    renderServices();
+    updateSummary();
+}
+
+function updatePersonNames() {
+    const inputs = document.querySelectorAll('.person-name-input');
+    bookingData.personNames = Array.from(inputs).map((input, idx) => input.value.trim() || `الشخص ${idx + 1}`);
 }
 
 function switchMainTab(tab) {
@@ -108,11 +148,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         bookingData.packages = data.packages || [];
         bookingData.settings = data.settings || { openTime: '10:00', closeTime: '22:00' };
 
-        // Save fetched data to localStorage
-        localStorage.setItem('sh_services', JSON.stringify(bookingData.services));
-        localStorage.setItem('sh_packages', JSON.stringify(bookingData.packages));
-        localStorage.setItem('sh_settings', JSON.stringify(bookingData.settings));
-
         // Check Maintenance Mode
         if (bookingData.settings && bookingData.settings.maintenanceMode) {
             const overlay = document.getElementById('maintenance-overlay');
@@ -157,10 +192,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             }
 
-            // إذا كان المستخدم في خطوة اختيار الوقت، نحدث الخيارات مباشرة
             const step2 = document.getElementById('step-2');
             if (step2 && step2.classList.contains('active') && !bookingData.settings.maintenanceMode) {
-                // نمرر true ليدل على أنه تحديث صامت في الخلفية
                 loadTimeSlots(true);
             }
         } catch (e) { console.error("Periodic check error:", e); }
@@ -171,7 +204,6 @@ function updateDayLabel(dateStr) {
     const days = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
     const d = new Date(dateStr);
     const dayName = days[d.getDay()];
-    // سنضيف حقل لعرض اسم اليوم في الواجهة
     const label = document.getElementById('day-name-label');
     if (label) label.innerText = `يوم ${dayName}`;
 }
@@ -255,19 +287,85 @@ function renderServices() {
 function toggleService(name) {
     const service = [...bookingData.services, ...bookingData.packages].find(s => s.name === name);
     const index = bookingData.selectedServices.findIndex(item => item.name === name);
+    
     if (index > -1) {
         bookingData.selectedServices.splice(index, 1);
+        renderServices();
+        updateSummary();
     } else {
-        if (service) bookingData.selectedServices.push(service);
+        if (bookingData.personCount > 1) {
+            openCountModal(service);
+        } else {
+            if (service) {
+                bookingData.selectedServices.push({ ...service, count: 1, assignedNames: [] });
+                renderServices();
+                updateSummary();
+            }
+        }
     }
+}
+
+function openCountModal(service) {
+    tempServiceSelection = service;
+    document.getElementById('modal-service-name').innerText = service.name;
+    const optionsCont = document.getElementById('modal-count-options');
+    optionsCont.innerHTML = '';
+    
+    updatePersonNames(); // التأكد من جلب أحدث الأسماء من المدخلات
+
+    bookingData.personNames.forEach((name, idx) => {
+        const btn = document.createElement('div');
+        btn.className = 'count-btn';
+        btn.innerText = name;
+        btn.onclick = () => {
+            btn.classList.toggle('active');
+        };
+        optionsCont.appendChild(btn);
+    });
+    
+    document.getElementById('service-count-modal').style.display = 'flex';
+}
+
+function confirmServiceCount() {
+    const activeBtns = document.querySelectorAll('.count-btn.active');
+    const selectedNames = Array.from(activeBtns).map(btn => btn.innerText);
+    const count = selectedNames.length;
+    
+    if (count === 0) return alert("يرجى اختيار شخص واحد على الأقل لهذه الخدمة");
+
+    if (tempServiceSelection) {
+        bookingData.selectedServices.push({ 
+            ...tempServiceSelection, 
+            count: count,
+            assignedNames: selectedNames 
+        });
+        tempServiceSelection = null;
+    }
+    
+    closeCountModal();
     renderServices();
     updateSummary();
 }
 
+function closeCountModal() {
+    document.getElementById('service-count-modal').style.display = 'none';
+}
+
 function updateSummary() {
-    const names = bookingData.selectedServices.map(s => s.name).join(' + ');
-    const totalPrice = bookingData.selectedServices.reduce((sum, s) => sum + s.price, 0);
-    document.getElementById('summary-service').innerText = `${names} (${totalPrice.toFixed(3)} د.ب)`;
+    const servicesStrings = bookingData.selectedServices.map(s => {
+        if (s.assignedNames && s.assignedNames.length > 0) {
+            return `${s.name} (${s.assignedNames.join(', ')})`;
+        }
+        return s.count > 1 ? `${s.name} (×${s.count})` : s.name;
+    });
+    const names = servicesStrings.join(' + ');
+    const totalPrice = bookingData.selectedServices.reduce((sum, s) => sum + (s.price * (s.count || 1)), 0);
+    
+    if (bookingData.personCount > 1) {
+        document.getElementById('summary-service').innerText = `${names} - الإجمالي: ${totalPrice.toFixed(3)} د.ب`;
+    } else {
+        document.getElementById('summary-service').innerText = `${names} (${totalPrice.toFixed(3)} د.ب)`;
+    }
 }
 
 async function loadTimeSlots(isSilent = false) {
@@ -276,17 +374,13 @@ async function loadTimeSlots(isSilent = false) {
     bookingData.date = date;
     const grid = document.getElementById('time-slots');
 
-    // إيقاف الكتابة لو كان التحديث صامت والاسم مكتوب مسبقاً (لمنع الوميض)
     if (!isSilent) {
         grid.innerHTML = '<p style="grid-column: span 2;">جاري تحميل المواعيد...</p>';
     }
 
     const now = new Date();
-    // الحصول على تاريخ اليوم بالتوقيت المحلي (YYYY-MM-DD) لتجنب مشاكل المناطق الزمنية
     const currentDay = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
 
-
-    // فحص إذا كان اليوم مغلقاً تماماً (إجازة)
     const closedDates = (bookingData.settings && bookingData.settings.closedDates) || [];
     const closedEntry = Array.isArray(closedDates)
         ? closedDates.find(d => (typeof d === 'string' ? d === date : d.date === date))
@@ -305,6 +399,7 @@ async function loadTimeSlots(isSilent = false) {
         return;
     }
 
+    let busyTime = [];
     try {
         const start = `${date}T00:00:00Z`;
         const res = await fetch(`${API_BASE}/api/calendar/busy?start=${start}`);
@@ -312,52 +407,38 @@ async function loadTimeSlots(isSilent = false) {
     } catch (e) { console.error("Calendar fetch error:", e); }
 
     if (loadId !== currentLoadId) return;
-    if (closedEntry) return;
 
-    // Generate slots based on settings (Minute-based for precision)
     const settings = bookingData.settings || { openTime: '10:00', closeTime: '22:00' };
-
-    // فترات العمل: نستخدم العمل الموزع لو موجود، وإلا نستخدم وقت الفتح والإغلاق التقليدي
     let intervals = settings.workIntervals || [];
     if (intervals.length === 0) {
         intervals = [{ open: settings.openTime || '10:00', close: settings.closeTime || '22:00' }];
     }
 
-    // حساب المدة الإجمالية للخدمات المختارة للتأكد من توفر وقت كافٍ
-    const totalDuration = bookingData.selectedServices.reduce((sum, s) => sum + (s.duration !== undefined ? s.duration : bookingData.settings.defaultServiceDuration || 30), 0);
-
+    // حساب المدة الإجمالية بناءً على عدد الأشخاص لكل خدمة
+    let totalDuration = bookingData.selectedServices.reduce((sum, s) => {
+        const baseDur = (s.duration !== undefined ? s.duration : 30);
+        return sum + (baseDur * (s.count || 1));
+    }, 0);
 
     let html = "";
-
     intervals.forEach(interval => {
-        // Convert current settings to total minutes
         const [openH, openM] = (interval.open || '10:00').split(':').map(Number);
         const [closeH, closeM] = (interval.close || '22:00').split(':').map(Number);
-
         const startTotalMinutes = (openH * 60) + (openM || 0);
         let endTotalMinutes = (closeH * 60) + (closeM || 0);
-
-        // إذا كان وقت الإغلاق أقل من وقت الفتح، فهذا يعني أن الإغلاق في اليوم التالي (فجر)
-        if (endTotalMinutes <= startTotalMinutes) {
-            endTotalMinutes += 1440; // إضافة 24 ساعة
-        }
+        if (endTotalMinutes <= startTotalMinutes) endTotalMinutes += 1440;
 
         const intervalEndTime = new Date(new Date(`${date}T00:00:00`).getTime() + endTotalMinutes * 60000).getTime();
 
-        // Loop every 30 minutes from start to end for THIS interval
         for (let totalMin = startTotalMinutes; totalMin < endTotalMinutes; totalMin += 30) {
             let currentLoopTotal = totalMin;
             const h = Math.floor((currentLoopTotal % 1440) / 60);
             const m = currentLoopTotal % 60;
-
             const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-
-            // تحويل العرض إلى نظام 12 ساعة (AM/PM)
             const displayH = h % 12 || 12;
-            const ampm = h < 12 || h >= 24 ? 'AM' : 'PM';
+            const ampm = (h % 24) < 12 ? 'AM' : 'PM';
             const displayTime = `${displayH}:${String(m).padStart(2, '0')} ${ampm}`;
 
-            // تحديد تاريخ الموعد
             let slotDate = date;
             if (currentLoopTotal >= 1440) {
                 const nextDay = new Date(new Date(date).getTime() + 86400000);
@@ -368,16 +449,8 @@ async function loadTimeSlots(isSilent = false) {
             const slotStart = slotDateTime.getTime();
             const slotEnd = slotStart + (totalDuration * 60000);
 
-            // 1. فحص إذا كان الوقت قد مضى
-            let isPast = false;
-            if (date === currentDay) {
-                if (slotDateTime < now) isPast = true;
-            }
-
-            // 2. فحص إذا كان الموعد يمتد لبعد وقت إغلاق الفترة الحالية
+            let isPast = (date === currentDay) && (slotDateTime < now);
             const exceedsClosing = slotEnd > intervalEndTime;
-
-            // 3. فحص التداخل مع مواعيد أخرى
             const isOverlap = busyTime.some(b => {
                 const bStart = new Date(b.start).getTime();
                 const bEnd = new Date(b.end).getTime();
@@ -385,10 +458,8 @@ async function loadTimeSlots(isSilent = false) {
             });
 
             const disabled = isPast || isOverlap || exceedsClosing;
-
             html += `
-                <div class="option-item ${disabled ? 'busy' : ''}" 
-                     onclick="${disabled ? '' : `selectTime('${timeStr}')`}">
+                <div class="option-item ${disabled ? 'busy' : ''}" onclick="${disabled ? '' : `selectTime('${timeStr}')`}">
                     ${displayTime}
                     ${isPast ? '<div style="font-size:0.6rem; color:var(--danger)">مضى</div>' : ''}
                     ${!isPast && exceedsClosing ? '<div style="font-size:0.5rem; color:var(--danger)">يفوق الإغلاق</div>' : ''}
@@ -399,22 +470,15 @@ async function loadTimeSlots(isSilent = false) {
     });
 
     if (loadId !== currentLoadId) return;
-    if (!html) html = '<p style="grid-column: span 2; color: var(--danger);">لا توجد مواعيد متاحة في هذا الوقت.</p>';
-    grid.innerHTML = html;
+    grid.innerHTML = html || '<p style="grid-column: span 2; color: var(--danger);">لا توجد مواعيد متاحة.</p>';
 }
 
 function selectTime(time) {
     bookingData.time = time;
     document.getElementById('summary-time').innerText = `${bookingData.date} | ${time}`;
-
-    // فحص إذا كان الطلب منتجات فقط لتغيير العنوان
-    const isProductOnly = bookingData.selectedServices.length > 0 &&
-        bookingData.selectedServices.every(s => s.type === 'product');
+    const isProductOnly = bookingData.selectedServices.length > 0 && bookingData.selectedServices.every(s => s.type === 'product');
     const step3Title = document.querySelector('#step-3 h2');
-    if (step3Title) {
-        step3Title.innerText = isProductOnly ? 'تأكيد موعد الاستلام' : 'تأكيد الحجز';
-    }
-
+    if (step3Title) step3Title.innerText = isProductOnly ? 'تأكيد موعد الاستلام' : 'تأكيد الحجز';
     goToStep(3);
 }
 
@@ -427,63 +491,51 @@ function goToStep(n) {
 let isSubmitting = false;
 async function confirmBooking() {
     if (isSubmitting) return;
-
     const name = document.getElementById('cust-name').value;
     let phone = document.getElementById('cust-phone').value;
     const btn = document.querySelector('#step-3 .btn-confirm');
-
-    phone = arToEn(phone); // تحويل الأرقام
+    phone = arToEn(phone);
     if (!name || !phone) return alert("يرجى ملئ البيانات");
 
     isSubmitting = true;
-    if (btn) {
-        btn.disabled = true;
-        btn.innerText = "جاري التأكيد...";
-        btn.style.opacity = "0.7";
-    }
+    if (btn) { btn.disabled = true; btn.innerText = "جاري التأكيد..."; btn.style.opacity = "0.7"; }
 
     const startTime = new Date(`${bookingData.date}T${bookingData.time}:00`).toISOString();
-
-    // حساب المدة الإجمالية بناءً على الخدمات المختارة
-    const totalDuration = bookingData.selectedServices.reduce((sum, s) => sum + (s.duration !== undefined ? s.duration : 30), 0);
+    
+    let totalDuration = bookingData.selectedServices.reduce((sum, s) => {
+        const baseDur = (s.duration !== undefined ? s.duration : 30);
+        return sum + (baseDur * (s.count || 1));
+    }, 0);
+    
     const endTime = new Date(new Date(startTime).getTime() + totalDuration * 60000).toISOString();
 
-    const servicesNames = bookingData.selectedServices.map(s => s.name).join(' + ');
-    const totalPrice = bookingData.selectedServices.reduce((sum, s) => sum + s.price, 0);
+    const servicesStrings = bookingData.selectedServices.map(s => {
+        if (s.assignedNames && s.assignedNames.length > 0) {
+            return `${s.name} (${s.assignedNames.join(', ')})`;
+        }
+        return s.count > 1 ? `${s.name} (×${s.count})` : s.name;
+    });
+    const servicesNames = servicesStrings.join(' + ');
+    
+    let totalPrice = bookingData.selectedServices.reduce((sum, s) => sum + (s.price * (s.count || 1)), 0);
 
-    // فحص إذا كان الطلب منتجات فقط
-    const isProductOnly = bookingData.selectedServices.length > 0 &&
-        bookingData.selectedServices.every(s => s.type === 'product');
+    const isProductOnly = bookingData.selectedServices.length > 0 && bookingData.selectedServices.every(s => s.type === 'product');
 
     try {
         const res = await fetch(`${API_BASE}/api/calendar/book`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                name, phone,
-                service: servicesNames,
-                price: totalPrice,
-                startTime, endTime,
-                isProductOnly: isProductOnly // إرسال العلم للسيرفر
-            })
+            body: JSON.stringify({ name, phone, service: servicesNames, price: totalPrice, startTime, endTime, isProductOnly })
         });
-
         const data = await res.json();
 
         if (res.ok) {
-            // تخزين بيانات الحجز للتحقق من الإلغاء
             bookingData.currentBooking = { name, startTime };
-
             goToStep('success');
-            startCancellationCheck(); // بدء فحص الإلغاء التلقائي
-
-            // تجهيز نص الوصف للنسخ (بدون ايموجي)
+            startCancellationCheck();
             const desc = isProductOnly ? `طلب منتجات: ${name} - ${bookingData.date} - ${bookingData.time}` : `حجز: ${name} - ${bookingData.date} - ${bookingData.time}`;
             document.getElementById('copy-desc').value = desc;
 
-            setupCalendarButtons(name, servicesNames, startTime, endTime);
-
-            // تعديل واجهة النجاح للمنتجات فقط
             if (isProductOnly) {
                 const stepSuccess = document.getElementById('step-success');
                 if (stepSuccess) {
@@ -495,7 +547,6 @@ async function confirmBooking() {
                                 يمكنك زيارة المحل في الوقت المحدد (${bookingData.time}) واستلام المنتجات. <br>
                                 <span style="font-weight:700; color:var(--text);">يمكنك دفع المبلغ الآن لتأكيد الطلب:</span>
                             </p>
-                            
                             <div style="background: var(--card-bg); border: 1px solid var(--border); padding: 20px; border-radius: 20px; margin-bottom: 25px; text-align: left;">
                                 <div style="margin-bottom: 10px;"><b>المبلغ المطلوب:</b> <span style="color:var(--primary);">${totalPrice.toFixed(3)} د.ب</span></div>
                                 <div style="margin-bottom: 5px;"><b>رقم الأيبان (IBAN):</b> <span style="color:var(--primary); font-size:0.85rem;">BH10BIBB00100002917431</span></div>
@@ -503,19 +554,10 @@ async function confirmBooking() {
                                 <hr style="border:0; border-top:1px solid var(--border); margin:10px 0;">
                                 <div style="font-size:0.8rem; color:var(--text-muted);">يرجى نسخ "وصف المعاملة" أدناه ووضعه في ملاحظات الدفع</div>
                             </div>
-
-                            <input type="text" id="copy-desc" value="${desc}" readonly 
-                                style="width:100%; padding:12px; border:1px solid var(--border); border-radius:12px; text-align:center; margin-bottom:10px; background:var(--bg-secondary); color:var(--text);">
-                            
+                            <input type="text" id="copy-desc" value="${desc}" readonly style="width:100%; padding:12px; border:1px solid var(--border); border-radius:12px; text-align:center; margin-bottom:10px; background:var(--bg-secondary); color:var(--text);">
                             <button class="btn-confirm" onclick="copyDesc()" style="margin-bottom: 20px; background:var(--bg-secondary); color:var(--text); border:1px solid var(--border);">نسخ وصف المعاملة</button>
-                            
                             <button class="btn-confirm" id="btn-whatsapp-confirm">✅ إرسال إيصال الدفع عبر واتساب</button>
-                            
-                            <div id="calendar-buttons-container" style="display: none; grid-template-columns: 1fr; gap: 10px; margin-top: 20px;">
-                                <button class="btn-back" id="btn-add-google" style="margin-top:0;">📅 إضافة لتذكريات قوقل</button>
-                            </div>
-                        </div>
-                    `;
+                        </div>`;
                 }
             }
 
@@ -523,96 +565,38 @@ async function confirmBooking() {
             const waMsg = isProductOnly
                 ? `تحية طيبة من حلاق الشكر\nلقد قمت بتقديم طلب شراء منتجات\n\nتفاصيل الطلب\nالاسم: ${name}\nالمنتجات: ${servicesNames}\nموعد الاستلام: ${bookingData.date} الساعة ${bookingData.time}\nالإجمالي: ${totalPrice.toFixed(3)} دب\n\nمرفق لكم ايصال الدفع لتأكيد الطلب\nشكرا لكم`
                 : `تحية طيبة من حلاق الشكر\nلقد قمت بتقديم طلب حجز موعد\n\nتفاصيل الحجز\nالاسم: ${name}\nالخدمات: ${servicesNames}\nالتاريخ: ${bookingData.date}\nالوقت: ${bookingData.time}\nالإجمالي: ${totalPrice.toFixed(3)} دب\n\nمرفق لكم ايصال تحويل العربون لشراء وقتك وتأكيد الموعد\nشكرا لكم`;
-
             waBtn.onclick = () => window.open(`https://wa.me/97337055332?text=${encodeURIComponent(waMsg)}`);
-
-            // Re-setup calendar if we replaced innerHTML
-            if (isProductOnly) setupCalendarButtons(name, servicesNames, startTime, endTime);
-
-        } else {
-            alert(data.error || "حدث خطأ أثناء الحجز، يرجى المحاولة مرة أخرى.");
-        }
-    } catch (e) {
-        alert("خطأ في الاتصال بالسيرفر");
-    } finally {
+        } else alert(data.error || "حدث خطأ.");
+    } catch (e) { alert("خطأ في الاتصال."); } finally {
         isSubmitting = false;
-        if (btn) {
-            btn.disabled = false;
-            btn.innerText = "تأكيد الحجز";
-            btn.style.opacity = "1";
-        }
+        if (btn) { btn.disabled = false; btn.innerText = "تأكيد الحجز"; btn.style.opacity = "1"; }
     }
 }
 
 function copyDesc() {
     const copyText = document.getElementById("copy-desc");
     copyText.select();
-    copyText.setSelectionRange(0, 99999);
     navigator.clipboard.writeText(copyText.value);
-    alert("تم نسخ وصف المعاملة: " + copyText.value);
+    alert("تم نسخ وصف المعاملة.");
 }
 
 let cancelCheckInterval = null;
 function startCancellationCheck() {
     if (cancelCheckInterval) clearInterval(cancelCheckInterval);
-
     cancelCheckInterval = setInterval(async () => {
-        if (!bookingData.currentBooking) {
-            clearInterval(cancelCheckInterval);
-            return;
-        }
-
+        if (!bookingData.currentBooking) { clearInterval(cancelCheckInterval); return; }
         try {
             const res = await fetch(`${API_BASE}/api/data`);
             const data = await res.json();
-
-            // البحث عن الحجز في القائمة
-            const exists = (data.appointments || []).some(a =>
-                a.name === bookingData.currentBooking.name &&
-                a.startTime === bookingData.currentBooking.startTime
-            );
-
-            if (!exists) {
-                clearInterval(cancelCheckInterval);
-                showCancellationOverlay();
-            }
-        } catch (e) {
-            console.error("Check error:", e);
-        }
-    }, 5000); // فحص كل 5 ثوانٍ
+            const exists = (data.appointments || []).some(a => a.name === bookingData.currentBooking.name && a.startTime === bookingData.currentBooking.startTime);
+            if (!exists) { clearInterval(cancelCheckInterval); showCancellationOverlay(); }
+        } catch (e) { console.error("Check error:", e); }
+    }, 5000);
 }
 
 function showCancellationOverlay() {
     const stepSuccess = document.getElementById('step-success');
     if (stepSuccess) {
-        stepSuccess.innerHTML = `
-            <div style="text-align: center; padding: 40px 20px;">
-                <div style="font-size: 5rem; margin-bottom: 20px;">🚫</div>
-                <h2 style="color: var(--danger); margin-bottom: 15px;">عذراً، تم إلغاء حجزك</h2>
-                <p style="color: var(--text-muted); line-height: 1.6; margin-bottom: 25px;">
-                    لقد تم إزالة هذا الحجز من النظام من قبل الإدارة. <br>
-                    يرجى إعادة الحجز في وقت آخر أو التواصل معنا للاستفسار: <br>
-                    <b style="color: var(--primary); font-size: 1.5rem; display: block; margin-top: 10px;">37055332</b>
-                </p>
-                <button class="btn-confirm" onclick="location.reload()">العودة للحجز من جديد</button>
-            </div>
-        `;
+        stepSuccess.innerHTML = `<div style="text-align: center; padding: 40px 20px;"><h2>عذراً، تم إلغاء حجزك</h2><button class="btn-confirm" onclick="location.reload()">العودة</button></div>`;
     }
-}
-
-function setupCalendarButtons(name, services, startTime, endTime) {
-    const container = document.getElementById('calendar-buttons-container');
-    if (!container) return;
-    container.style.display = 'grid';
-
-    const title = `موعد حلاقة: ${services}`;
-    const location = "حلاق الشكر - البحرين";
-    const desc = `حجز باسم: ${name}\nالخدمات: ${services}\nننتظركم في الموعد المحدد.`;
-
-    // 1. Google Calendar Link
-    const gStart = new Date(startTime).toISOString().replace(/-|:|\.\d\d\d/g, "");
-    const gEnd = new Date(endTime).toISOString().replace(/-|:|\.\d\d\d/g, "");
-    const gUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${gStart}/${gEnd}&details=${encodeURIComponent(desc)}&location=${encodeURIComponent(location)}`;
-
-    document.getElementById('btn-add-google').onclick = () => window.open(gUrl, "_blank");
 }

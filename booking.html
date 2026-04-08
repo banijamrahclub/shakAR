@@ -207,6 +207,87 @@
                 box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
             }
         }
+
+        .person-count-btn {
+            flex: 1;
+            text-align: center;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: 0.3s;
+            color: var(--text-muted);
+        }
+
+        .person-count-btn.active {
+            background: var(--primary);
+            color: black;
+            border-color: var(--primary);
+        }
+
+        /* Service Count Modal */
+        #service-count-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            padding: 20px;
+        }
+
+        .count-modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 30px;
+            border-radius: 25px;
+            width: 100%;
+            max-width: 350px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .count-options {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 25px 0;
+        }
+
+        .count-btn {
+            min-width: 60px;
+            width: auto;
+            padding: 0 20px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .count-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .count-btn.active {
+            background: var(--primary);
+            color: black;
+            border-color: var(--primary);
+        }
     </style>
 </head>
 
@@ -248,7 +329,28 @@
         <main class="booking-card">
             <div id="main-tab-book">
                 <div id="step-1" class="step active">
-                    <h3>1. اختر الخدمة</h3>
+                    <h2>اختر الخدمة</h2>
+
+                    <!-- Number of People Selector -->
+                    <div style="margin-bottom: 20px; background: rgba(255,255,255,0.03); padding: 15px; border-radius: 15px; border: 1px solid var(--border);">
+                        <label style="display: block; margin-bottom: 12px; font-weight: 700; font-size: 0.9rem;">حجز لعدد أشخاص:</label>
+                        <div style="display: flex; gap: 10px;">
+                            <div class="person-count-btn active" onclick="setPersonCount(1)">1</div>
+                            <div class="person-count-btn" onclick="setPersonCount(2)">2</div>
+                            <div class="person-count-btn" onclick="setPersonCount(3)">3</div>
+                        </div>
+
+                        <!-- Names Container -->
+                        <div id="names-container"
+                            style="display: none; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px;">
+                            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px;">أسماء الأشخاص
+                                (اختياري):</p>
+                            <div id="names-inputs" style="display: flex; flex-direction: column; gap: 10px;">
+                                <!-- سيتم توليد المدخلات بواسطة JS -->
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="service-type-tabs">
                         <button class="type-tab-btn active" onclick="switchServiceType('service')">
                             ✂️
@@ -353,6 +455,19 @@
         <footer>
             <p>© 2026 حلاق الشكر | جميع الحقوق محفوظة</p>
         </footer>
+    </div>
+
+    <!-- Service Count Modal -->
+    <div id="service-count-modal">
+        <div class="count-modal-content">
+            <h3 id="modal-service-name" style="margin-bottom: 10px; color: var(--text-main);">اسم الخدمة</h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">كم شخص سيحصل على هذه الخدمة؟</p>
+            <div class="count-options" id="modal-count-options">
+                <!-- JS will inject options -->
+            </div>
+            <button class="btn-confirm" onclick="confirmServiceCount()">تأكيد</button>
+            <button class="btn-back" onclick="closeCountModal()" style="margin-top: 15px;">إلغاء</button>
+        </div>
     </div>
 
     <script src="booking-app.js"></script>
