@@ -463,6 +463,30 @@ app.get('/api/sync-down', async (req, res) => {
     } catch (e) { res.status(500).json({ success: false }); }
 });
 
+app.post('/api/calendar/edit', async (req, res) => {
+    const { oldApp, newApp } = req.body;
+    try {
+        // 1. حذف الموعد القديم من قوقل
+        try {
+            const oldEnd = oldApp.endTime || new Date(new Date(oldApp.startTime).getTime() + 30 * 60000).toISOString();
+            const deleteUrl = `${GAS_URL}?action=delete&name=${encodeURIComponent(oldApp.name)}&startTime=${encodeURIComponent(oldApp.startTime)}&endTime=${encodeURIComponent(oldEnd)}`;
+            await fetch(deleteUrl);
+        } catch (e) { console.error("GAS Edit-Delete Error:", e); }
+
+        // 2. إضافة الموعد الجديد
+        try {
+            const params = `action=book&name=${encodeURIComponent(newApp.name)}&phone=${encodeURIComponent(newApp.phone)}&service=${encodeURIComponent(newApp.service)}&startTime=${encodeURIComponent(newApp.startTime)}&endTime=${encodeURIComponent(newApp.endTime)}`;
+            await fetch(GAS_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: params
+            });
+        } catch (e) { console.error("GAS Edit-Book Error:", e); }
+
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ success: false }); }
+});
+
 app.post('/api/calendar/cancel', async (req, res) => {
     const { id, name, startTime } = req.body;
     try {

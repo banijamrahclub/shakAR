@@ -1540,7 +1540,10 @@ function openEditModal(id) {
     });
 
     renderEditServicesGrid();
-    updateEditSummary();
+    
+    // حساب المدة الحالية المخزنة
+    const storedDuration = app.duration || (app.endTime ? (new Date(app.endTime).getTime() - new Date(app.startTime).getTime()) / 60000 : 0);
+    updateEditSummary(storedDuration);
     
     document.getElementById('edit-app-error').style.display = 'none';
     document.getElementById('edit-app-modal').style.display = 'flex';
@@ -1579,7 +1582,7 @@ function toggleEditService(name) {
     updateEditSummary();
 }
 
-function updateEditSummary() {
+function updateEditSummary(manualDur = null) {
     const names = state.editSelectedServices.map(s => s.name).join(' + ');
     const totalPrice = state.editSelectedServices.reduce((sum, s) => sum + s.price, 0);
     const totalDuration = state.editSelectedServices.reduce((sum, s) => sum + (s.duration !== undefined ? s.duration : 30), 0);
@@ -1587,6 +1590,13 @@ function updateEditSummary() {
     document.getElementById('e-selected-names').innerText = names || '--';
     document.getElementById('e-total-price').innerText = totalPrice.toFixed(3);
     document.getElementById('e-total-duration').innerText = totalDuration;
+
+    const durInput = document.getElementById('edit-custom-duration');
+    if (manualDur !== null) {
+        durInput.value = manualDur || totalDuration;
+    } else if (!durInput.value) {
+        durInput.value = totalDuration;
+    }
 }
 
 function closeEditModal() {
@@ -1614,10 +1624,15 @@ async function saveAppointmentEdit() {
     const oldApp = state.appointments[appIndex];
 
     const startTime = new Date(`${dateStr}T${timeStr}`).toISOString();
-    const totalDuration = state.editSelectedServices.reduce((sum, s) => sum + (s.duration !== undefined ? s.duration : 30), 0);
+    
+    // استخدام المدة اليدوية إذا تم إدخالها، وإلا استخدام المحسوبة
+    const calcDuration = state.editSelectedServices.reduce((sum, s) => sum + (s.duration !== undefined ? s.duration : 30), 0);
+    const manualDuration = parseInt(document.getElementById('edit-custom-duration').value);
+    const finalDuration = !isNaN(manualDuration) && manualDuration > 0 ? manualDuration : calcDuration;
+    
     const totalPrice = state.editSelectedServices.reduce((sum, s) => sum + s.price, 0);
     const serviceNames = state.editSelectedServices.map(s => s.name).join(' + ');
-    const endTime = new Date(new Date(startTime).getTime() + totalDuration * 60000).toISOString();
+    const endTime = new Date(new Date(startTime).getTime() + finalDuration * 60000).toISOString();
 
     // فحص التعارض مع المواعيد الأخرى (فقط إذا كانت المزامنة مفعلة)
     if (syncCalendar) {
@@ -1646,6 +1661,7 @@ async function saveAppointmentEdit() {
         phone,
         startTime,
         endTime,
+        duration: finalDuration, // حفظ المدة المخصصة
         service: serviceNames,
         price: totalPrice
     };
@@ -1653,10 +1669,11 @@ async function saveAppointmentEdit() {
     // مزامنة مع قوقل إذا تم طلب ذلك
     if (syncCalendar) {
         try {
-            await fetch(`${API_BASE}/api/calendar/book`, {
+            const newAppData = state.appointments[appIndex];
+            await fetch(`${API_BASE}/api/calendar/edit`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, phone, service: serviceNames, price: totalPrice, startTime, endTime, syncCalendar: true, status: 'confirmed' })
+                body: JSON.stringify({ oldApp, newApp: newAppData })
             });
         } catch (e) { console.error("Sync Edit Error:", e); }
     }
