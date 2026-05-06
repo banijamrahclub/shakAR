@@ -37,20 +37,20 @@ app.use((req, res, next) => {
 });
 
 const defaultServices = [
-    { name: "قص الشعر", price: 1.0, duration: 20 },
-    { name: "قص اللحية", price: 1.0, duration: 15 },
-    { name: "شمع الوجه", price: 1.0, duration: 10 },
-    { name: "صباغة اللحية", price: 1.0, duration: 15 },
-    { name: "مساج كتف وراس", price: 1.0, duration: 15 },
-    { name: "حلاقة الأطفال", price: 1.0, duration: 20 },
-    { name: "تسريحة", price: 1.0, duration: 15 },
-    { name: "غسل الشعر", price: 0.5, duration: 10 },
-    { name: "لصقة أنف", price: 0.5, duration: 5 },
-    { name: "الخيط", price: 0.5, duration: 10 },
-    { name: "صباغة الشعر", price: 1.5, duration: 30 },
-    { name: "تنظيف الوجه", price: 2.0, duration: 30 },
-    { name: "التمليس", price: 3.0, duration: 45 },
-    { name: "البروتين", price: 15.0, duration: 90 }
+    { name: "قص الشعر", price: 1.0, duration: 20, category: "hair" },
+    { name: "قص اللحية", price: 1.0, duration: 15, category: "beard" },
+    { name: "شمع الوجه", price: 1.0, duration: 10, category: "skincare" },
+    { name: "صباغة اللحية", price: 1.0, duration: 15, category: "beard" },
+    { name: "مساج كتف وراس", price: 1.0, duration: 15, category: "other" },
+    { name: "حلاقة الأطفال", price: 1.0, duration: 20, category: "hair" },
+    { name: "تسريحة", price: 1.0, duration: 15, category: "hair" },
+    { name: "غسل الشعر", price: 0.5, duration: 10, category: "hair" },
+    { name: "لصقة أنف", price: 0.5, duration: 5, category: "skincare" },
+    { name: "الخيط", price: 0.5, duration: 10, category: "skincare" },
+    { name: "صباغة الشعر", price: 1.5, duration: 30, category: "hair" },
+    { name: "تنظيف الوجه", price: 2.0, duration: 30, category: "skincare" },
+    { name: "التمليس", price: 3.0, duration: 45, category: "hair" },
+    { name: "البروتين", price: 15.0, duration: 90, category: "hair" }
 ];
 
 const defaultPackages = [
@@ -205,6 +205,13 @@ function initializeLocalDB() {
             barbers: [
                 { id: 'owner', name: 'الحلاق الشكر', role: 'owner' },
                 { id: 'employee', name: 'الموظف 1', role: 'employee' }
+            ],
+            categories: [
+                { id: 'hair', name: 'خدمات الشعر' },
+                { id: 'beard', name: 'خدمات اللحية' },
+                { id: 'skincare', name: 'خدمات الوجه' },
+                { id: 'dye', name: 'الصبغ' },
+                { id: 'other', name: 'أخرى' }
             ],
             settings: { openTime: '10:00', closeTime: '22:00' }
         }, null, 2));

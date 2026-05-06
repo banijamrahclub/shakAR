@@ -227,6 +227,72 @@
             border-color: var(--primary);
         }
 
+        /* Service Type Tabs */
+        .service-type-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .type-tab-btn {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .type-tab-btn.active {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .type-tab-btn span {
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        /* Sub Tabs Styles */
+        .sub-tabs-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            padding: 10px 0 20px 0;
+        }
+
+        .sub-tab {
+            padding: 10px 5px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 50px;
+            line-height: 1.2;
+        }
+
+        .sub-tab.active {
+            background: var(--primary);
+            color: black;
+            border-color: var(--primary);
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.2);
+        }
+
         /* Service Count Modal */
         #service-count-modal {
             position: fixed;
@@ -352,18 +418,22 @@
                     </div>
 
                     <div class="service-type-tabs">
-                        <button class="type-tab-btn active" onclick="switchServiceType('service')">
+                        <button class="type-tab-btn active" id="tab-service" onclick="switchServiceType('service')">
                             ✂️
                             <span>خدمات</span>
                         </button>
-                        <button class="type-tab-btn" onclick="switchServiceType('package')">
+                        <button class="type-tab-btn" id="tab-package" onclick="switchServiceType('package')">
                             🎁
                             <span>بكجات</span>
                         </button>
-                        <button class="type-tab-btn" onclick="switchServiceType('product')">
+                        <button class="type-tab-btn" id="tab-product" onclick="switchServiceType('product')">
                             🧴
                             <span>منتجات</span>
                         </button>
+                    </div>
+
+                    <div id="sub-category-filters" class="sub-tabs-container">
+                        <!-- JS Content -->
                     </div>
                     <div id="services-list" class="grid-options">
                         <!-- JS Content -->

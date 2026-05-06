@@ -1,12 +1,12 @@
 // 1. STATE MANAGEMENT
 const defaultServices = [
-    { name: "قص الشعر", price: 1.0 }, { name: "قص اللحية", price: 1.0 },
-    { name: "شمع الوجه", price: 1.0 }, { name: "صباغة اللحية", price: 1.0 },
-    { name: "مساج كتف وراس", price: 1.0 }, { name: "حلاقة الأطفال", price: 1.0 },
-    { name: "تسريحة", price: 1.0 }, { name: "غسل الشعر", price: 0.5 },
-    { name: "لصقة أنف", price: 0.5 }, { name: "الخيط", price: 0.5 },
-    { name: "صباغة الشعر", price: 1.5 }, { name: "تنظيف الوجه", price: 2.0 },
-    { name: "التمليس", price: 3.0 }, { name: "البروتين", price: 15.0 }
+    { name: "قص الشعر", price: 1.0, category: "hair" }, { name: "قص اللحية", price: 1.0, category: "beard" },
+    { name: "شمع الوجه", price: 1.0, category: "skincare" }, { name: "صباغة اللحية", price: 1.0, category: "beard" },
+    { name: "مساج كتف وراس", price: 1.0, category: "other" }, { name: "حلاقة الأطفال", price: 1.0, category: "hair" },
+    { name: "تسريحة", price: 1.0, category: "hair" }, { name: "غسل الشعر", price: 0.5, category: "hair" },
+    { name: "لصقة أنف", price: 0.5, category: "skincare" }, { name: "الخيط", price: 0.5, category: "skincare" },
+    { name: "صباغة الشعر", price: 1.5, category: "hair" }, { name: "تنظيف الوجه", price: 2.0, category: "skincare" },
+    { name: "التمليس", price: 3.0, category: "hair" }, { name: "البروتين", price: 15.0, category: "hair" }
 ];
 
 const defaultPackages = [
@@ -39,7 +39,14 @@ let state = {
     appDateFilter: '', // فلتر التاريخ في الحجوزات
     selectedChartMonth: new Date().getMonth(), // الشهر المختار في الرسومات
     selectedChartYear: new Date().getFullYear(), // السنة المختارة في الرسومات
-    editSelectedServices: [] // الخدمات المختارة في نافذة التعديل
+    editSelectedServices: [], // الخدمات المختارة في نافذة التعديل
+    categories: [
+        { id: 'hair', name: '💇‍♂️ خدمات الشعر' },
+        { id: 'beard', name: '🧔 خدمات اللحية' },
+        { id: 'skincare', name: '✨ خدمات الوجه' },
+        { id: 'dye', name: '🎨 الصبغ' },
+        { id: 'other', name: '📦 أخرى' }
+    ]
 };
 
 const PASSWORD = "1";
@@ -88,6 +95,7 @@ async function save() {
     localStorage.setItem('sh_packages', JSON.stringify(state.packages));
     localStorage.setItem('sh_barbers', JSON.stringify(state.barbers));
     localStorage.setItem('sh_settings', JSON.stringify(state.settings));
+    localStorage.setItem('sh_categories', JSON.stringify(state.categories));
 
     if (isSaving) {
         savePending = true;
@@ -179,6 +187,7 @@ async function loadData() {
         state.fixedExpenses = cloudData.fixedExpenses || [];
         if (cloudData.services) state.services = cloudData.services;
         if (cloudData.packages) state.packages = cloudData.packages;
+        if (cloudData.categories) state.categories = cloudData.categories;
         state.barbers = cloudData.barbers || [{ id: 'owner', name: 'الحلاق الشكر', role: 'owner' }, { id: 'employee', name: 'الموظف 1', role: 'employee' }];
         state.appointments = cloudData.appointments || [];
         state.settings = cloudData.settings || { openTime: '10:00', closeTime: '22:00' };
@@ -203,6 +212,7 @@ function saveLocalBackup() {
     localStorage.setItem('sh_packages', JSON.stringify(state.packages));
     localStorage.setItem('sh_barbers', JSON.stringify(state.barbers));
     localStorage.setItem('sh_settings', JSON.stringify(state.settings));
+    localStorage.setItem('sh_categories', JSON.stringify(state.categories));
 }
 
 async function refreshFromCloud() {
@@ -231,6 +241,7 @@ async function refreshFromCloud() {
             }
             if (result.data.services) state.services = result.data.services;
             if (result.data.packages) state.packages = result.data.packages;
+            if (result.data.categories) state.categories = result.data.categories;
             if (result.data.appointments) state.appointments = result.data.appointments;
 
             saveLocalBackup();
@@ -255,6 +266,15 @@ function restoreFromLocal() {
     state.packages = JSON.parse(localStorage.getItem('sh_packages')) || defaultPackages;
     state.barbers = JSON.parse(localStorage.getItem('sh_barbers')) || [{ id: 'owner', name: 'الحلاق الشكر', role: 'owner' }, { id: 'employee', name: 'الموظف 1', role: 'employee' }];
     state.settings = JSON.parse(localStorage.getItem('sh_settings')) || { openTime: '10:00', closeTime: '22:00' };
+    
+    let storedCats = JSON.parse(localStorage.getItem('sh_categories'));
+    state.categories = (storedCats && storedCats.length > 0) ? storedCats : [
+        { id: 'hair', name: '💇‍♂️ خدمات الشعر' },
+        { id: 'beard', name: '🧔 خدمات اللحية' },
+        { id: 'skincare', name: '✨ خدمات الوجه' },
+        { id: 'dye', name: '🎨 الصبغ' },
+        { id: 'other', name: '📦 أخرى' }
+    ];
     state.appointments = [];
 }
 
@@ -374,7 +394,10 @@ function updateUI() {
     if (state.currentPage === 'history') renderHistoryTable();
     if (state.currentPage === 'top-services') renderTopServices();
     if (state.currentPage === 'manage-barbers') renderManageBarbers();
-    if (state.currentPage === 'manage-services') renderManageServices();
+    if (state.currentPage === 'manage-services') {
+        renderManageServices();
+        renderManageCategories();
+    }
     if (state.currentPage === 'manage-packages') renderManagePackages();
     if (state.currentPage === 'appointments') renderAppointmentsTable();
     if (state.currentPage === 'settings') renderSettings();
@@ -1276,6 +1299,12 @@ function renderManageServices() {
                     <option value="product" ${s.type === 'product' ? 'selected' : ''}>🧴 منتج</option>
                 </select>
             </td>
+            <td>
+                <select onchange="updateService(${i}, 'category', this.value)" style="background:transparent; border:1px solid var(--border); color:white; padding:5px; width:100%; border-radius:5px;">
+                    ${state.categories.map(cat => `<option value="${cat.id}" ${s.category === cat.id ? 'selected' : ''}>${cat.name}</option>`).join('')}
+                    ${!state.categories.some(cat => cat.id === s.category) ? `<option value="${s.category}" selected>❓ ${s.category}</option>` : ''}
+                </select>
+            </td>
             <td><input type="number" step="0.5" value="${s.price.toFixed(3)}" style="background:transparent; border:1px solid var(--border); color:white; padding:5px; width:100%; border-radius:5px;" onchange="updateService(${i}, 'price', this.value)"></td>
             <td><input type="number" value="${s.duration !== undefined ? s.duration : 30}" style="background:transparent; border:1px solid var(--border); color:white; padding:5px; width:100%; border-radius:5px;" onchange="updateService(${i}, 'duration', this.value)"></td>
             <td style="display:flex; gap:5px;">
@@ -1309,6 +1338,7 @@ async function moveService(index, direction) {
 async function addService() {
     const name = document.getElementById('new-service-name').value;
     const type = document.getElementById('new-service-type').value || 'service';
+    const category = document.getElementById('new-service-category').value || 'other';
     const price = parseFloat(document.getElementById('new-service-price').value);
     const durationInput = document.getElementById('new-service-duration').value;
     // إذا كان منتج، المدة الافتراضية 0
@@ -1316,7 +1346,7 @@ async function addService() {
     const duration = durationInput === "" ? defaultDuration : parseInt(durationInput);
     
     if (!name || isNaN(price)) return alert("يرجى إدخال اسم وسعر صحيح");
-    state.services.push({ name, type, price, duration });
+    state.services.push({ name, type, category, price, duration });
     await save();
     renderManageServices();
     renderServices();
@@ -1341,6 +1371,49 @@ async function updateService(index, field, value) {
     } catch (e) {
         console.error(e);
         showToast("❌ فشل تحديث الخدمة");
+    }
+}
+
+function renderManageCategories() {
+    const list = document.getElementById('manage-categories-list');
+    if (!list) return;
+    list.innerHTML = state.categories.map((cat, idx) => `
+        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 10px; border: 1px solid var(--border);">
+            <span style="font-weight: 700; font-size: 0.9rem;">${cat.name}</span>
+            <button onclick="deleteCategory(${idx})" style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.1rem; line-height: 1;">🗑️</button>
+        </div>
+    `).join('');
+
+    // تحديث القوائم المنسدلة في صفحة إضافة خدمة جديدة
+    const newServiceCat = document.getElementById('new-service-category');
+    if (newServiceCat) {
+        // نحتفظ بالقيمة المختارة حالياً لو وجدت
+        const currentVal = newServiceCat.value;
+        newServiceCat.innerHTML = state.categories.map(cat => `<option value="${cat.id}">${cat.name}</option>`).join('');
+        if (currentVal) newServiceCat.value = currentVal;
+    }
+}
+
+async function addCategory() {
+    const input = document.getElementById('new-category-name');
+    const name = input.value.trim();
+    if (!name) return alert("يرجى إدخال اسم التصنيف");
+
+    const id = 'cat_' + Date.now();
+    state.categories.push({ id, name });
+    await save();
+    renderManageCategories();
+    renderManageServices();
+    input.value = '';
+    showToast("✅ تمت إضافة التصنيف الجديد");
+}
+
+async function deleteCategory(index) {
+    if (confirm(`هل أنت متأكد من حذف تصنيف "${state.categories[index].name}"؟`)) {
+        state.categories.splice(index, 1);
+        await save();
+        renderManageCategories();
+        renderManageServices();
     }
 }
 

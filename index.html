@@ -505,11 +505,17 @@
                         والأسماء الحالية.</p>
 
                     <div
-                        style="display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr auto; gap: 15px; margin-bottom: 30px; background: rgba(255,255,255,0.02); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
+                        style="display: grid; grid-template-columns: 2fr 1.2fr 1.2fr 1fr 1fr auto; gap: 15px; margin-bottom: 30px; background: rgba(255,255,255,0.02); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
                         <input type="text" id="new-service-name" placeholder="الاسم (خدمة أو منتج)">
                         <select id="new-service-type" style="background: var(--bg-input); color: white; border: 1px solid var(--border); border-radius: 10px; padding: 0 10px;">
                             <option value="service">✂️ خدمة حلاقة</option>
                             <option value="product">🧴 منتج (شامبو، كريم، إلخ)</option>
+                        </select>
+                        <select id="new-service-category" style="background: var(--bg-input); color: white; border: 1px solid var(--border); border-radius: 10px; padding: 0 10px;">
+                            <option value="hair">💇‍♂️ شعر</option>
+                            <option value="beard">🧔 لحية</option>
+                            <option value="skincare">✨ عناية بالبشرة</option>
+                            <option value="other">📦 أخرى</option>
                         </select>
                         <input type="number" id="new-service-price" placeholder="السعر (د.ب)">
                         <input type="number" id="new-service-duration" placeholder="المدة (دقيقة)">
@@ -521,6 +527,8 @@
                             <thead>
                                 <tr>
                                     <th>اسم الخدمة</th>
+                                    <th>النوع</th>
+                                    <th>التصنيف</th>
                                     <th>السعر (د.ب)</th>
                                     <th>المدة (دقيقة)</th>
                                     <th>الترتيب</th>
@@ -531,6 +539,19 @@
                                 <!-- JS Generated -->
                             </tbody>
                         </table>
+                    </div>
+
+                    <!-- Category Management Section -->
+                    <div style="margin-top: 50px; border-top: 1px solid var(--border); padding-top: 30px;">
+                        <h3 style="margin-bottom: 20px;">📁 إدارة تصنيفات الخدمات</h3>
+                        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">يمكنك هنا إضافة أو حذف التصنيفات التي تظهر للزبائن في صفحة الحجز.</p>
+                        <div style="display: grid; grid-template-columns: 1fr auto; gap: 15px; margin-bottom: 25px; background: rgba(255,255,255,0.02); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
+                            <input type="text" id="new-category-name" placeholder="اسم التصنيف الجديد (مثال: 🧖‍♂️ حمام مغربي)">
+                            <button class="btn-action" style="width: auto; padding: 0 25px;" onclick="addCategory()">إضافة تصنيف</button>
+                        </div>
+                        <div id="manage-categories-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">
+                            <!-- JS Content -->
+                        </div>
                     </div>
                 </div>
             </div>

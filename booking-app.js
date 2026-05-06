@@ -13,6 +13,7 @@ let bookingData = {
     services: [],
     packages: [],
     currentType: 'service',
+    currentSubCategory: 'all',
     personCount: 1,
     personNames: []
 };
@@ -146,14 +147,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         const data = await res.json();
         bookingData.services = data.services || [];
         bookingData.packages = data.packages || [];
+        bookingData.categories = data.categories || [
+            { id: 'hair', name: '💇‍♂️ خدمات الشعر' },
+            { id: 'beard', name: '🧔 خدمات اللحية' },
+            { id: 'skincare', name: '✨ خدمات الوجه' },
+            { id: 'dye', name: '🎨 الصبغ' }
+        ];
         bookingData.settings = data.settings || { openTime: '10:00', closeTime: '22:00' };
+
+        renderCategoryFilters();
+        renderServices();
 
         // Check Maintenance Mode
         if (bookingData.settings && bookingData.settings.maintenanceMode) {
             const overlay = document.getElementById('maintenance-overlay');
             if (overlay) {
                 overlay.style.display = 'flex';
-                document.body.style.overflow = 'hidden'; // Prevent scrolling
+                document.body.style.overflow = 'hidden';
             }
         }
 
@@ -211,14 +221,35 @@ function updateDayLabel(dateStr) {
 function switchServiceType(type) {
     bookingData.currentType = type;
     document.querySelectorAll('.type-tab-btn').forEach(btn => {
-        const text = btn.innerText;
-        btn.classList.toggle('active',
-            (type === 'service' && (text.includes('خدمات') || text.includes('منفردة'))) ||
-            (type === 'package' && text.includes('بكجات')) ||
-            (type === 'product' && text.includes('منتجات'))
-        );
+        btn.classList.toggle('active', btn.id === `tab-${type}`);
     });
+
+    const subFilters = document.getElementById('sub-category-filters');
+    if (subFilters) {
+        subFilters.style.display = type === 'service' ? 'grid' : 'none';
+    }
+
     renderServices();
+}
+
+function setSubCategory(cat, el) {
+    bookingData.currentSubCategory = cat;
+    document.querySelectorAll('.sub-tab').forEach(tab => tab.classList.remove('active'));
+    if (el) el.classList.add('active');
+    renderServices();
+}
+
+function renderCategoryFilters() {
+    const container = document.getElementById('sub-category-filters');
+    if (!container) return;
+
+    let html = `<button class="sub-tab ${bookingData.currentSubCategory === 'all' ? 'active' : ''}" onclick="setSubCategory('all', this)">الكل</button>`;
+    
+    bookingData.categories.forEach(cat => {
+        html += `<button class="sub-tab ${bookingData.currentSubCategory === cat.id ? 'active' : ''}" onclick="setSubCategory('${cat.id}', this)">${cat.name}</button>`;
+    });
+
+    container.innerHTML = html;
 }
 
 function renderServices() {
@@ -226,12 +257,18 @@ function renderServices() {
     let html = "";
 
     if (bookingData.currentType === 'service') {
-        const services = bookingData.services.filter(s => !s.type || s.type === 'service');
+        let services = bookingData.services.filter(s => !s.type || s.type === 'service');
+        
+        // تطبيق فلتر التصنيف الفرعي
+        if (bookingData.currentSubCategory !== 'all') {
+            services = services.filter(s => s.category === bookingData.currentSubCategory);
+        }
+
         html = services.map(s => {
             const isSelected = bookingData.selectedServices.some(item => item.name === s.name);
             return `
                 <div class="option-item ${isSelected ? 'selected' : ''}" onclick="toggleService('${s.name}')">
-                    <div style="font-weight:700;">${s.name}</div>
+                    <div style="font-weight:700;">${s.name} ${s.category === 'skincare' ? '✨' : ''}</div>
                     ${s.duration ? `<div style="font-size:0.7rem; color:var(--text-muted);">${s.duration} دقيقة</div>` : ''}
                     <div style="color:var(--primary); font-size:0.8rem;">${s.price.toFixed(3)} د.ب</div>
                     ${isSelected ? '<div class="check-mark">✓</div>' : ''}
