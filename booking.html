@@ -456,7 +456,20 @@
                 <div id="step-3" class="step">
                     <h3>3. بيانات التواصل</h3>
                     <input type="text" id="cust-name" placeholder="الاسم الكامل" class="input-field">
-                    <input type="tel" id="cust-phone" placeholder="رقم الهاتف" class="input-field">
+                    <div style="display: grid; grid-template-columns: 120px 1fr; gap: 10px; margin-bottom: 15px;">
+                        <div style="position: relative;">
+                            <select id="country-code" class="input-field" style="margin-bottom: 0; padding: 0 10px; text-align: center; direction: ltr; height: 50px; font-weight: 700; appearance: none; -webkit-appearance: none; cursor: pointer;">
+                                <option value="+973" selected>🇧🇭 +973</option>
+                                <option value="+966">🇸🇦 +966</option>
+                                <option value="+971">🇦🇪 +971</option>
+                                <option value="+965">🇰🇼 +965</option>
+                                <option value="+968">🇴🇲 +968</option>
+                                <option value="+974">🇶🇦 +974</option>
+                            </select>
+                            <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; font-size: 0.8rem; opacity: 0.5;">▼</span>
+                        </div>
+                        <input type="tel" id="cust-phone" placeholder="رقم الهاتف" class="input-field" style="margin-bottom: 0; height: 50px; text-align: left; direction: ltr; padding-left: 15px;">
+                    </div>
                     <div class="summary-box">
                         <p>الخدمة: <span id="summary-service"></span></p>
                         <p>الموعد: <span id="summary-time"></span></p>
@@ -510,10 +523,20 @@
                 <h3>البحث عن مواعيدي</h3>
                 <p style="margin-bottom: 20px; font-size: 0.9rem; color: var(--text-muted);">أدخل رقم هاتفك لعرض حجوزاتك
                     القادمة</p>
-                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                    <input type="tel" id="search-phone" placeholder="رقم الهاتف" class="input-field"
-                        style="margin-bottom:0;">
-                    <button class="btn-confirm" style="width: 80px; margin-top:0;" onclick="fetchMyApps()">بحث</button>
+                <div style="display: grid; grid-template-columns: 120px 1fr 80px; gap: 10px; margin-bottom: 20px;">
+                    <div style="position: relative;">
+                        <select id="search-country-code" class="input-field" style="margin-bottom: 0; padding: 0 10px; text-align: center; direction: ltr; height: 50px; font-weight: 700; appearance: none; -webkit-appearance: none; cursor: pointer;">
+                            <option value="+973" selected>🇧🇭 +973</option>
+                            <option value="+966">🇸🇦 +966</option>
+                            <option value="+971">🇦🇪 +971</option>
+                            <option value="+965">🇰🇼 +965</option>
+                            <option value="+968">🇴🇲 +968</option>
+                            <option value="+974">🇶🇦 +974</option>
+                        </select>
+                        <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; font-size: 0.8rem; opacity: 0.5;">▼</span>
+                    </div>
+                    <input type="tel" id="search-phone" placeholder="رقم الهاتف" class="input-field" style="margin-bottom:0; height: 50px; text-align: left; direction: ltr; padding-left: 15px;">
+                    <button class="btn-confirm" style="width: 100%; margin-top:0; height: 50px;" onclick="fetchMyApps()">بحث</button>
                 </div>
                 <div id="my-apps-list" class="my-apps-container">
                     <!-- سيتم عرض الحجوزات هنا -->

@@ -577,9 +577,15 @@ function handleAppSearch() {
 }
 
 function sendWhatsAppMessage(phone, encodedMsg) {
-    // تنظيف رقم الهاتف إذا كان يبدأ بـ 0 أو بدون مفتاح الدولة
+    // تنظيف رقم الهاتف
     let cleanPhone = phone.replace(/\s+/g, '').replace('+', '');
-    if (!cleanPhone.startsWith('973')) cleanPhone = '973' + cleanPhone;
+    
+    // إذا كان الرقم 8 أرقام فقط، نفترض أنه بحريني ونضيف 973
+    // أما إذا كان أطول (يحتوي على رمز دولة) فنتركه كما هو
+    if (cleanPhone.length === 8) {
+        cleanPhone = '973' + cleanPhone;
+    }
+    
     window.open(`https://wa.me/${cleanPhone}?text=${encodedMsg}`);
 }
 
@@ -660,10 +666,28 @@ function updateManualSummary() {
 
 async function saveManualAppointment() {
     const name = document.getElementById('m-app-name').value;
-    const phone = document.getElementById('m-app-phone').value;
+    const countryCode = document.getElementById('m-app-country-code').value;
+    let phone = document.getElementById('m-app-phone').value;
     const start = document.getElementById('m-app-start').value;
 
     if (!name || !phone || !start) return alert("يرجى ملئ الاسم والهاتف والتوقيت");
+    
+    // تنظيف ودمج الرقم
+    phone = phone.replace(/\s+/g, '').replace(/^0+/, '');
+    
+    // إزالة رمز البحرين إذا تم إدخاله بالخطأ مع اختيار دولة أخرى
+    if (countryCode !== '+973' && phone.startsWith('973')) {
+        phone = phone.substring(3);
+    }
+    
+    // تجنب تكرار الرمز المختار
+    const rawCode = countryCode.replace('+', '');
+    if (phone.startsWith(rawCode)) {
+        phone = phone.substring(rawCode.length);
+    }
+
+    const fullPhone = countryCode + phone;
+    phone = fullPhone;
     if (state.manualSelectedServices.length === 0) return alert("يرجى اختيار خدمة واحدة على الأقل");
 
     const startTime = new Date(start).toISOString();

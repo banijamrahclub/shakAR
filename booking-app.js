@@ -72,9 +72,26 @@ function switchMainTab(tab) {
 }
 
 async function fetchMyApps() {
+    const countryCode = document.getElementById('search-country-code').value;
     let phone = document.getElementById('search-phone').value;
     phone = arToEn(phone); // تحويل الأرقام
     if (!phone) return alert("أدخل رقم الهاتف");
+
+    // تنظيف رقم الهاتف ودمجه مع رمز الدولة
+    phone = phone.replace(/\s+/g, '').replace(/^0+/, ''); // إزالة المسافات والأصفار في البداية
+    
+    // إزالة رمز البحرين إذا تم إدخاله بالخطأ مع اختيار دولة أخرى
+    if (countryCode !== '+973' && phone.startsWith('973')) {
+        phone = phone.substring(3);
+    }
+    
+    // تجنب تكرار الرمز المختار
+    const rawCode = countryCode.replace('+', '');
+    if (phone.startsWith(rawCode)) {
+        phone = phone.substring(rawCode.length);
+    }
+
+    const fullPhone = countryCode + phone;
 
     const list = document.getElementById('my-apps-list');
     list.innerHTML = 'جاري البحث...';
@@ -82,7 +99,13 @@ async function fetchMyApps() {
     try {
         const res = await fetch(`${API_BASE}/api/data`);
         const data = await res.json();
-        const myApps = (data.appointments || []).filter(a => a.phone === phone);
+        
+        // البحث عن الرقم بالصيغة الكاملة (مع الرمز) أو الصيغة المحلية (بدون الرمز)
+        const myApps = (data.appointments || []).filter(a => {
+            const cleanAppPhone = a.phone.replace(/\s+/g, '').replace('+', '');
+            const cleanSearchPhone = fullPhone.replace(/\s+/g, '').replace('+', '');
+            return cleanAppPhone === cleanSearchPhone;
+        });
 
         if (myApps.length === 0) {
             list.innerHTML = '<p style="color:var(--text-muted)">لا توجد حجوزات لهذا الرقم</p>';
@@ -112,7 +135,7 @@ async function fetchMyApps() {
                     ` : ''}
 
                     <button class="btn-back" style="color:var(--danger); border:1px solid var(--danger); padding:5px 10px; border-radius:8px; margin-top:10px; width:100%; transition: 0.3s;" 
-                        onclick="cancelApp('${phone}', ${index})">إلغاء الموعد</button>
+                        onclick="cancelApp('${fullPhone}', ${index})">إلغاء الموعد</button>
                 </div>
             `;
         }).join('');
@@ -529,10 +552,29 @@ let isSubmitting = false;
 async function confirmBooking() {
     if (isSubmitting) return;
     const name = document.getElementById('cust-name').value;
+    const countryCode = document.getElementById('country-code').value;
     let phone = document.getElementById('cust-phone').value;
     const btn = document.querySelector('#step-3 .btn-confirm');
     phone = arToEn(phone);
+    
     if (!name || !phone) return alert("يرجى ملئ البيانات");
+
+    // تنظيف رقم الهاتف ودمجه مع رمز الدولة
+    phone = phone.replace(/\s+/g, '').replace(/^0+/, ''); // إزالة المسافات والأصفار في البداية
+    
+    // إذا كان المستخدم قد اختار رمزاً غير البحرين، ولكن الرقم المدخل يبدأ بـ 973، نقوم بحذف الـ 973
+    if (countryCode !== '+973' && phone.startsWith('973')) {
+        phone = phone.substring(3);
+    }
+    
+    // أيضاً إذا كان الرقم المدخل يبدأ بنفس الرمز المختار (لتجنب التكرار)
+    const rawCode = countryCode.replace('+', '');
+    if (phone.startsWith(rawCode)) {
+        phone = phone.substring(rawCode.length);
+    }
+
+    const fullPhone = countryCode + phone;
+    phone = fullPhone;
 
     isSubmitting = true;
     if (btn) { btn.disabled = true; btn.innerText = "جاري التأكيد..."; btn.style.opacity = "0.7"; }
