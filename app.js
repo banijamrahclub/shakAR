@@ -182,15 +182,42 @@ async function loadData() {
             return;
         }
 
-        state.history = cloudData.history || [];
-        state.expenses = cloudData.expenses || [];
-        state.fixedExpenses = cloudData.fixedExpenses || [];
+        // دمج ذكي بدلاً من الاستبدال الكامل لمنع ضياع البيانات المحلية أثناء الحفظ
+        if (cloudData.history) {
+            const existingIds = new Set(state.history.map(h => h.id));
+            const newItems = cloudData.history.filter(h => !existingIds.has(h.id));
+            state.history = [...state.history, ...newItems].sort((a, b) => b.id - a.id);
+        }
+        
+        if (cloudData.expenses) {
+            const existingIds = new Set(state.expenses.map(e => e.id));
+            const newItems = cloudData.expenses.filter(e => !existingIds.has(e.id));
+            state.expenses = [...state.expenses, ...newItems].sort((a, b) => b.id - a.id);
+        }
+
+        if (cloudData.appointments) {
+            // بالنسبة للمواعيد، نستخدم دمجاً أكثر ذكاءً لأن الحالة (status) قد تتغير
+            const cloudAppMap = new Map(cloudData.appointments.map(a => [a.id, a]));
+            state.appointments = state.appointments.map(localApp => {
+                const cloudApp = cloudAppMap.get(localApp.id);
+                if (cloudApp) {
+                    cloudAppMap.delete(localApp.id);
+                    // إذا كان الموعد المحلي "pending" والسحابي "confirmed"، نحدثه
+                    // أما إذا كان المحلي أحدث، نحتفظ به (لأننا في منتصف عملية حفظ غالباً)
+                    return (localApp.status === 'pending' && cloudApp.status === 'confirmed') ? cloudApp : localApp;
+                }
+                return localApp;
+            });
+            // إضافة المواعيد الجديدة تماماً من السحاب
+            state.appointments = [...state.appointments, ...Array.from(cloudAppMap.values())];
+        }
+
+        state.fixedExpenses = cloudData.fixedExpenses || state.fixedExpenses;
         if (cloudData.services) state.services = cloudData.services;
         if (cloudData.packages) state.packages = cloudData.packages;
         if (cloudData.categories) state.categories = cloudData.categories;
-        state.barbers = cloudData.barbers || [{ id: 'owner', name: 'الحلاق الشكر', role: 'owner' }, { id: 'employee', name: 'الموظف 1', role: 'employee' }];
-        state.appointments = cloudData.appointments || [];
-        state.settings = cloudData.settings || { openTime: '10:00', closeTime: '22:00' };
+        state.barbers = cloudData.barbers || state.barbers;
+        state.settings = cloudData.settings || state.settings;
 
         if (cloudData.lastCloudSync) {
             updateSyncStatus('synced', cloudData.lastCloudSync);
@@ -401,6 +428,7 @@ function updateUI() {
     if (state.currentPage === 'manage-packages') renderManagePackages();
     if (state.currentPage === 'appointments') renderAppointmentsTable();
     if (state.currentPage === 'settings') renderSettings();
+    if (state.currentPage === 'vip-customers') renderVipCustomers();
 
     updateGlobalStats();
 
@@ -807,7 +835,8 @@ async function completeAppointment(id, name, startTime) {
             role: 'owner',
             total: finalPrice,
             items: app.service,
-            paymentMethod: pMethod
+            paymentMethod: pMethod,
+            phone: app.phone // حفظ رقم الهاتف لتتبع العملاء المميزين
         };
         state.history.unshift(sale);
 
@@ -1992,3 +2021,51 @@ async function resetData() {
     }
 }
 
+
+function renderVipCustomers() {
+    const tableBody = document.getElementById('vip-customers-table-body');
+    if (!tableBody) return;
+
+    // تجميع البيانات من السجل التاريخي (History)
+    // نركز فقط على العمليات التي تحتوي على رقم هاتف (التي تمت عبر الحجز)
+    const customerStats = {};
+
+    state.history.forEach(sale => {
+        if (sale.phone) {
+            if (!customerStats[sale.phone]) {
+                customerStats[sale.phone] = {
+                    phone: sale.phone,
+                    count: 0,
+                    totalSpent: 0
+                };
+            }
+            customerStats[sale.phone].count += 1;
+            customerStats[sale.phone].totalSpent += (sale.total || 0);
+        }
+    });
+
+    // تحويل الكائن إلى مصفوفة وفرزها بناءً على عدد الحجوزات (تنازلياً)
+    const sortedCustomers = Object.values(customerStats).sort((a, b) => b.count - a.count);
+
+    if (sortedCustomers.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-muted);">لا توجد بيانات عملاء مكتملة حالياً (تظهر البيانات بعد إتمام الحجوزات القادمة)</td></tr>';
+        return;
+    }
+
+    tableBody.innerHTML = sortedCustomers.map(customer => {
+        // تنظيف الرقم للواتساب
+        const waPhone = customer.phone.replace(/\s+/g, '').replace('+', '');
+        
+        return `
+            <tr>
+                <td style="font-weight:700; color:var(--primary); direction:ltr;">${customer.phone}</td>
+                <td style="font-weight:800; font-size:1.1rem;">${customer.count}</td>
+                <td style="color:var(--success); font-weight:700;">${customer.totalSpent.toFixed(3)} د.ب</td>
+                <td>
+                    <button class="btn-action" style="background:#25d366; color:white; width:auto; padding:5px 15px;" 
+                        onclick="window.open('https://wa.me/${waPhone}')">💬 واتساب</button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}

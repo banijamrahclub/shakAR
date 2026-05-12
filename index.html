@@ -140,6 +140,9 @@
                 <div class="nav-link" onclick="handleNav('settings')">
                     <span>⚙️ أوقات العمل</span>
                 </div>
+                <div class="nav-link" onclick="handleNav('vip-customers')">
+                    <span>💎 العملاء المميزين</span>
+                </div>
                 <div class="nav-link" onclick="handleNav('manage-barbers')">
                     <span>👥 إدارة الموظفين</span>
                 </div>
@@ -833,6 +836,34 @@
                             </thead>
                             <tbody>
                                 <!-- JS Content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE: VIP CUSTOMERS -->
+            <div id="page-vip-customers" class="page">
+                <div class="card-glass">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <div>
+                            <h2 style="margin: 0;">💎 العملاء المميزين (الأكثر حجزاً)</h2>
+                            <p style="color: var(--text-muted); margin-top: 5px;">يتم ترتيب العملاء بناءً على عدد الحجوزات المكتملة التي تمت من خلال الموقع.</p>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>رقم الهاتف</th>
+                                    <th>عدد الحجوزات المكتملة</th>
+                                    <th>إجمالي المدفوعات (د.ب)</th>
+                                    <th>تواصل</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vip-customers-table-body">
+                                <!-- سيتم التعبئة بواسطة JS -->
                             </tbody>
                         </table>
                     </div>
